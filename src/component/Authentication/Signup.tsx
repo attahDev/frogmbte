@@ -132,16 +132,13 @@ export default function SignupModal({ isOpen = true, onClose, onSuccess }: Props
             });
 
             console.log("Registration successful", userData);
-            
-            // Store email for OTP verification if needed
-            localStorage.setItem('pendingVerificationEmail', form.email);
-            
+
             // Call onSuccess callback
             onSuccess?.(userData);
-            
-            // Navigate to OTP verification
-            navigate('/verify-otp');
-            
+
+            // OTP verification disabled for now — go straight to login
+            navigate('/login');
+
             // Close modal if in modal mode
             if (onClose) {
                 onClose();
