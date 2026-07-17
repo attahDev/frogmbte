@@ -107,7 +107,7 @@ const galleryMoments: GalleryMoment[] = [
     title: "Portico Library: Reclaiming History",
     description:
       "Proceeds from our heritage events go toward reclaiming all three floors of this historic building for the first time in over a century.",
-    image: gallerySrc(GALLERY_IMAGES[2]),
+    image: gallerySrc(GALLERY_IMAGES[1]),
   },
   {
     id: "black-history-month",
