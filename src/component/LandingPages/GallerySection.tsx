@@ -3,8 +3,7 @@ import { ArrowLeft, ArrowRight, Play, X } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 
 const GALLERY_IMAGES = [
-  "Gallery_Image (1).jpeg",
-  "Gallery_Image (2).jpeg",
+  "Ann.jpg",
   "Gallery_Image (3).jpeg",
   "Gallery_Image (4).jpeg",
 ] as const;
@@ -15,8 +14,7 @@ type GalleryImageMeta = {
 };
 
 const GALLERY_IMAGE_META: Record<(typeof GALLERY_IMAGES)[number], GalleryImageMeta> = {
-  "Gallery_Image (1).jpeg": {},
-  "Gallery_Image (2).jpeg": {},
+  "Ann.jpg": { portrait: true, objectPosition: "center top" },
   "Gallery_Image (3).jpeg": {},
   "Gallery_Image (4).jpeg": { portrait: true, objectPosition: "center top" },
 };
@@ -99,7 +97,7 @@ const galleryMoments: GalleryMoment[] = [
     title: "Heritage Dining at The Portico Library",
     description:
       "An edible history of Manchester, hosted by our CEO with Mayor Andy Burnham in support of the Portico Reunited restoration project.",
-    image: gallerySrc(GALLERY_IMAGES[0]),
+    image: gallerySrc("Ann.jpg"),
   },
   {
     id: "portico-visit",
@@ -107,7 +105,7 @@ const galleryMoments: GalleryMoment[] = [
     title: "Portico Library: Reclaiming History",
     description:
       "Proceeds from our heritage events go toward reclaiming all three floors of this historic building for the first time in over a century.",
-    image: gallerySrc(GALLERY_IMAGES[1]),
+    image: gallerySrc(GALLERY_IMAGES[2]),
   },
   {
     id: "black-history-month",
@@ -115,7 +113,7 @@ const galleryMoments: GalleryMoment[] = [
     title: "Portico Ubuntu: Be Part of the Offer",
     description:
       "Celebrating Black history and culture through community storytelling, book launches, and shared heritage experiences.",
-    image: gallerySrc(GALLERY_IMAGES[2]),
+    image: gallerySrc(GALLERY_IMAGES[1]),
   },
   {
     id: "network-gathering",
@@ -123,7 +121,7 @@ const galleryMoments: GalleryMoment[] = [
     title: "Building Our Membership Network",
     description:
       "Preserving, identifying, and leveraging the history and shared culture of our membership network as a core strategic pillar.",
-    image: gallerySrc(GALLERY_IMAGES[3]),
+    image: gallerySrc(GALLERY_IMAGES[2]),
   },
 ];
 
