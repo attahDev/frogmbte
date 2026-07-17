@@ -117,7 +117,7 @@ function AppLayout() {
 
             {/* ── LIVE at launch: Dashboard, Academy, Green Impact, Hall of Fame ── */}
             <Route path="academy" element={<ToolkIndex />} />
-            <Route path="hall-of-fame" element={<HallOfFameAI />} /> {/* Hall of Fame AI chat — delivered */}
+            <Route path="hall-of-fame" element={<HallOfFameEmbed />} /> {/* hof.git app embedded via iframe */} /> {/* Hall of Fame AI chat — delivered */}
             <Route path="green-impact" element={<ClimateActionIndex />} />
             <Route path="green-impact/:courseSlug" element={<CourseOverviewPage />} />
             <Route path="green-impact/:courseSlug/:lessonSlug" element={<CourseLessonPage />} />
