@@ -1,1 +1,5 @@
 
+User-agent: *
+Allow: /
+
+Sitemap: https://gmbtefro.vercel.app/sitemap.xml
