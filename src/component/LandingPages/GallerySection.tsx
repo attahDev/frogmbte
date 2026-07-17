@@ -17,7 +17,6 @@ type GalleryImageMeta = {
 const GALLERY_IMAGE_META: Record<(typeof GALLERY_IMAGES)[number], GalleryImageMeta> = {
   "Ann.jpg": { portrait: true, objectPosition: "center top" },
   "Gallery_Image (3).jpeg": {},
-  "Gallery_Image (4).jpeg": { portrait: true, objectPosition: "center top" },
   "Gallery_Image (5).jpeg": {},
 };
 
