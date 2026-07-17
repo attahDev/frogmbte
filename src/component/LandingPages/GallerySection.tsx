@@ -5,7 +5,6 @@ import { useCallback, useEffect, useState } from "react";
 const GALLERY_IMAGES = [
   "Ann.jpg",
   "Gallery_Image (3).jpeg",
-  "Gallery_Image (4).jpeg",
   "Gallery_Image (5).jpeg",
 ] as const;
 
