@@ -30,7 +30,7 @@ import { ToolkIndex } from './component/StudentDashboard/ServicesSection/Toolkit
 import ServicesIndexPage from './component/servicesPages/servicesIndex';
 import { Toaster } from "react-hot-toast";
 import ComingSoon from './component/Authentication/Soon';
-+import HallOfFameEmbed from './component/StudentDashboard/HOFAI/HallOfFameEmbed';
+import HallOfFameEmbed from './component/StudentDashboard/HOFAI/HallOfFameEmbed';
 import AIDashboardIndex from './component/MarketResearchDashboard/AIDashboardIndex';
 import BPTabs from './component/MarketResearchDashboard/BusinessPlanSection/BPTabs';
 import { IGDashboardSection } from './component/MarketResearchDashboard/IdeaGenerator/IGDashboardSection';
@@ -117,7 +117,10 @@ function AppLayout() {
 
             {/* ── LIVE at launch: Dashboard, Academy, Green Impact, Hall of Fame ── */}
             <Route path="academy" element={<ToolkIndex />} />
-            <Route path="hall-of-fame" element={<HallOfFameEmbed />} /> {/* hof.git app embedded via iframe */} /> {/* Hall of Fame AI chat — delivered */}
+            <Route
+                path="hall-of-fame"
+                element={<HallOfFameEmbed />}
+              />
             <Route path="green-impact" element={<ClimateActionIndex />} />
             <Route path="green-impact/:courseSlug" element={<CourseOverviewPage />} />
             <Route path="green-impact/:courseSlug/:lessonSlug" element={<CourseLessonPage />} />
