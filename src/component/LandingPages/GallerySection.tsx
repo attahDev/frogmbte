@@ -117,14 +117,6 @@ const galleryMoments: GalleryMoment[] = [
       "Celebrating Black history and culture through community storytelling, book launches, and shared heritage experiences.",
     image: gallerySrc(GALLERY_IMAGES[1]),
   },
-  {
-    id: "network-gathering",
-    badge: "Success Story",
-    title: "Building Our Membership Network",
-    description:
-      "Preserving, identifying, and leveraging the history and shared culture of our membership network as a core strategic pillar.",
-    image: gallerySrc(GALLERY_IMAGES[3]),
-  },
 ];
 
 const storyVideos: StoryVideo[] = [
