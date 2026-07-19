@@ -42,7 +42,7 @@ const teamMembers: TeamMember[] = [
     imagePosition: "object-[50%_18%]",
   },
   {
-    name: "Sodeeq",
+    name: "Sodeeq Ipadeola",
     lname: "Olalekan",
     title: "Head of Digital Trust, Policy and Compliance",
     role: "Building bridges between academia and industry",
