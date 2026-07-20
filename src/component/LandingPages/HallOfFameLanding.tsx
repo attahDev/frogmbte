@@ -1,4 +1,4 @@
-const HOF_LANDING_URL = "https://hof-ochre.vercel.app";
+const HOF_LANDING_URL = "https://hofgmbte.vercel.app";
 
 export default function HallOfFameLanding() {
   return (
