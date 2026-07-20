@@ -3,7 +3,7 @@
 import { api } from "../../../lib/api";
 
 const BASE = (
-  import.meta.env.VITE_MARKET_RESEARCH_API_URL ||
+  import.meta.env.VITE_PITCH_DECK_API_URL ||
   "https://pitchdeckk.onrender.com"
 ).replace(/\/+$/, "");
 
