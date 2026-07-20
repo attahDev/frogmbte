@@ -1,6 +1,7 @@
 import './App.css';
 import Footer from './component/Footer';
 import { IndexLandingPage } from './component/LandingPages/IndexLandingPage';
+import HallOfFameLanding from './component/LandingPages/HallOfFameLanding';
 import NavBar from './component/Navbar';
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -106,6 +107,7 @@ function AppLayout() {
       >
         <Routes>
           <Route path="/" element={<IndexLandingPage />} />
+          <Route path="/hall-of-fame" element={<HallOfFameLanding />} />
           <Route path="/about" element={<IndexAboutPage />} />
           <Route path="/partners" element={<IndexPartnersPage />} />
           <Route path="/events" element={<EventIndex />} />
@@ -135,7 +137,14 @@ function AppLayout() {
             <Route path="business" element={<ComingSoon />} /> {/* <ToolkitsIndex /> */}
             <Route path="partnerships" element={<ComingSoon />} /> {/* <PartnershipsIndex /> */}
             <Route path="pitch-deck" element={<ComingSoon />} />
-            <Route path="proposal-builder" element={<ComingSoon />} />
+            <Route
+              path="proposal-builder"
+              element={
+                <Suspense fallback={<ToolFallback />}>
+                  <ProposalBuilder />
+                </Suspense>
+              }
+            />
             <Route
               path="research"
               element={<Navigate to="/dashboard/market-research" replace />}
@@ -151,7 +160,14 @@ function AppLayout() {
             <Route path="brand-identity" element={<ComingSoon />} /> {/* <BrandIdentityBuilder /> */}
             <Route path="ai-studio" element={<ComingSoon />} /> {/* <AIBusinessStudioSection /> */}
             <Route path="idea-generator" element={<ComingSoon />} /> {/* <IGDashboardSection /> */}
-            <Route path="market-research" element={<ComingSoon />} /> {/* <MarketResearchTool /> */}
+            <Route
+              path="market-research"
+              element={
+                <Suspense fallback={<ToolFallback />}>
+                  <MarketResearchTool />
+                </Suspense>
+              }
+            />
             <Route path="opportunity-insights" element={<ComingSoon />} /> {/* <MRDashboardSection /> */}
             <Route path="business-plan" element={<ComingSoon />} /> {/* <BPTabs /> */}
 
