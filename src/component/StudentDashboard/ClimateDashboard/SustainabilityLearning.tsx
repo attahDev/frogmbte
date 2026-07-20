@@ -1,5 +1,7 @@
-import { Play } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Play, Loader2 } from "lucide-react";
 import { Link } from "react-router-dom";
+import { fetchCourses } from "../../../lib/coursesApi";
 
 type CourseCardProps = {
   title: string;
@@ -8,33 +10,6 @@ type CourseCardProps = {
   progress: number;
   slug: string;
 };
-
-const courses: CourseCardProps[] = [
-  {
-    title: "Climate & Social Justice",
-    image:
-      "https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?q=80&w=1200&auto=format&fit=crop",
-    duration: "2 weeks",
-    progress: 0,
-    slug: "climate-social-justice",
-  },
-  {
-    title: "Climate Technology & Data",
-    image:
-      "https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=1200&auto=format&fit=crop",
-    duration: "2 weeks",
-    progress: 0,
-    slug: "climate-technology-and-data",
-  },
-  {
-    title: "Climate Change Impacts & Risks",
-    image:
-      "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?q=80&w=1200&auto=format&fit=crop",
-    duration: "4 weeks",
-    progress: 0,
-    slug: "climate-change-impacts-and-risks",
-  },
-];
 
 function CourseCard({
   title,
@@ -108,6 +83,31 @@ function CourseCard({
 }
 
 export default function SustainabilityLearningSection() {
+  const [courses, setCourses] = useState<CourseCardProps[] | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetchCourses("climate")
+      .then((data) => {
+        if (cancelled) return;
+        setCourses(
+          data.map((c) => ({
+            title: c.title,
+            image: c.image,
+            duration: c.duration,
+            progress: c.progress,
+            slug: c.slug,
+          })),
+        );
+      })
+      .catch(() => {
+        if (!cancelled) setCourses([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   return (
     <section className="w-full rounded-[18px] border-[0.3px] border-[#001F3F73] bg-[#FFFDF7] px-4 py-5 shadow-[0px_2px_4px_-1px_rgba(0,31,63,0.06),0px_4px_6px_-1px_rgba(0,31,63,0.10)] sm:px-5 sm:py-6 lg:rounded-[20px] lg:px-7 lg:pb-8 lg:pt-[26px]">
       <h2 className="text-[22px] font-semibold leading-tight tracking-[-0.03em] text-[#0B2B50] sm:text-[25px] lg:text-[28px]">
@@ -118,11 +118,21 @@ export default function SustainabilityLearningSection() {
         Build your carbon literacy and green skills
       </p>
 
-      <div className="mt-6 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:mt-9 lg:gap-x-7 lg:gap-y-[30px] 2xl:grid-cols-3">
-        {courses.map((course) => (
-          <CourseCard key={course.slug} {...course} />
-        ))}
-      </div>
+      {courses === null ? (
+        <div className="mt-8 flex items-center justify-center py-8 text-gray-400">
+          <Loader2 className="h-5 w-5 animate-spin" />
+        </div>
+      ) : courses.length === 0 ? (
+        <p className="mt-8 text-[14px] text-[#6B7280]">
+          No climate courses have been published yet — check back soon.
+        </p>
+      ) : (
+        <div className="mt-6 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:mt-9 lg:gap-x-7 lg:gap-y-[30px] 2xl:grid-cols-3">
+          {courses.map((course) => (
+            <CourseCard key={course.slug} {...course} />
+          ))}
+        </div>
+      )}
     </section>
   );
 }

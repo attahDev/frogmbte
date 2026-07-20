@@ -1,7 +1,6 @@
 import './App.css';
 import Footer from './component/Footer';
 import { IndexLandingPage } from './component/LandingPages/IndexLandingPage';
-import HallOfFameLanding from './component/LandingPages/HallOfFameLanding';
 import NavBar from './component/Navbar';
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -32,6 +31,7 @@ import ServicesIndexPage from './component/servicesPages/servicesIndex';
 import { Toaster } from "react-hot-toast";
 import ComingSoon from './component/Authentication/Soon';
 import HallOfFameEmbed from './component/StudentDashboard/HOFAI/HallOfFameEmbed';
+import HallOfFameLandingEmbed from './component/StudentDashboard/HOFAI/HallOfFameLandingEmbed';
 import AIDashboardIndex from './component/MarketResearchDashboard/AIDashboardIndex';
 import BPTabs from './component/MarketResearchDashboard/BusinessPlanSection/BPTabs';
 import { IGDashboardSection } from './component/MarketResearchDashboard/IdeaGenerator/IGDashboardSection';
@@ -107,10 +107,10 @@ function AppLayout() {
       >
         <Routes>
           <Route path="/" element={<IndexLandingPage />} />
-          <Route path="/hall-of-fame" element={<HallOfFameLanding />} />
           <Route path="/about" element={<IndexAboutPage />} />
           <Route path="/partners" element={<IndexPartnersPage />} />
           <Route path="/events" element={<EventIndex />} />
+          <Route path="/hall-of-fame" element={<HallOfFameLandingEmbed />} />
           <Route path="/contact" element={<IndexContact />} />
           <Route path="/services" element={<ServicesIndexPage />} />
           <Route path="/verify-otp" element={<OtpPage />} />
@@ -195,7 +195,6 @@ function AppLayout() {
           <Route path="/signup" element={<SignupModal />} />
           <Route path="/login" element={<LoginModal />} />
           <Route path="/reset-password" element={<ForgotPasswordModal />} />
-          <Route path="/dashboard/services/tookits" element={<Navigate to="/dashboard/opportunities" replace />} />
           <Route path="/profile" element={<Navigate to="/dashboard/profile" replace />} />
           <Route path="/settings" element={<Navigate to="/dashboard/settings" replace />} />
         </Routes>

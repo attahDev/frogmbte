@@ -1,123 +1,78 @@
-import { useState } from 'react';
-import { Calendar, Clock, Users, MapPin, Video, ArrowRight, Download } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Calendar, Clock, Users, MapPin, Video, ArrowRight, Download, Loader2 } from 'lucide-react';
+import {
+  fetchUpcomingEvents,
+  fetchMyEvents,
+  rsvpToEvent,
+  saveEvent,
+  unsaveEvent,
+  placeholderImageFor,
+  type UiEvent,
+  type EventFormat,
+} from '../../../lib/eventsApi';
 
-type EventType = 'upcoming' | 'attended' | 'saved';
-type EventFormat = 'Virtual' | 'In-Person' | 'Hybrid';
-
-interface Event {
-  id: string;
-  title: string;
-  description: string;
-  date: string;
-  time: string;
-  format: EventFormat;
-  image: string;
-  attending?: string;
-  imageType?: string;
-}
+type EventTab = 'upcoming' | 'attended' | 'saved';
 
 const EventsUI = () => {
-  const [activeTab, setActiveTab] = useState<EventType>('upcoming');
+  const [activeTab, setActiveTab] = useState<EventTab>('upcoming');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const sampleImages = {
-    event1: '/dashboard/envent/plannede/imm1.jpg',
-    event2: '/dashboard/envent/plannede/imm2.jpg',
-    event3: '/dashboard/envent/plannede/imm3.jpg',
-    event4: '/dashboard/envent/plannede/imm4.jpg',
-    event5: '/dashboard/envent/plannede/imm5.jpg',
+  const [upcomingEvents, setUpcomingEvents] = useState<UiEvent[]>([]);
+  const [attendedEvents, setAttendedEvents] = useState<UiEvent[]>([]);
+  const [savedEvents, setSavedEvents] = useState<UiEvent[]>([]);
+  const [savedIds, setSavedIds] = useState<Set<string>>(new Set());
+  const [busyId, setBusyId] = useState<string | null>(null);
+
+  const load = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const [all, mine] = await Promise.all([fetchUpcomingEvents(), fetchMyEvents()]);
+      // "Upcoming" tab = everything open, not just what the user registered
+      // for, so people can discover events they haven't RSVP'd to yet.
+      setUpcomingEvents(all);
+      setAttendedEvents(mine.attended);
+      setSavedEvents(mine.saved);
+      setSavedIds(new Set(mine.saved.map((e) => e.id)));
+    } catch {
+      setError("Couldn't load events right now. Try again in a moment.");
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const upcomingEvents: Event[] = [
-    {
-      id: '1',
-      title: 'Tech Career Panel Discussion',
-      description: 'Join industry leaders discussing career paths in technology',
-      date: 'Nov 15, 2025',
-      time: '6:00 PM - 9:00 PM',
-      format: 'Virtual',
-      image: sampleImages.event1,
-      imageType: 'auditorium'
-    },
-    {
-      id: '2',
-      title: 'Networking Mixer',
-      description: 'Build your professional network with Manchester tech community',
-      date: 'Nov 18, 2025',
-      time: '10:00 AM - 2:30 PM',
-      format: 'In-Person',
-      image: sampleImages.event2,
-      imageType: 'networking'
-    },
-    {
-      id: '3',
-      title: 'Hackathon: Build the Future',
-      description: 'Come Collaborate, code and create real world tech solutions that shape tomorrow.',
-      date: 'Nov 25, 2025',
-      time: '12:00 PM - 7:00 PM',
-      format: 'Hybrid',
-      image: sampleImages.event3,
-      imageType: 'hackathon'
-    },
-    {
-      id: '4',
-      title: 'Women in Tech',
-      description: 'Empowering Women in tech through workshops, panel discussions and networking opportunities.',
-      date: 'Dec 31, 2025',
-      time: '8:00 AM - 12:00 PM',
-      format: 'In-Person',
-      image: sampleImages.event4,
-      imageType: 'women-tech'
-    },
-    {
-      id: '5',
-      title: 'Coding Bootcamp Session',
-      description: 'Master the fundamentals of web development with experienced instructors',
-      date: 'Dec 31, 2025',
-      time: '8:00 AM - 12:00 PM',
-      format: 'In-Person',
-      image: sampleImages.event5,
-      imageType: 'bootcamp'
-    }
-  ];
+  useEffect(() => {
+    load();
+  }, []);
 
-  const attendedEvents: Event[] = [
-    {
-      id: '6',
-      title: 'Diversity in Tech Panel',
-      description: 'Join thought leaders discussing pathways to a more inclusive tech industry.',
-      date: 'Nov 15, 2025',
-      time: '6:00 PM - 9:00 PM',
-      format: 'Virtual',
-      image: sampleImages.event1,
-      imageType: 'diversity',
-      attending: '150 attended'
+  const handleRsvp = async (eventId: string) => {
+    setBusyId(eventId);
+    try {
+      await rsvpToEvent(eventId);
+      await load();
+    } catch {
+      setError("Couldn't register for that event. It may already be full or you're already registered.");
+    } finally {
+      setBusyId(null);
     }
-  ];
+  };
 
-  const savedEvents: Event[] = [
-    {
-      id: '7',
-      title: 'UX Design & Code Mastery',
-      description: 'Bridge creativity as you learn to design and bring ideas to life through code.',
-      date: 'Dec 31, 2025',
-      time: '8:00 AM - 12:00 PM',
-      format: 'In-Person',
-      image: sampleImages.event2,
-      imageType: 'ux-design',
-      attending: '75 attending'
-    },
-    {
-      id: '8',
-      title: 'Leadership Workshop',
-      description: 'Session to help you lead with vision and impact in today\'s tech driven world',
-      date: 'Dec 31, 2025',
-      time: '8:00 AM - 12:00 PM',
-      format: 'In-Person',
-      image: sampleImages.event3,
-      imageType: 'leadership',
-      attending: '42 attending'
+  const handleToggleSave = async (eventId: string) => {
+    setBusyId(eventId);
+    try {
+      if (savedIds.has(eventId)) {
+        await unsaveEvent(eventId);
+      } else {
+        await saveEvent(eventId);
+      }
+      await load();
+    } catch {
+      setError("Couldn't update saved events.");
+    } finally {
+      setBusyId(null);
     }
-  ];
+  };
 
   const getEvents = () => {
     switch (activeTab) {
@@ -132,18 +87,17 @@ const EventsUI = () => {
     }
   };
 
-  const getImageGradient = (imageType?: string) => {
-    const gradients: Record<string, string> = {
-      'auditorium': 'from-blue-900/80 to-gray-900/80',
-      'networking': 'from-amber-900/60 to-gray-800/60',
-      'hackathon': 'from-yellow-400/20 to-blue-400/20',
-      'women-tech': 'from-green-600/30 to-yellow-500/30',
-      'bootcamp': 'from-green-700/40 to-lime-600/40',
-      'diversity': 'from-amber-800/50 to-gray-700/50',
-      'ux-design': 'from-gray-400/60 to-pink-300/60',
-      'leadership': 'from-teal-200/60 to-gray-300/60'
-    };
-    return gradients[imageType || ''] || 'from-gray-600/60 to-gray-800/60';
+  const getImageGradient = (id: string) => {
+    const gradients = [
+      'from-blue-900/80 to-gray-900/80',
+      'from-amber-900/60 to-gray-800/60',
+      'from-yellow-400/20 to-blue-400/20',
+      'from-green-600/30 to-yellow-500/30',
+      'from-green-700/40 to-lime-600/40',
+    ];
+    let hash = 0;
+    for (let i = 0; i < id.length; i++) hash = (hash * 31 + id.charCodeAt(i)) >>> 0;
+    return gradients[hash % gradients.length];
   };
 
   const FormatBadge = ({ format }: { format: EventFormat }) => {
@@ -167,19 +121,18 @@ const EventsUI = () => {
     );
   };
 
-  const EventCard = ({ event, isAttended }: { event: Event; isAttended?: boolean }) => (
+  const EventCard = ({ event, isAttended }: { event: UiEvent; isAttended?: boolean }) => (
     <div className="bg-[#FFFDF7] rounded-xl sm:rounded-2xl shadow-lg hover:shadow-xl transition-shadow duration-300 overflow-hidden border border-gray-200 hover:border-red-100">
       <div className="relative h-40 sm:h-48 overflow-hidden">
         <img
-          src={event.image}
+          src={placeholderImageFor(event.id)}
           alt={event.title}
           className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
           onError={(e) => {
             e.currentTarget.style.display = 'none';
           }}
         />
-        <div className={`absolute inset-0 bg-gradient-to-br ${getImageGradient(event.imageType)} mix-blend-overlay`} />
-        <div className={`absolute inset-0 bg-gradient-to-br ${getImageGradient(event.imageType)} ${!event.image ? 'block' : 'hidden'}`} />
+        <div className={`absolute inset-0 bg-gradient-to-br ${getImageGradient(event.id)} mix-blend-overlay`} />
 
         <div className="absolute top-3 right-3 sm:top-4 sm:right-4">
           <FormatBadge format={event.format} />
@@ -191,11 +144,6 @@ const EventsUI = () => {
           <h3 className="text-base sm:text-xl font-bold text-gray-900 line-clamp-2 pr-2">
             {event.title}
           </h3>
-          {event.attending && (
-            <span className="flex-shrink-0 bg-red-50 text-[#D7263D] text-xs font-semibold px-2 py-1 sm:px-2.5 sm:py-1 rounded-full">
-              {event.attending}
-            </span>
-          )}
         </div>
 
         <p className="text-gray-600 text-xs sm:text-sm mb-3 sm:mb-4 leading-relaxed line-clamp-2 sm:line-clamp-3">
@@ -225,10 +173,27 @@ const EventsUI = () => {
             </button>
           </div>
         ) : (
-          <button className="w-full bg-gradient-to-r from-[#D7263D] to-[#D7263D] text-white py-2.5 sm:py-3.5 px-3 sm:px-4 rounded-lg sm:rounded-xl text-sm font-semibold hover:from-[#D7263D] hover:to-[#D7263D] hover:shadow-lg transition-all duration-200 flex items-center justify-center gap-2 group">
-            View Details
-            <ArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 group-hover:translate-x-1 transition-transform" />
-          </button>
+          <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
+            <button
+              onClick={() => handleRsvp(event.id)}
+              disabled={busyId === event.id}
+              className="flex-1 bg-gradient-to-r from-[#D7263D] to-[#D7263D] text-white py-2.5 sm:py-3.5 px-3 sm:px-4 rounded-lg sm:rounded-xl text-sm font-semibold hover:shadow-lg transition-all duration-200 flex items-center justify-center gap-2 group disabled:opacity-60"
+            >
+              {busyId === event.id ? <Loader2 className="w-4 h-4 animate-spin" /> : (
+                <>
+                  RSVP
+                  <ArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 group-hover:translate-x-1 transition-transform" />
+                </>
+              )}
+            </button>
+            <button
+              onClick={() => handleToggleSave(event.id)}
+              disabled={busyId === event.id}
+              className="px-3 sm:px-4 py-2.5 sm:py-3.5 rounded-lg sm:rounded-xl text-sm font-semibold border-2 border-gray-200 text-gray-900 hover:bg-gray-50 transition-all duration-200 disabled:opacity-60"
+            >
+              {savedIds.has(event.id) ? 'Saved' : 'Save'}
+            </button>
+          </div>
         )}
       </div>
     </div>
@@ -236,7 +201,7 @@ const EventsUI = () => {
 
   return (
     <div className="bg-gradient-to-b from-[#FFFDF7] to-gray-50/50 px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
-      <div className="mx-auto max-w-[1400px]">
+      <div className="mx-auto max-w-full lg:max-w-[1400px]">
         {/* Header */}
         <div className="mb-6 sm:mb-8 md:mb-10">
           <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-1 sm:mb-2">
@@ -250,7 +215,7 @@ const EventsUI = () => {
         {/* Tabs - Horizontal scroll on mobile */}
         <div className="mb-6 overflow-x-auto pb-2 scrollbar-hide sm:mb-8 lg:mb-10">
           <div className="flex w-max min-w-full gap-2 sm:w-auto sm:min-w-0 sm:gap-4">
-            {(['upcoming', 'attended', 'saved'] as EventType[]).map((tab) => (
+            {(['upcoming', 'attended', 'saved'] as EventTab[]).map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
@@ -286,8 +251,18 @@ const EventsUI = () => {
           </div>
         </div>
 
+        {error && (
+          <div className="mb-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            {error}
+          </div>
+        )}
+
         {/* Events Grid */}
-        {getEvents().length > 0 ? (
+        {loading ? (
+          <div className="flex items-center justify-center py-16 text-gray-400">
+            <Loader2 className="w-6 h-6 animate-spin" />
+          </div>
+        ) : getEvents().length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
             {getEvents().map((event) => (
               <EventCard

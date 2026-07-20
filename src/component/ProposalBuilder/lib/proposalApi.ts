@@ -3,11 +3,9 @@
 // @ts-nocheck
 
 const BASE = (
-  import.meta.env.VITE_MARKET_RESEARCH_API_URL ||
+  import.meta.env.VITE_PROPOSAL_API_URL ||
   "https://gmbtpitch.onrender.com"
 ).replace(/\/+$/, "");
-
-console.log("Market Research API:", BASE);
 
 if (!BASE) {
  console.error(

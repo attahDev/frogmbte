@@ -1,8 +1,32 @@
+import { useEffect, useState } from "react";
+import { fetchMyEvents } from "../../../lib/eventsApi";
+
 export default function EventsStats() {
+  const [counts, setCounts] = useState({ upcoming: 0, attended: 0, saved: 0 });
+
+  useEffect(() => {
+    let cancelled = false;
+    fetchMyEvents()
+      .then((mine) => {
+        if (cancelled) return;
+        setCounts({
+          upcoming: mine.upcoming.length,
+          attended: mine.attended.length,
+          saved: mine.saved.length,
+        });
+      })
+      .catch(() => {
+        // Leave at 0 — the events grid below shows its own error state.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const cards = [
-    { label: "Upcoming", value: 5 },
-    { label: "Attended", value: 3 },
-    { label: "Saved", value: 2 },
+    { label: "Upcoming", value: counts.upcoming },
+    { label: "Attended", value: counts.attended },
+    { label: "Saved", value: counts.saved },
   ];
 
   return (

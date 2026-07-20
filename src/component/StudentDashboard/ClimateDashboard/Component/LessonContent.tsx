@@ -20,6 +20,7 @@ import type {
 type LessonContentProps = {
   course: SustainabilityCourse;
   lesson: CourseLesson;
+  onToggleSection: (sectionId: string) => void;
 };
 
 type SectionStyle = {
@@ -76,13 +77,22 @@ const sectionStyles: Record<LessonSectionType, SectionStyle> = {
 export function LessonContent({
   course,
   lesson,
+  onToggleSection,
 }: LessonContentProps) {
   return (
     <div className="min-w-0 flex-1">
       <header className="rounded-[20px] bg-[#001F3F] px-5 py-8 text-white sm:px-8 lg:px-10 lg:py-10">
-        <p className="text-[13px] font-semibold uppercase tracking-[0.13em] text-[#FFD700]">
-          {course.title}
-        </p>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <p className="text-[13px] font-semibold uppercase tracking-[0.13em] text-[#FFD700]">
+            {course.title}
+          </p>
+          {lesson.completed && (
+            <span className="flex items-center gap-1.5 rounded-full bg-[#2D7A45]/20 px-3 py-1 text-[12px] font-semibold text-[#7FE0A0]">
+              <CheckCircle2 size={14} />
+              Completed
+            </span>
+          )}
+        </div>
 
         <h1 className="mt-3 max-w-[850px] text-[30px] font-semibold leading-[1.16] tracking-[-0.04em] sm:text-[38px] lg:text-[44px]">
           {lesson.title}
@@ -135,14 +145,24 @@ export function LessonContent({
 
       <div className="mt-6 space-y-5">
         {lesson.sections.map((section) => (
-          <LessonSectionCard key={section.id} section={section} />
+          <LessonSectionCard
+            key={section.id}
+            section={section}
+            onToggleComplete={() => onToggleSection(section.id)}
+          />
         ))}
       </div>
     </div>
   );
 }
 
-function LessonSectionCard({ section }: { section: LessonSection }) {
+function LessonSectionCard({
+  section,
+  onToggleComplete,
+}: {
+  section: LessonSection;
+  onToggleComplete: () => void;
+}) {
   const sectionType = section.type ?? "content";
   const style = sectionStyles[sectionType];
   const Icon = style.icon;
@@ -151,25 +171,61 @@ function LessonSectionCard({ section }: { section: LessonSection }) {
   return (
     <section
       id={section.id}
-      className={`scroll-mt-6 rounded-[18px] border p-5 sm:p-7 ${style.wrapper}`}
+      className={`scroll-mt-6 rounded-[18px] border p-5 sm:p-7 ${style.wrapper} ${section.completed ? "ring-2 ring-[#2D7A45]/40" : ""}`}
     >
-      <div className="flex items-start gap-4">
-        <div
-          className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full ${style.iconWrapper}`}
-        >
-          <Icon size={21} />
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex items-start gap-4">
+          <div
+            className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full ${style.iconWrapper}`}
+          >
+            <Icon size={21} />
+          </div>
+
+          <div className="min-w-0 flex-1">
+            <p className="text-[12px] font-semibold uppercase tracking-[0.13em] text-[#7E8794]">
+              {style.label}
+            </p>
+
+            <h2 className="mt-1 text-[22px] font-semibold tracking-[-0.025em] text-[#001F3F]">
+              {section.title}
+            </h2>
+          </div>
         </div>
 
-        <div className="min-w-0 flex-1">
-          <p className="text-[12px] font-semibold uppercase tracking-[0.13em] text-[#7E8794]">
-            {style.label}
-          </p>
-
-          <h2 className="mt-1 text-[22px] font-semibold tracking-[-0.025em] text-[#001F3F]">
-            {section.title}
-          </h2>
-        </div>
+        {/* The actual progress-tracking mechanic — checking this calls
+            PATCH .../sections/:id/toggle, which recomputes real module and
+            course completion server-side. */}
+        <label className="flex shrink-0 cursor-pointer items-center gap-2 rounded-full border border-[#D8DCE2] bg-white px-3 py-1.5 text-[13px] font-medium text-[#4E5D6C] transition hover:border-[#2D7A45]">
+          <input
+            type="checkbox"
+            checked={!!section.completed}
+            onChange={onToggleComplete}
+            className="h-4 w-4 accent-[#2D7A45]"
+          />
+          {section.completed ? "Done" : "Mark as done"}
+        </label>
       </div>
+
+      {section.media && (
+        <div className="mt-5">
+          {section.media.type === "image" ? (
+            <img
+              src={section.media.url}
+              alt={section.media.caption ?? section.title}
+              className="w-full rounded-[14px] border border-[#E2E5E9] object-cover"
+            />
+          ) : (
+            <video
+              src={section.media.url}
+              controls
+              className="w-full rounded-[14px] border border-[#E2E5E9]"
+            />
+          )}
+          {section.media.caption && (
+            <p className="mt-2 text-[13px] text-[#7E8794]">{section.media.caption}</p>
+          )}
+        </div>
+      )}
 
       {section.paragraphs && (
         <div className="mt-5 space-y-4">

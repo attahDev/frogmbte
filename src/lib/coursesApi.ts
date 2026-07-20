@@ -94,3 +94,50 @@ export async function fetchCourseBySlug(courseSlug: string): Promise<Sustainabil
     return null;
   }
 }
+
+type BackendModuleWithProgress = BackendModule & {
+  completedSectionIds: string[];
+  isCompleted: boolean;
+};
+
+/** A single lesson merged with the current user's checkbox progress —
+ *  what CourseLessonPage should actually render instead of pulling the
+ *  lesson out of the whole-course fetch (which has no progress data). */
+export async function fetchLessonBySlug(
+  courseSlug: string,
+  lessonSlug: string,
+): Promise<{ course: SustainabilityCourse; lesson: CourseLesson } | null> {
+  try {
+    const { data } = await api.get(`/courses/by-slug/${courseSlug}/modules/${lessonSlug}`);
+    const payload: { course: BackendCourse; module: BackendModuleWithProgress } = data?.data ?? data;
+
+    const course = toCourse(payload.course, []);
+    const lesson = toLesson(payload.module);
+    const completedIds = new Set(payload.module.completedSectionIds);
+
+    return {
+      course,
+      lesson: {
+        ...lesson,
+        completed: payload.module.isCompleted,
+        sections: lesson.sections.map((s) => ({ ...s, completed: completedIds.has(s.id) })),
+      },
+    };
+  } catch {
+    return null;
+  }
+}
+
+/** The "mark this section done" checkbox. Toggles on the server (which
+ *  recomputes real completion from real data — see courses.service.ts) and
+ *  returns the fresh state. */
+export async function toggleSectionComplete(
+  courseSlug: string,
+  lessonSlug: string,
+  sectionId: string,
+) {
+  const { data } = await api.patch(
+    `/courses/by-slug/${courseSlug}/modules/${lessonSlug}/sections/${sectionId}/toggle`,
+  );
+  return data;
+}

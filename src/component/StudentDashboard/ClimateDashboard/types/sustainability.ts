@@ -6,12 +6,23 @@ export type LessonSectionType =
   | "summary"
   | "questions";
 
+export type SectionMedia = {
+  type: "image" | "video";
+  url: string;
+  caption?: string;
+};
+
 export type LessonSection = {
   id: string;
   title: string;
   paragraphs?: string[];
   points?: string[];
   type?: LessonSectionType;
+  media?: SectionMedia;
+  order?: number;
+  /** Whether the current user has checked this section as done — merged
+   *  in from ModuleProgress, not part of the authored content itself. */
+  completed?: boolean;
 };
 
 export type CourseLesson = {
@@ -22,6 +33,8 @@ export type CourseLesson = {
   duration: string;
   learningOutcomes: string[];
   sections: LessonSection[];
+  /** True once every section in this lesson is checked done. */
+  completed?: boolean;
 };
 
 export type CourseProject = {

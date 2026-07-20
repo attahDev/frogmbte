@@ -1,7 +1,36 @@
+import { useEffect, useState } from "react";
 import { BookOpen, Calendar, Users } from "lucide-react";
 import DashboardBreadcrumb from "../../ui/DashboardBreadcrumb";
+import { fetchCourses } from "../../../../lib/coursesApi";
+import { fetchMentors } from "../../../../lib/mentorsApi";
+import { fetchUpcomingEvents } from "../../../../lib/eventsApi";
 
 export default function EducationToolkit() {
+  // Was hardcoded to "12" in all three cards regardless of what each metric
+  // actually meant — now each number comes from its own real endpoint.
+  const [counts, setCounts] = useState<{ resources: number | null; mentors: number | null; events: number | null }>({
+    resources: null,
+    mentors: null,
+    events: null,
+  });
+
+  useEffect(() => {
+    let cancelled = false;
+    Promise.all([
+      fetchCourses("education").catch(() => []),
+      fetchMentors().catch(() => []),
+      fetchUpcomingEvents().catch(() => []),
+    ]).then(([courses, mentors, events]) => {
+      if (cancelled) return;
+      setCounts({ resources: courses.length, mentors: mentors.length, events: events.length });
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const display = (n: number | null) => (n === null ? "—" : n);
+
   return (
     <div className="bg-[#FFFDF7]">
       <div className="bg-[#FFD700] px-4 sm:px-6 md:px-8 lg:px-10 py-6 md:py-8 border-b-4 border-[#001F3F]">
@@ -49,7 +78,7 @@ export default function EducationToolkit() {
           </h3>
 
           <div className="flex items-center justify-between mb-4 sm:mb-5">
-            <p className="text-[#E11D48] text-3xl sm:text-4xl font-bold">12</p>
+            <p className="text-[#E11D48] text-3xl sm:text-4xl font-bold">{display(counts.resources)}</p>
 
             <span className="inline-block bg-[#EEF2F7] text-[#001F3FB2] px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs whitespace-nowrap">
               Courses & Tutorials
@@ -72,7 +101,7 @@ export default function EducationToolkit() {
           </h3>
 
           <div className="flex items-center justify-between mb-3 sm:mb-4">
-            <p className="text-[#E11D48] text-3xl sm:text-4xl font-bold">12</p>
+            <p className="text-[#E11D48] text-3xl sm:text-4xl font-bold">{display(counts.mentors)}</p>
 
             <span className="inline-block bg-[#EEF2F7] text-[#001F3FB2] px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs whitespace-nowrap">
               Available Now
@@ -95,7 +124,7 @@ export default function EducationToolkit() {
           </h3>
 
           <div className="flex items-center justify-between mb-3 sm:mb-4">
-            <p className="text-[#E11D48] text-3xl sm:text-4xl font-bold">12</p>
+            <p className="text-[#E11D48] text-3xl sm:text-4xl font-bold">{display(counts.events)}</p>
 
             <span className="inline-block bg-[#EEF2F7] text-[#001F3FB2] px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs whitespace-nowrap">
               Workshops This Month
