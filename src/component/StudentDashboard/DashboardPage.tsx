@@ -82,7 +82,7 @@ const Dashboard: React.FC = () => {
   const [aiStudioOpen, setAiStudioOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
-  const { logout } = useAuth();
+  const { logout, user } = useAuth();
   const isMentorAiPage = location.pathname.includes('/mentors-ai');
   const isAiStudioRoute = AI_STUDIO_PATHS.some(
     (path) => location.pathname === path || location.pathname.startsWith(`${path}/`)
@@ -260,10 +260,19 @@ const Dashboard: React.FC = () => {
             icon: <Settings className={iconClass} />,
             path: '/dashboard/settings',
           },
+          ...(user?.role === 'ADMIN'
+            ? [
+                {
+                  name: 'Admin Portal',
+                  icon: <LayoutDashboard className={iconClass} />,
+                  path: '/dashboard/admin',
+                },
+              ]
+            : []),
         ],
       },
     ],
-    []
+    [user]
   );
   const showExpandedSidebar = isNarrow ? isMobileMenuOpen : !isSidebarCollapsed;
 

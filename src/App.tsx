@@ -32,6 +32,14 @@ import { Toaster } from "react-hot-toast";
 import ComingSoon from './component/Authentication/Soon';
 import HallOfFameEmbed from './component/StudentDashboard/HOFAI/HallOfFameEmbed';
 import HallOfFameLandingEmbed from './component/StudentDashboard/HOFAI/HallOfFameLandingEmbed';
+import AdminLayout from './component/Admin/AdminLayout';
+import AdminOverview from './component/Admin/AdminOverview';
+import AdminUsers from './component/Admin/AdminUsers';
+import AdminMentors from './component/Admin/AdminMentors';
+import AdminEvents from './component/Admin/AdminEvents';
+import AdminCourses from './component/Admin/AdminCourses';
+import AdminGreenProjects from './component/Admin/AdminGreenProjects';
+import AdminHOF from './component/Admin/AdminHOF';
 import AIDashboardIndex from './component/MarketResearchDashboard/AIDashboardIndex';
 import BPTabs from './component/MarketResearchDashboard/BusinessPlanSection/BPTabs';
 import { IGDashboardSection } from './component/MarketResearchDashboard/IdeaGenerator/IGDashboardSection';
@@ -116,6 +124,16 @@ function AppLayout() {
           <Route path="/verify-otp" element={<OtpPage />} />
           <Route path="/dashboard" element={<DashboardIndex />}>
             <Route index element={<DashboardSection />} />
+
+            <Route path="admin" element={<AdminLayout />}>
+              <Route index element={<AdminOverview />} />
+              <Route path="users" element={<AdminUsers />} />
+              <Route path="mentors" element={<AdminMentors />} />
+              <Route path="events" element={<AdminEvents />} />
+              <Route path="courses" element={<AdminCourses />} />
+              <Route path="green-projects" element={<AdminGreenProjects />} />
+              <Route path="hall-of-fame" element={<AdminHOF />} />
+            </Route>
 
             {/* ── LIVE at launch: Dashboard, Academy, Green Impact, Hall of Fame ── */}
             <Route path="academy" element={<ToolkIndex />} />

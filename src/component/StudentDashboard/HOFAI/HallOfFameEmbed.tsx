@@ -1,4 +1,4 @@
-const HOF_APP_URL = "https://hof-ochre.vercel.app";
+const HOF_APP_URL = import.meta.env.VITE_HOF_APP_URL || "https://hof-ochre.vercel.app";
 
 /** Dashboard version — used only inside the authenticated /dashboard shell.
  *  Goes straight to HOF's /dashboard, not its public landing hero (that
