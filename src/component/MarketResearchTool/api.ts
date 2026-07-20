@@ -2,10 +2,7 @@
 // @ts-nocheck
 // @ts-nocheck
 
-const BASE = (
-  import.meta.env.VITE_MARKET_RESEARCH_API_URL ||
-  "https://gmbtemrkt.onrender.com/api/v1"
-).replace(/\/+$/, "");
+const BASE = "https://gmbtemrkt.onrender.com/api/v1".replace(/\/+$/, "");
 
 console.log("Market Research API:", BASE);
 if (!BASE) {

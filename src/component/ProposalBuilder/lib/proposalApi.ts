@@ -2,10 +2,7 @@
 
 // @ts-nocheck
 
-const BASE = (
-  import.meta.env.VITE_PROPOSAL_API_URL ||
-  "https://gmbtpitch.onrender.com"
-).replace(/\/+$/, "");
+const BASE = "https://gmbtpitch.onrender.com".replace(/\/+$/, "");
 
 if (!BASE) {
  console.error(

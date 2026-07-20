@@ -12,6 +12,6 @@ export const useAuth = () => {
 };
 
 export const api = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || "https://backgmb.onrender.com",
+  baseURL: "https://backgmb.onrender.com",
   withCredentials: true,
 });

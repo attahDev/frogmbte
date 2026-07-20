@@ -29,7 +29,7 @@
  * routes currently have no auth of their own — it's only protected today
  * because it's iframed behind gmbtefro's login wall.
  */
-const HOF_APP_URL = import.meta.env.VITE_HOF_APP_URL || "https://hofgmbte.vercel.app";
+const HOF_APP_URL = "https://hofgmbte.vercel.app";
 
 export default function HallOfFameLandingEmbed() {
   return (

@@ -2,10 +2,7 @@
 // @ts-nocheck
 import { api } from "../../../lib/api";
 
-const BASE = (
-  import.meta.env.VITE_PITCH_DECK_API_URL ||
-  "https://pitchdeckk.onrender.com"
-).replace(/\/+$/, "");
+const BASE = "https://pitchdeckk.onrender.com".replace(/\/+$/, "");
 
 if (!BASE) {
   console.error(
