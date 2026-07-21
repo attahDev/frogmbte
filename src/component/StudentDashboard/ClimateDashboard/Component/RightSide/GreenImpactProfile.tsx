@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Activity, Leaf, TrendingUp } from "lucide-react";
 import { fetchGreenStats, type GreenStats } from "../../../../../lib/greenImpactApi";
+import { onGreenImpactUpdate } from "../../../../../lib/greenImpactEvents";
 import { api } from "../../../../../lib/api";
 import LogGreenActionForm from "./LogGreenActionForm";
 
@@ -75,8 +76,11 @@ export default function GreenImpactProfile() {
         if (!cancelled) setRecentActions([]);
       });
 
+    const unsubscribe = onGreenImpactUpdate(refresh);
+
     return () => {
       cancelled = true;
+      unsubscribe();
     };
   }, []);
 

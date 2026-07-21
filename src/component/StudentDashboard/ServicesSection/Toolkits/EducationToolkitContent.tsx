@@ -1,6 +1,21 @@
+import { useEffect, useState } from "react";
 import { BookOpen, Calendar, Video, ExternalLink } from "lucide-react";
+import { fetchCourses } from "../../../../lib/coursesApi";
+import type { SustainabilityCourse } from "../../ClimateDashboard/types/sustainability";
 
 export default function EducationToolkitContent() {
+  // "Featured Learning Paths" used to be three courses hard-typed straight
+  // into JSX with fixed progress numbers that never moved. Now it's
+  // whatever's actually in the education category, with each user's own
+  // real progress.
+  const [courses, setCourses] = useState<SustainabilityCourse[] | null>(null);
+
+  useEffect(() => {
+    fetchCourses("education")
+      .then((data) => setCourses(data.slice(0, 3)))
+      .catch(() => setCourses([]));
+  }, []);
+
   return (
     <div className="px-4 sm:px-6 md:px-10 py-6 sm:py-8 md:py-12 bg-[#FFFDF7]">
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 md:gap-10">
@@ -57,21 +72,20 @@ export default function EducationToolkitContent() {
           </h3>
 
           <div className="space-y-4 sm:space-y-6">
-            <LearningPath
-              title="Web Development Fundamentals"
-              modules={8}
-              progress={65}
-            />
-            <LearningPath
-              title="Data Science & AI Basics"
-              modules={12}
-              progress={40}
-            />
-            <LearningPath
-              title="Digital Marketing Essentials"
-              modules={6}
-              progress={85}
-            />
+            {courses === null ? (
+              <p className="text-sm text-[#6B7280]">Loading…</p>
+            ) : courses.length === 0 ? (
+              <p className="text-sm text-[#6B7280]">No education courses have been published yet — check back soon.</p>
+            ) : (
+              courses.map((c) => (
+                <LearningPath
+                  key={c.slug}
+                  title={c.title}
+                  modules={c.lessons.length}
+                  progress={c.progress}
+                />
+              ))
+            )}
           </div>
         </div>
 

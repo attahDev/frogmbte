@@ -1,12 +1,21 @@
-import { useEffect, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import { api } from "../../lib/api";
 
 type Course = {
   id: string;
   title: string;
+  description: string | null;
   slug: string;
   category: string;
   totalModules: number;
+  isActive: boolean;
+};
+
+type CourseModule = {
+  id: string;
+  title: string;
+  slug: string;
+  order: number;
 };
 
 const EMPTY_COURSE = { title: "", description: "", category: "climate" };
@@ -33,9 +42,20 @@ export default function AdminCourses() {
   const [submitting, setSubmitting] = useState(false);
   const [jsonError, setJsonError] = useState<string | null>(null);
 
+  // Editing a course's title/description
+  const [editingCourseId, setEditingCourseId] = useState<string | null>(null);
+  const [editForm, setEditForm] = useState({ title: "", description: "" });
+
+  // Expanded course's chapter list, for editing/removing chapters
+  const [expandedCourseId, setExpandedCourseId] = useState<string | null>(null);
+  const [chapters, setChapters] = useState<CourseModule[] | null>(null);
+  const [chaptersLoading, setChaptersLoading] = useState(false);
+  const [editingChapterId, setEditingChapterId] = useState<string | null>(null);
+  const [chapterTitleDraft, setChapterTitleDraft] = useState("");
+
   const load = () => {
     api
-      .get("/courses")
+      .get("/courses", { params: { includeInactive: "true" } })
       .then(({ data }) => setCourses(data?.data ?? data ?? []))
       .catch(() => setCourses([]));
   };
@@ -58,6 +78,88 @@ export default function AdminCourses() {
     }
   };
 
+  const startEditCourse = (c: Course) => {
+    setEditingCourseId(c.id);
+    setEditForm({ title: c.title, description: c.description ?? "" });
+  };
+
+  const saveEditCourse = async (id: string) => {
+    setSubmitting(true);
+    try {
+      await api.patch(`/courses/${id}`, {
+        title: editForm.title || undefined,
+        description: editForm.description,
+      });
+      setEditingCourseId(null);
+      load();
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  // Soft-delete / restore — courses are never hard-deleted so progress
+  // history and anything referencing them survives.
+  const toggleCourseActive = async (c: Course) => {
+    setSubmitting(true);
+    try {
+      await api.patch(`/courses/${c.id}`, { isActive: !c.isActive });
+      load();
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const loadChaptersRefresh = (courseId: string) => {
+    api
+      .get(`/courses/${courseId}/modules`)
+      .then(({ data }) => setChapters(data?.data ?? data ?? []))
+      .catch(() => setChapters([]));
+  };
+
+  const loadChapters = (courseId: string) => {
+    if (expandedCourseId === courseId) {
+      setExpandedCourseId(null);
+      setChapters(null);
+      return;
+    }
+    setExpandedCourseId(courseId);
+    setChaptersLoading(true);
+    api
+      .get(`/courses/${courseId}/modules`)
+      .then(({ data }) => setChapters(data?.data ?? data ?? []))
+      .catch(() => setChapters([]))
+      .finally(() => setChaptersLoading(false));
+  };
+
+  const startEditChapter = (m: CourseModule) => {
+    setEditingChapterId(m.id);
+    setChapterTitleDraft(m.title);
+  };
+
+  const saveChapterTitle = async (courseId: string, moduleId: string) => {
+    if (!chapterTitleDraft) return;
+    setSubmitting(true);
+    try {
+      await api.patch(`/courses/${courseId}/modules/${moduleId}`, { title: chapterTitleDraft });
+      setEditingChapterId(null);
+      loadChaptersRefresh(courseId);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const removeChapter = async (courseId: string, moduleId: string) => {
+    if (!confirm("Remove this chapter? This can't be undone.")) return;
+    setSubmitting(true);
+    try {
+      await api.delete(`/courses/${courseId}/modules/${moduleId}`);
+      loadChaptersRefresh(courseId);
+      load(); // totalModules changed
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   const addModule = async () => {
     if (!selectedCourseId || !moduleTitle) return;
     let content;
@@ -72,6 +174,8 @@ export default function AdminCourses() {
     try {
       await api.post(`/courses/${selectedCourseId}/modules`, { title: moduleTitle, content });
       setModuleTitle("");
+      load();
+      if (expandedCourseId === selectedCourseId) loadChaptersRefresh(selectedCourseId);
     } finally {
       setSubmitting(false);
     }
@@ -164,22 +268,147 @@ export default function AdminCourses() {
         <h2 className="text-base font-semibold text-[#001F3F]">Courses</h2>
         {courses === null ? (
           <p className="mt-3 text-sm text-gray-500">Loading…</p>
+        ) : courses.length === 0 ? (
+          <p className="mt-3 text-sm text-gray-500">No courses created yet.</p>
         ) : (
           <table className="mt-3 w-full text-left text-sm">
             <thead>
               <tr className="border-b border-gray-200 text-gray-500">
                 <th className="py-2 pr-3">Title</th>
                 <th className="py-2 pr-3">Category</th>
-                <th className="py-2">Chapters</th>
+                <th className="py-2 pr-3">Chapters</th>
+                <th className="py-2 pr-3">Status</th>
+                <th className="py-2">Actions</th>
               </tr>
             </thead>
             <tbody>
               {courses.map((c) => (
-                <tr key={c.id} className="border-b border-gray-100">
-                  <td className="py-2 pr-3">{c.title}</td>
-                  <td className="py-2 pr-3">{c.category}</td>
-                  <td className="py-2">{c.totalModules}</td>
-                </tr>
+                <Fragment key={c.id}>
+                  <tr className={`border-b border-gray-100 ${!c.isActive ? "opacity-50" : ""}`}>
+                    <td className="py-2 pr-3">
+                      {editingCourseId === c.id ? (
+                        <div className="flex flex-col gap-1">
+                          <input
+                            value={editForm.title}
+                            onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
+                            className="rounded border border-gray-300 px-2 py-1 text-sm"
+                          />
+                          <input
+                            value={editForm.description}
+                            onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
+                            placeholder="Description"
+                            className="rounded border border-gray-300 px-2 py-1 text-sm"
+                          />
+                        </div>
+                      ) : (
+                        c.title
+                      )}
+                    </td>
+                    <td className="py-2 pr-3">{c.category}</td>
+                    <td className="py-2 pr-3">{c.totalModules}</td>
+                    <td className="py-2 pr-3">{c.isActive ? "Active" : "Removed"}</td>
+                    <td className="py-2">
+                      <div className="flex flex-wrap gap-2">
+                        {editingCourseId === c.id ? (
+                          <>
+                            <button
+                              onClick={() => saveEditCourse(c.id)}
+                              disabled={submitting}
+                              className="rounded bg-[#001F3F] px-2 py-1 text-xs text-white disabled:opacity-50"
+                            >
+                              Save
+                            </button>
+                            <button
+                              onClick={() => setEditingCourseId(null)}
+                              className="rounded border border-gray-300 px-2 py-1 text-xs text-gray-600"
+                            >
+                              Cancel
+                            </button>
+                          </>
+                        ) : (
+                          <button
+                            onClick={() => startEditCourse(c)}
+                            className="rounded border border-gray-300 px-2 py-1 text-xs text-gray-600"
+                          >
+                            Edit
+                          </button>
+                        )}
+                        <button
+                          onClick={() => toggleCourseActive(c)}
+                          disabled={submitting}
+                          className="rounded border border-gray-300 px-2 py-1 text-xs text-gray-600 disabled:opacity-50"
+                        >
+                          {c.isActive ? "Remove" : "Restore"}
+                        </button>
+                        <button
+                          onClick={() => loadChapters(c.id)}
+                          className="rounded border border-gray-300 px-2 py-1 text-xs text-gray-600"
+                        >
+                          {expandedCourseId === c.id ? "Hide chapters" : "Manage chapters"}
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                  {expandedCourseId === c.id && (
+                    <tr key={`${c.id}-chapters`} className="border-b border-gray-100 bg-gray-50">
+                      <td colSpan={5} className="py-3 px-3">
+                        {chaptersLoading ? (
+                          <p className="text-xs text-gray-500">Loading chapters…</p>
+                        ) : !chapters || chapters.length === 0 ? (
+                          <p className="text-xs text-gray-500">No chapters uploaded for this course yet.</p>
+                        ) : (
+                          <ul className="space-y-1">
+                            {chapters.map((m) => (
+                              <li key={m.id} className="flex items-center justify-between gap-2 text-xs">
+                                {editingChapterId === m.id ? (
+                                  <>
+                                    <input
+                                      value={chapterTitleDraft}
+                                      onChange={(e) => setChapterTitleDraft(e.target.value)}
+                                      className="flex-1 rounded border border-gray-300 px-2 py-1"
+                                    />
+                                    <div className="flex gap-1">
+                                      <button
+                                        onClick={() => saveChapterTitle(c.id, m.id)}
+                                        className="rounded bg-[#001F3F] px-2 py-1 text-white"
+                                      >
+                                        Save
+                                      </button>
+                                      <button
+                                        onClick={() => setEditingChapterId(null)}
+                                        className="rounded border border-gray-300 px-2 py-1 text-gray-600"
+                                      >
+                                        Cancel
+                                      </button>
+                                    </div>
+                                  </>
+                                ) : (
+                                  <>
+                                    <span className="text-gray-700">{m.title}</span>
+                                    <div className="flex gap-1">
+                                      <button
+                                        onClick={() => startEditChapter(m)}
+                                        className="rounded border border-gray-300 px-2 py-1 text-gray-600"
+                                      >
+                                        Edit
+                                      </button>
+                                      <button
+                                        onClick={() => removeChapter(c.id, m.id)}
+                                        className="rounded border border-red-300 px-2 py-1 text-red-600"
+                                      >
+                                        Remove
+                                      </button>
+                                    </div>
+                                  </>
+                                )}
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                      </td>
+                    </tr>
+                  )}
+                </Fragment>
               ))}
             </tbody>
           </table>

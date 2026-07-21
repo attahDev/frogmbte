@@ -1,6 +1,8 @@
+import { useState } from 'react';
 import { Heart, MessageCircle, Share2, ArrowRight, Star } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useApiGet } from '../hooks/useApiGet';
+import { api } from '../../../lib/api';
 import CardSkeleton from '../shared/CardSkeleton';
 
 interface SpotlightStory {
@@ -14,6 +16,7 @@ interface SpotlightStory {
   likes: number;
   comments: number;
   createdAt: string;
+  hasLiked: boolean;
 }
 
 function initials(name: string) {
@@ -37,6 +40,37 @@ function timeAgo(iso: string) {
 export default function CommunitySpotlight() {
   const { data: stories, loading } = useApiGet<SpotlightStory[]>('/community/spotlight', []);
   const list = stories ?? [];
+
+  // The list itself only refetches on mount/route change — liking shouldn't
+  // require a full refetch, so track per-story overrides locally and fall
+  // back to whatever the API returned.
+  const [overrides, setOverrides] = useState<Record<string, { likes: number; hasLiked: boolean }>>({});
+  const [pending, setPending] = useState<Record<string, boolean>>({});
+
+  const toggleLike = async (story: SpotlightStory) => {
+    if (pending[story.id]) return;
+    const current = overrides[story.id] ?? { likes: story.likes, hasLiked: story.hasLiked };
+    const next = current.hasLiked
+      ? { likes: Math.max(0, current.likes - 1), hasLiked: false }
+      : { likes: current.likes + 1, hasLiked: true };
+
+    setPending((p) => ({ ...p, [story.id]: true }));
+    setOverrides((o) => ({ ...o, [story.id]: next })); // optimistic
+
+    try {
+      const { data } = current.hasLiked
+        ? await api.delete(`/community/spotlight/${story.id}/like`)
+        : await api.post(`/community/spotlight/${story.id}/like`);
+      const result = data?.data ?? data;
+      if (result && typeof result.likes === 'number') {
+        setOverrides((o) => ({ ...o, [story.id]: { likes: result.likes, hasLiked: result.hasLiked } }));
+      }
+    } catch {
+      setOverrides((o) => ({ ...o, [story.id]: current })); // revert on failure
+    } finally {
+      setPending((p) => ({ ...p, [story.id]: false }));
+    }
+  };
 
   return (
     <div className="w-full bg-[#FFFDF7] p-4 sm:p-6 lg:p-8">
@@ -100,10 +134,25 @@ export default function CommunitySpotlight() {
                         </div>
 
                         <div className="flex items-center gap-4 sm:gap-6">
-                          <span className="flex items-center gap-1.5 sm:gap-2 text-gray-600">
-                            <Heart className="w-4 h-4 sm:w-5 sm:h-5" />
-                            <span className="text-xs sm:text-sm font-medium">{story.likes}</span>
-                          </span>
+                          <button
+                            type="button"
+                            onClick={() => toggleLike(story)}
+                            disabled={pending[story.id]}
+                            className={`flex items-center gap-1.5 sm:gap-2 transition disabled:opacity-60 ${
+                              (overrides[story.id]?.hasLiked ?? story.hasLiked)
+                                ? 'text-red-600'
+                                : 'text-gray-600 hover:text-red-600'
+                            }`}
+                            aria-label={(overrides[story.id]?.hasLiked ?? story.hasLiked) ? 'Unlike' : 'Like'}
+                          >
+                            <Heart
+                              className="w-4 h-4 sm:w-5 sm:h-5"
+                              fill={(overrides[story.id]?.hasLiked ?? story.hasLiked) ? 'currentColor' : 'none'}
+                            />
+                            <span className="text-xs sm:text-sm font-medium">
+                              {overrides[story.id]?.likes ?? story.likes}
+                            </span>
+                          </button>
                           <span className="flex items-center gap-1.5 sm:gap-2 text-gray-600">
                             <MessageCircle className="w-4 h-4 sm:w-5 sm:h-5" />
                             <span className="text-xs sm:text-sm font-medium">{story.comments}</span>

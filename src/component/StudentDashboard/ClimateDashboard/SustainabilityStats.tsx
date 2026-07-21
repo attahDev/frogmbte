@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { fetchGreenStats, type GreenStats } from "../../../lib/greenImpactApi";
+import { onGreenImpactUpdate } from "../../../lib/greenImpactEvents";
 
 type StatCardProps = {
   icon: React.ReactNode;
@@ -64,15 +65,25 @@ export default function SustainabilityStats() {
 
   useEffect(() => {
     let cancelled = false;
-    fetchGreenStats()
-      .then((data) => {
-        if (!cancelled) setStats(data);
-      })
-      .catch(() => {
-        if (!cancelled) setStats(null);
-      });
+
+    const load = () => {
+      fetchGreenStats()
+        .then((data) => {
+          if (!cancelled) setStats(data);
+        })
+        .catch(() => {
+          if (!cancelled) setStats(null);
+        });
+    };
+
+    load();
+    // Logging a green action anywhere on the page broadcasts this — refetch
+    // instead of leaving these cards stale until the user reloads.
+    const unsubscribe = onGreenImpactUpdate(load);
+
     return () => {
       cancelled = true;
+      unsubscribe();
     };
   }, []);
 

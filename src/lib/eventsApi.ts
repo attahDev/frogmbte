@@ -6,9 +6,12 @@ export type BackendEvent = {
   title: string;
   description: string | null;
   location: string | null;
+  imageUrl: string | null;
+  mode: string | null;
   startsAt: string;
   endsAt: string | null;
   isActive: boolean;
+  isFeatured: boolean;
 };
 
 export type BackendAttendance = {
@@ -28,12 +31,14 @@ export type UiEvent = {
   time: string;
   format: EventFormat;
   location: string | null;
+  image: string;
+  isFeatured: boolean;
   startsAt: string;
 };
 
-/** The event dataset has no image field yet (flagged separately under
- * media management) — cycle through the existing static placeholders
- * instead of leaving cards blank until that's built. */
+/** Older events created before the imageUrl column existed can still have
+ * no image set — cycle through the static placeholders for those only,
+ * rather than leaving the card blank. */
 const PLACEHOLDER_IMAGES = [
   "/dashboard/envent/plannede/imm1.jpg",
   "/dashboard/envent/plannede/imm2.jpg",
@@ -49,6 +54,10 @@ export function placeholderImageFor(id: string): string {
 }
 
 function formatFor(event: BackendEvent): EventFormat {
+  if (event.mode === "Virtual" || event.mode === "In-Person" || event.mode === "Hybrid") {
+    return event.mode;
+  }
+  // Events created before the mode field existed — best-effort guess.
   return event.location ? "In-Person" : "Virtual";
 }
 
@@ -75,6 +84,8 @@ function toUiEvent(event: BackendEvent): UiEvent {
     time,
     format: formatFor(event),
     location: event.location,
+    image: event.imageUrl ?? placeholderImageFor(event.id),
+    isFeatured: event.isFeatured,
     startsAt: event.startsAt,
   };
 }
