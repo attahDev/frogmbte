@@ -58,4 +58,9 @@ export type SustainabilityCourse = {
   learningOutcomes: string[];
   lessons: CourseLesson[];
   finalProject?: CourseProject;
+  // Sub-tags for filtering/sorting within a category (e.g. "Web
+  // Development", "Beginner") and admin-curated spotlight flag — both
+  // pass straight through from the backend Course row.
+  tags: string[];
+  isFeatured: boolean;
 };

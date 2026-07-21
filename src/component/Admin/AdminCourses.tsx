@@ -7,6 +7,8 @@ type Course = {
   description: string | null;
   slug: string;
   category: string;
+  tags: string[];
+  isFeatured: boolean;
   totalModules: number;
   isActive: boolean;
 };
@@ -18,33 +20,51 @@ type CourseModule = {
   order: number;
 };
 
-const EMPTY_COURSE = { title: "", description: "", category: "climate" };
+const EMPTY_COURSE = { title: "", description: "", category: "climate", tagsText: "", isFeatured: false };
+
+// One section in the chapter builder — plain strings in the form, turned
+// into the ModuleContentDto shape the backend expects only on submit.
+// This is what replaced the raw-JSON textarea: same underlying shape
+// (see backgmb's ModuleContentDto/ModuleSectionDto), just as input boxes.
+type SectionDraft = {
+  id: string;
+  title: string;
+  type: "content" | "example" | "case-study" | "activity" | "summary" | "questions";
+  paragraphsText: string;
+  pointsText: string;
+};
+
+const EMPTY_SECTION = (): SectionDraft => ({
+  id: `section-${Math.random().toString(36).slice(2, 8)}`,
+  title: "",
+  type: "content",
+  paragraphsText: "",
+  pointsText: "",
+});
+
+const splitLines = (text: string) =>
+  text
+    .split("\n")
+    .map((l) => l.trim())
+    .filter(Boolean);
 
 export default function AdminCourses() {
   const [courses, setCourses] = useState<Course[] | null>(null);
   const [form, setForm] = useState(EMPTY_COURSE);
   const [selectedCourseId, setSelectedCourseId] = useState<string>("");
-  const [moduleTitle, setModuleTitle] = useState("");
-  const [moduleJson, setModuleJson] = useState(
-    JSON.stringify(
-      {
-        description: "Short description",
-        duration: "30 min",
-        learningOutcomes: ["Outcome 1"],
-        sections: [
-          { id: "intro", title: "Introduction", type: "content", order: 0, paragraphs: ["..."] },
-        ],
-      },
-      null,
-      2,
-    ),
-  );
-  const [submitting, setSubmitting] = useState(false);
-  const [jsonError, setJsonError] = useState<string | null>(null);
 
-  // Editing a course's title/description
+  // Chapter (module) builder
+  const [moduleTitle, setModuleTitle] = useState("");
+  const [moduleDescription, setModuleDescription] = useState("");
+  const [moduleDuration, setModuleDuration] = useState("");
+  const [learningOutcomesText, setLearningOutcomesText] = useState("");
+  const [sections, setSections] = useState<SectionDraft[]>([EMPTY_SECTION()]);
+
+  const [submitting, setSubmitting] = useState(false);
+
+  // Editing a course's title/description/category/tags/featured
   const [editingCourseId, setEditingCourseId] = useState<string | null>(null);
-  const [editForm, setEditForm] = useState({ title: "", description: "" });
+  const [editForm, setEditForm] = useState({ title: "", description: "", tagsText: "", isFeatured: false });
 
   // Expanded course's chapter list, for editing/removing chapters
   const [expandedCourseId, setExpandedCourseId] = useState<string | null>(null);
@@ -70,6 +90,8 @@ export default function AdminCourses() {
         title: form.title,
         description: form.description || undefined,
         category: form.category,
+        tags: splitLines(form.tagsText.replace(/,/g, "\n")),
+        isFeatured: form.isFeatured,
       });
       setForm(EMPTY_COURSE);
       load();
@@ -80,7 +102,12 @@ export default function AdminCourses() {
 
   const startEditCourse = (c: Course) => {
     setEditingCourseId(c.id);
-    setEditForm({ title: c.title, description: c.description ?? "" });
+    setEditForm({
+      title: c.title,
+      description: c.description ?? "",
+      tagsText: c.tags.join(", "),
+      isFeatured: c.isFeatured,
+    });
   };
 
   const saveEditCourse = async (id: string) => {
@@ -89,6 +116,8 @@ export default function AdminCourses() {
       await api.patch(`/courses/${id}`, {
         title: editForm.title || undefined,
         description: editForm.description,
+        tags: splitLines(editForm.tagsText.replace(/,/g, "\n")),
+        isFeatured: editForm.isFeatured,
       });
       setEditingCourseId(null);
       load();
@@ -160,20 +189,36 @@ export default function AdminCourses() {
     }
   };
 
+  const addSectionDraft = () => setSections((s) => [...s, EMPTY_SECTION()]);
+  const removeSectionDraft = (id: string) => setSections((s) => s.filter((sec) => sec.id !== id));
+  const updateSectionDraft = (id: string, patch: Partial<SectionDraft>) =>
+    setSections((s) => s.map((sec) => (sec.id === id ? { ...sec, ...patch } : sec)));
+
   const addModule = async () => {
     if (!selectedCourseId || !moduleTitle) return;
-    let content;
-    try {
-      content = JSON.parse(moduleJson);
-      setJsonError(null);
-    } catch {
-      setJsonError("Content isn't valid JSON — fix it before submitting.");
-      return;
-    }
     setSubmitting(true);
     try {
-      await api.post(`/courses/${selectedCourseId}/modules`, { title: moduleTitle, content });
+      await api.post(`/courses/${selectedCourseId}/modules`, {
+        title: moduleTitle,
+        content: {
+          description: moduleDescription || undefined,
+          duration: moduleDuration || undefined,
+          learningOutcomes: splitLines(learningOutcomesText),
+          sections: sections.map((s, i) => ({
+            id: s.id,
+            title: s.title || `Section ${i + 1}`,
+            type: s.type,
+            paragraphs: splitLines(s.paragraphsText),
+            points: splitLines(s.pointsText),
+            order: i,
+          })),
+        },
+      });
       setModuleTitle("");
+      setModuleDescription("");
+      setModuleDuration("");
+      setLearningOutcomesText("");
+      setSections([EMPTY_SECTION()]);
       load();
       if (expandedCourseId === selectedCourseId) loadChaptersRefresh(selectedCourseId);
     } finally {
@@ -186,7 +231,7 @@ export default function AdminCourses() {
       <div className="rounded-md border border-gray-300 bg-white p-4">
         <h2 className="text-base font-semibold text-[#001F3F]">Create a course</h2>
 
-        <div className="mt-3 grid gap-2 sm:grid-cols-3">
+        <div className="mt-3 grid gap-2 sm:grid-cols-2">
           <input
             placeholder="Title"
             value={form.title}
@@ -205,8 +250,22 @@ export default function AdminCourses() {
             placeholder="Description (optional)"
             value={form.description}
             onChange={(e) => setForm({ ...form, description: e.target.value })}
-            className="rounded border border-gray-300 px-2 py-1 text-sm"
+            className="rounded border border-gray-300 px-2 py-1 text-sm sm:col-span-2"
           />
+          <input
+            placeholder="Tags, comma-separated (e.g. Web Development, Beginner)"
+            value={form.tagsText}
+            onChange={(e) => setForm({ ...form, tagsText: e.target.value })}
+            className="rounded border border-gray-300 px-2 py-1 text-sm sm:col-span-2"
+          />
+          <label className="flex items-center gap-2 text-xs text-gray-600 sm:col-span-2">
+            <input
+              type="checkbox"
+              checked={form.isFeatured}
+              onChange={(e) => setForm({ ...form, isFeatured: e.target.checked })}
+            />
+            Feature this course (surfaces it first on the Academy/Green Impact landing page)
+          </label>
         </div>
 
         <button
@@ -221,9 +280,8 @@ export default function AdminCourses() {
       <div className="rounded-md border border-gray-300 bg-white p-4">
         <h2 className="text-base font-semibold text-[#001F3F]">Add a chapter (module)</h2>
         <p className="mt-1 text-xs text-gray-400">
-          Raw JSON for now — for uploading a whole course's worth of chapters at once, use{" "}
-          <code>gmbtebac/scripts/upload_course_content.py</code> instead of typing JSON here
-          module by module.
+          For uploading a whole course's worth of chapters at once instead of one at a time, use{" "}
+          <code>gmbtebac/scripts/upload_course_content.py</code>.
         </p>
 
         <div className="mt-3 grid gap-2 sm:grid-cols-2">
@@ -245,20 +303,105 @@ export default function AdminCourses() {
             onChange={(e) => setModuleTitle(e.target.value)}
             className="rounded border border-gray-300 px-2 py-1 text-sm"
           />
+          <input
+            placeholder="Short description (optional)"
+            value={moduleDescription}
+            onChange={(e) => setModuleDescription(e.target.value)}
+            className="rounded border border-gray-300 px-2 py-1 text-sm"
+          />
+          <input
+            placeholder="Duration, e.g. 30 min (optional)"
+            value={moduleDuration}
+            onChange={(e) => setModuleDuration(e.target.value)}
+            className="rounded border border-gray-300 px-2 py-1 text-sm"
+          />
         </div>
 
-        <textarea
-          value={moduleJson}
-          onChange={(e) => setModuleJson(e.target.value)}
-          rows={10}
-          className="mt-2 w-full rounded border border-gray-300 px-2 py-1 font-mono text-xs"
-        />
-        {jsonError && <p className="mt-1 text-xs text-red-600">{jsonError}</p>}
+        <label className="mt-2 block text-xs text-gray-500">
+          Learning outcomes — one per line
+          <textarea
+            value={learningOutcomesText}
+            onChange={(e) => setLearningOutcomesText(e.target.value)}
+            rows={3}
+            className="mt-1 w-full rounded border border-gray-300 px-2 py-1 text-sm"
+            placeholder={"Understand X\nBe able to do Y"}
+          />
+        </label>
+
+        <div className="mt-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-semibold text-[#001F3F]">Sections</h3>
+            <button
+              onClick={addSectionDraft}
+              type="button"
+              className="rounded border border-gray-300 px-2 py-1 text-xs text-gray-600"
+            >
+              + Add section
+            </button>
+          </div>
+
+          <div className="mt-2 space-y-3">
+            {sections.map((s, i) => (
+              <div key={s.id} className="rounded border border-gray-200 p-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-medium text-gray-500">Section {i + 1}</span>
+                  {sections.length > 1 && (
+                    <button
+                      onClick={() => removeSectionDraft(s.id)}
+                      type="button"
+                      className="text-xs text-red-600"
+                    >
+                      Remove
+                    </button>
+                  )}
+                </div>
+                <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                  <input
+                    placeholder="Section title"
+                    value={s.title}
+                    onChange={(e) => updateSectionDraft(s.id, { title: e.target.value })}
+                    className="rounded border border-gray-300 px-2 py-1 text-sm"
+                  />
+                  <select
+                    value={s.type}
+                    onChange={(e) => updateSectionDraft(s.id, { type: e.target.value as SectionDraft["type"] })}
+                    className="rounded border border-gray-300 px-2 py-1 text-sm"
+                  >
+                    <option value="content">Content</option>
+                    <option value="example">Example</option>
+                    <option value="case-study">Case study</option>
+                    <option value="activity">Activity</option>
+                    <option value="summary">Summary</option>
+                    <option value="questions">Questions</option>
+                  </select>
+                </div>
+                <label className="mt-2 block text-xs text-gray-500">
+                  Paragraphs — one per line
+                  <textarea
+                    value={s.paragraphsText}
+                    onChange={(e) => updateSectionDraft(s.id, { paragraphsText: e.target.value })}
+                    rows={3}
+                    className="mt-1 w-full rounded border border-gray-300 px-2 py-1 text-sm"
+                  />
+                </label>
+                <label className="mt-2 block text-xs text-gray-500">
+                  Bullet points — one per line (optional, used for activity/questions/summary)
+                  <textarea
+                    value={s.pointsText}
+                    onChange={(e) => updateSectionDraft(s.id, { pointsText: e.target.value })}
+                    rows={2}
+                    className="mt-1 w-full rounded border border-gray-300 px-2 py-1 text-sm"
+                  />
+                </label>
+              </div>
+            ))}
+          </div>
+        </div>
 
         <button
           onClick={addModule}
           disabled={submitting || !selectedCourseId || !moduleTitle}
-          className="mt-3 rounded bg-[#001F3F] px-3 py-1.5 text-sm text-white disabled:opacity-50"
+          className="mt-4 rounded bg-[#001F3F] px-3 py-1.5 text-sm text-white disabled:opacity-50"
         >
           Add chapter
         </button>
@@ -276,6 +419,7 @@ export default function AdminCourses() {
               <tr className="border-b border-gray-200 text-gray-500">
                 <th className="py-2 pr-3">Title</th>
                 <th className="py-2 pr-3">Category</th>
+                <th className="py-2 pr-3">Tags</th>
                 <th className="py-2 pr-3">Chapters</th>
                 <th className="py-2 pr-3">Status</th>
                 <th className="py-2">Actions</th>
@@ -299,12 +443,29 @@ export default function AdminCourses() {
                             placeholder="Description"
                             className="rounded border border-gray-300 px-2 py-1 text-sm"
                           />
+                          <input
+                            value={editForm.tagsText}
+                            onChange={(e) => setEditForm({ ...editForm, tagsText: e.target.value })}
+                            placeholder="Tags, comma-separated"
+                            className="rounded border border-gray-300 px-2 py-1 text-sm"
+                          />
+                          <label className="flex items-center gap-2 text-xs text-gray-600">
+                            <input
+                              type="checkbox"
+                              checked={editForm.isFeatured}
+                              onChange={(e) => setEditForm({ ...editForm, isFeatured: e.target.checked })}
+                            />
+                            Featured
+                          </label>
                         </div>
                       ) : (
-                        c.title
+                        <>
+                          {c.title} {c.isFeatured && <span className="text-xs text-[#D7263D]">★</span>}
+                        </>
                       )}
                     </td>
                     <td className="py-2 pr-3">{c.category}</td>
+                    <td className="py-2 pr-3 text-xs text-gray-500">{c.tags?.join(", ") || "—"}</td>
                     <td className="py-2 pr-3">{c.totalModules}</td>
                     <td className="py-2 pr-3">{c.isActive ? "Active" : "Removed"}</td>
                     <td className="py-2">
@@ -350,8 +511,8 @@ export default function AdminCourses() {
                     </td>
                   </tr>
                   {expandedCourseId === c.id && (
-                    <tr key={`${c.id}-chapters`} className="border-b border-gray-100 bg-gray-50">
-                      <td colSpan={5} className="py-3 px-3">
+                    <tr className="border-b border-gray-100 bg-gray-50">
+                      <td colSpan={6} className="py-3 px-3">
                         {chaptersLoading ? (
                           <p className="text-xs text-gray-500">Loading chapters…</p>
                         ) : !chapters || chapters.length === 0 ? (

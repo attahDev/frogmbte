@@ -4,22 +4,48 @@ import { api } from "../../lib/api";
 type EventRow = {
   id: string;
   title: string;
+  description: string | null;
   location: string | null;
+  imageUrl: string | null;
+  mode: string | null;
+  link: string | null;
   startsAt: string;
   endsAt: string | null;
   isActive: boolean;
+  isFeatured: boolean;
 };
 
-const EMPTY = { title: "", description: "", location: "", startsAt: "", endsAt: "" };
+const EMPTY = {
+  title: "",
+  description: "",
+  location: "",
+  imageUrl: "",
+  mode: "In-Person",
+  link: "",
+  startsAt: "",
+  endsAt: "",
+  isFeatured: false,
+};
+
+// datetime-local inputs need "YYYY-MM-DDTHH:mm" with no timezone suffix.
+function toLocalInput(iso: string | null): string {
+  if (!iso) return "";
+  const d = new Date(iso);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
 
 export default function AdminEvents() {
   const [events, setEvents] = useState<EventRow[] | null>(null);
   const [form, setForm] = useState(EMPTY);
   const [submitting, setSubmitting] = useState(false);
 
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editForm, setEditForm] = useState(EMPTY);
+
   const load = () => {
     api
-      .get("/events")
+      .get("/events", { params: { includeInactive: "true" } })
       .then(({ data }) => setEvents(data?.data ?? data ?? []))
       .catch(() => setEvents([]));
   };
@@ -34,8 +60,12 @@ export default function AdminEvents() {
         title: form.title,
         description: form.description || undefined,
         location: form.location || undefined,
+        imageUrl: form.imageUrl || undefined,
+        mode: form.mode || undefined,
+        link: form.link || undefined,
         startsAt: new Date(form.startsAt).toISOString(),
         endsAt: form.endsAt ? new Date(form.endsAt).toISOString() : undefined,
+        isFeatured: form.isFeatured,
       });
       setForm(EMPTY);
       load();
@@ -44,9 +74,54 @@ export default function AdminEvents() {
     }
   };
 
-  const cancelEvent = async (id: string) => {
-    await api.delete(`/events/${id}`);
-    load();
+  const startEdit = (ev: EventRow) => {
+    setEditingId(ev.id);
+    setEditForm({
+      title: ev.title,
+      description: ev.description ?? "",
+      location: ev.location ?? "",
+      imageUrl: ev.imageUrl ?? "",
+      mode: ev.mode ?? "In-Person",
+      link: ev.link ?? "",
+      startsAt: toLocalInput(ev.startsAt),
+      endsAt: toLocalInput(ev.endsAt),
+      isFeatured: ev.isFeatured,
+    });
+  };
+
+  const saveEdit = async (id: string) => {
+    setSubmitting(true);
+    try {
+      await api.patch(`/events/${id}`, {
+        title: editForm.title,
+        description: editForm.description,
+        location: editForm.location,
+        imageUrl: editForm.imageUrl,
+        mode: editForm.mode,
+        link: editForm.link,
+        startsAt: new Date(editForm.startsAt).toISOString(),
+        endsAt: editForm.endsAt ? new Date(editForm.endsAt).toISOString() : null,
+        isFeatured: editForm.isFeatured,
+      });
+      setEditingId(null);
+      load();
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const toggleActive = async (ev: EventRow) => {
+    setSubmitting(true);
+    try {
+      if (ev.isActive) {
+        await api.delete(`/events/${ev.id}`); // soft-delete, backend never hard-deletes
+      } else {
+        await api.patch(`/events/${ev.id}`, { isActive: true });
+      }
+      load();
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -67,7 +142,15 @@ export default function AdminEvents() {
             onChange={(e) => setForm({ ...form, location: e.target.value })}
             className="rounded border border-gray-300 px-2 py-1 text-sm"
           />
-          <div />
+          <select
+            value={form.mode}
+            onChange={(e) => setForm({ ...form, mode: e.target.value })}
+            className="rounded border border-gray-300 px-2 py-1 text-sm"
+          >
+            <option value="Virtual">Virtual</option>
+            <option value="In-Person">In-Person</option>
+            <option value="Hybrid">Hybrid</option>
+          </select>
           <label className="text-xs text-gray-500">
             Starts
             <input
@@ -86,12 +169,32 @@ export default function AdminEvents() {
               className="mt-1 block w-full rounded border border-gray-300 px-2 py-1 text-sm"
             />
           </label>
+          <input
+            placeholder="Image URL (optional)"
+            value={form.imageUrl}
+            onChange={(e) => setForm({ ...form, imageUrl: e.target.value })}
+            className="rounded border border-gray-300 px-2 py-1 text-sm"
+          />
+          <input
+            placeholder="Link — registration page, Zoom/Meet, Eventbrite (optional)"
+            value={form.link}
+            onChange={(e) => setForm({ ...form, link: e.target.value })}
+            className="rounded border border-gray-300 px-2 py-1 text-sm"
+          />
           <textarea
             placeholder="Description (optional)"
             value={form.description}
             onChange={(e) => setForm({ ...form, description: e.target.value })}
             className="rounded border border-gray-300 px-2 py-1 text-sm sm:col-span-2"
           />
+          <label className="flex items-center gap-2 text-xs text-gray-600 sm:col-span-2">
+            <input
+              type="checkbox"
+              checked={form.isFeatured}
+              onChange={(e) => setForm({ ...form, isFeatured: e.target.checked })}
+            />
+            Feature this event (pins it first on the dashboard, ahead of soonest-first sorting)
+          </label>
         </div>
 
         <button
@@ -104,42 +207,135 @@ export default function AdminEvents() {
       </div>
 
       <div className="rounded-md border border-gray-300 bg-white p-4">
-        <h2 className="text-base font-semibold text-[#001F3F]">Upcoming events</h2>
+        <h2 className="text-base font-semibold text-[#001F3F]">Events</h2>
 
         {events === null ? (
           <p className="mt-3 text-sm text-gray-500">Loading…</p>
         ) : events.length === 0 ? (
-          <p className="mt-3 text-sm text-gray-500">No upcoming events.</p>
+          <p className="mt-3 text-sm text-gray-500">No events created yet.</p>
         ) : (
-          <table className="mt-3 w-full text-left text-sm">
-            <thead>
-              <tr className="border-b border-gray-200 text-gray-500">
-                <th className="py-2 pr-3">Title</th>
-                <th className="py-2 pr-3">Starts</th>
-                <th className="py-2 pr-3">Location</th>
-                <th className="py-2">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {events.map((ev) => (
-                <tr key={ev.id} className="border-b border-gray-100">
-                  <td className="py-2 pr-3 whitespace-nowrap">{ev.title}</td>
-                  <td className="py-2 pr-3 whitespace-nowrap">
-                    {new Date(ev.startsAt).toLocaleString()}
-                  </td>
-                  <td className="py-2 pr-3 whitespace-nowrap">{ev.location || "Virtual"}</td>
-                  <td className="py-2">
+          <div className="mt-3 space-y-3">
+            {events.map((ev) =>
+              editingId === ev.id ? (
+                <div key={ev.id} className="rounded border border-[#001F3F] p-3">
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    <input
+                      value={editForm.title}
+                      onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
+                      placeholder="Title"
+                      className="rounded border border-gray-300 px-2 py-1 text-sm sm:col-span-2"
+                    />
+                    <input
+                      value={editForm.location}
+                      onChange={(e) => setEditForm({ ...editForm, location: e.target.value })}
+                      placeholder="Location"
+                      className="rounded border border-gray-300 px-2 py-1 text-sm"
+                    />
+                    <select
+                      value={editForm.mode}
+                      onChange={(e) => setEditForm({ ...editForm, mode: e.target.value })}
+                      className="rounded border border-gray-300 px-2 py-1 text-sm"
+                    >
+                      <option value="Virtual">Virtual</option>
+                      <option value="In-Person">In-Person</option>
+                      <option value="Hybrid">Hybrid</option>
+                    </select>
+                    <label className="text-xs text-gray-500">
+                      Starts
+                      <input
+                        type="datetime-local"
+                        value={editForm.startsAt}
+                        onChange={(e) => setEditForm({ ...editForm, startsAt: e.target.value })}
+                        className="mt-1 block w-full rounded border border-gray-300 px-2 py-1 text-sm"
+                      />
+                    </label>
+                    <label className="text-xs text-gray-500">
+                      Ends
+                      <input
+                        type="datetime-local"
+                        value={editForm.endsAt}
+                        onChange={(e) => setEditForm({ ...editForm, endsAt: e.target.value })}
+                        className="mt-1 block w-full rounded border border-gray-300 px-2 py-1 text-sm"
+                      />
+                    </label>
+                    <input
+                      value={editForm.imageUrl}
+                      onChange={(e) => setEditForm({ ...editForm, imageUrl: e.target.value })}
+                      placeholder="Image URL"
+                      className="rounded border border-gray-300 px-2 py-1 text-sm"
+                    />
+                    <input
+                      value={editForm.link}
+                      onChange={(e) => setEditForm({ ...editForm, link: e.target.value })}
+                      placeholder="Link (optional)"
+                      className="rounded border border-gray-300 px-2 py-1 text-sm"
+                    />
+                    <textarea
+                      value={editForm.description}
+                      onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
+                      placeholder="Description"
+                      className="rounded border border-gray-300 px-2 py-1 text-sm sm:col-span-2"
+                    />
+                    <label className="flex items-center gap-2 text-xs text-gray-600 sm:col-span-2">
+                      <input
+                        type="checkbox"
+                        checked={editForm.isFeatured}
+                        onChange={(e) => setEditForm({ ...editForm, isFeatured: e.target.checked })}
+                      />
+                      Featured
+                    </label>
+                  </div>
+                  <div className="mt-3 flex gap-2">
                     <button
-                      onClick={() => cancelEvent(ev.id)}
-                      className="rounded border border-red-300 px-2 py-1 text-xs text-red-600"
+                      onClick={() => saveEdit(ev.id)}
+                      disabled={submitting}
+                      className="rounded bg-[#001F3F] px-3 py-1.5 text-sm text-white disabled:opacity-50"
+                    >
+                      Save
+                    </button>
+                    <button
+                      onClick={() => setEditingId(null)}
+                      className="rounded border border-gray-300 px-3 py-1.5 text-sm text-gray-600"
                     >
                       Cancel
                     </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                  </div>
+                </div>
+              ) : (
+                <div
+                  key={ev.id}
+                  className={`flex flex-wrap items-center justify-between gap-2 rounded border border-gray-200 p-3 text-sm ${
+                    !ev.isActive ? "opacity-50" : ""
+                  }`}
+                >
+                  <div>
+                    <p className="font-medium text-[#001F3F]">
+                      {ev.title} {ev.isFeatured && <span className="text-xs text-[#D7263D]">★ Featured</span>}
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      {new Date(ev.startsAt).toLocaleString()} · {ev.location || "Virtual"} · {ev.mode ?? "In-Person"}
+                      {!ev.isActive && " · Removed"}
+                    </p>
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => startEdit(ev)}
+                      className="rounded border border-gray-300 px-2 py-1 text-xs text-gray-600"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      onClick={() => toggleActive(ev)}
+                      disabled={submitting}
+                      className="rounded border border-gray-300 px-2 py-1 text-xs text-gray-600 disabled:opacity-50"
+                    >
+                      {ev.isActive ? "Remove" : "Restore"}
+                    </button>
+                  </div>
+                </div>
+              ),
+            )}
+          </div>
         )}
       </div>
     </div>

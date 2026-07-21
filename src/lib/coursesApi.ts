@@ -11,6 +11,8 @@ type BackendCourse = {
   title: string;
   description: string | null;
   category: string | null;
+  tags: string[];
+  isFeatured: boolean;
   metadata: Record<string, any> | null;
   totalModules: number;
   completedModules?: number;
@@ -55,6 +57,8 @@ function toCourse(course: BackendCourse, modules: BackendModule[] = []): Sustain
     learningOutcomes: m.learningOutcomes ?? [],
     lessons: modules.sort((a, b) => a.order - b.order).map(toLesson),
     finalProject: m.finalProject,
+    tags: course.tags ?? [],
+    isFeatured: course.isFeatured ?? false,
   };
 }
 
