@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Bell } from "lucide-react";
 import { useAuth } from "../contexts/mainuseAuth"; // Updated import path
+import { fetchMyUnreadCount } from "../lib/notificationsApi";
 import LoginModal from "./Authentication/Login";
 import SignupModal from './Authentication/Signup';
 
@@ -17,6 +19,22 @@ const NavBar = () => {
     const location = useLocation();
     const navigate = useNavigate();
     const { user, isAuthenticated, logout } = useAuth(); // Get auth state from new context
+    const [unreadNotifications, setUnreadNotifications] = useState(0);
+
+    useEffect(() => {
+        if (!isAuthenticated) return;
+        let cancelled = false;
+        const load = () =>
+            fetchMyUnreadCount()
+                .then((count) => !cancelled && setUnreadNotifications(count))
+                .catch(() => {});
+        load();
+        const interval = setInterval(load, 60000);
+        return () => {
+            cancelled = true;
+            clearInterval(interval);
+        };
+    }, [isAuthenticated, location.pathname]);
 
     const handleLinkClick = () => {
         setIsMenuOpen(false);
@@ -238,15 +256,18 @@ const NavBar = () => {
                         // User is logged in - Show profile icons
                         <div className="flex items-center space-x-4 xl:space-x-6">
                             {/* Notification Icon */}
-                            {/* <button type="button" aria-label="Notifications" className="relative flex items-center text-black p-2 hover:bg-gray-50 rounded-full transition duration-150">
-                                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
-                                    <path d="M13.73 21a2 2 0 0 1-3.46 0" />
-                                </svg>
-                                <span className="absolute -top-1 -right-1 bg-[#D7263D] text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                                    3
-                                </span>
-                            </button> */}
+                            <Link
+                                to="/dashboard/notifications"
+                                aria-label="Notifications"
+                                className="relative flex items-center text-black p-2 hover:bg-gray-50 rounded-full transition duration-150"
+                            >
+                                <Bell size={22} strokeWidth={2} />
+                                {unreadNotifications > 0 && (
+                                    <span className="absolute -top-1 -right-1 bg-[#D7263D] text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                                        {unreadNotifications > 9 ? "9+" : unreadNotifications}
+                                    </span>
+                                )}
+                            </Link>
 
                             {/* Message Icon
                             <button type="button" aria-label="Messages" className="relative flex items-center text-black p-2 hover:bg-gray-50 rounded-full transition duration-150">

@@ -25,6 +25,7 @@ import DigitalTrustIndex from './component/StudentDashboard/DigitalTrust/Digital
 import PartnershipsIndex from './component/StudentDashboard/Partnerships/PartnershipsIndex';
 import JobDetailsPage from './component/StudentDashboard/JobDashboard/JobDetailsPage';
 import JobIndex from './component/StudentDashboard/JobDashboard/JobIndex';
+import NotificationsPage from './component/StudentDashboard/NotificationsSection/NotificationsPage';
 import { ToolkitsIndex } from './component/StudentDashboard/ToolkitsSection/ToolkitsIndex';
 import { ToolkIndex } from './component/StudentDashboard/ServicesSection/Toolkits/ToolkIndex';
 import ServicesIndexPage from './component/servicesPages/servicesIndex';
@@ -170,6 +171,7 @@ function AppLayout() {
               element={<Navigate to="/dashboard/market-research" replace />}
             />
 
+            <Route path="notifications" element={<NotificationsPage />} />
             <Route path="digital-trust" element={<ComingSoon />} /> {/* <DigitalTrustIndex /> */}
             <Route path="community" element={<ComingSoon />} /> {/* <MentorIndex /> */}
             <Route path="events" element={<ComingSoon />} /> {/* <EventSectionIndex /> */}
