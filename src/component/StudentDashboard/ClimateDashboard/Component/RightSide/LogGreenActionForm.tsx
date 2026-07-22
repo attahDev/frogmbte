@@ -11,11 +11,28 @@ const TYPE_OPTIONS: { value: GreenActionType; label: string }[] = [
   { value: "OTHER", label: "Other" },
 ];
 
+// Greater Manchester's boroughs — optional tag that powers the real
+// "Impact by Area" chart. Left blank, the action just doesn't count
+// toward any borough's total.
+const AREA_OPTIONS = [
+  "City Centre",
+  "Salford",
+  "Trafford",
+  "Stockport",
+  "Oldham",
+  "Bolton",
+  "Bury",
+  "Rochdale",
+  "Tameside",
+  "Wigan",
+];
+
 export default function LogGreenActionForm({ onLogged }: { onLogged: () => void }) {
   const [open, setOpen] = useState(false);
   const [type, setType] = useState<GreenActionType>("RECYCLING");
   const [co2, setCo2] = useState("");
   const [description, setDescription] = useState("");
+  const [area, setArea] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -28,9 +45,15 @@ export default function LogGreenActionForm({ onLogged }: { onLogged: () => void 
     setSubmitting(true);
     setError(null);
     try {
-      await logGreenAction({ type, co2OffsetKg, description: description || undefined });
+      await logGreenAction({
+        type,
+        co2OffsetKg,
+        description: description || undefined,
+        area: area || undefined,
+      });
       setCo2("");
       setDescription("");
+      setArea("");
       setOpen(false);
       onLogged();
     } catch {

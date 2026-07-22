@@ -1,119 +1,76 @@
-import { ArrowUpRight, ArrowDownRight, Wallet } from "lucide-react";
-
-type CreditCardItem = {
-  title: string;
-  pointsPerCredit: number;
-  available: number;
-  trend: number;
-};
-
-type TransactionItem = {
-  title: string;
-  date: string;
-  points: number;
-  type: "buy" | "sell";
-};
-
-const credits: CreditCardItem[] = [
-  {
-    title: "Forest Conservation Credits",
-    pointsPerCredit: 8,
-    available: 500,
-    trend: 5.1,
-  },
-  {
-    title: "Clean Water Credits",
-    pointsPerCredit: 4,
-    available: 750,
-    trend: -1.2,
-  },
-  {
-    title: "Renewable Energy Credits",
-    pointsPerCredit: 5,
-    available: 1000,
-    trend: 2.5,
-  },
-];
-
-const transactions: TransactionItem[] = [
-  {
-    title: "Purchased 50 credits",
-    date: "2026-03-20",
-    points: -250,
-    type: "buy",
-  },
-  {
-    title: "Sold 30 credits",
-    date: "2026-03-18",
-    points: 180,
-    type: "sell",
-  },
-  {
-    title: "Purchased 100 credits",
-    date: "2026-03-15",
-    points: -500,
-    type: "buy",
-  },
-];
+import { useEffect, useState } from "react";
+import { ArrowDownRight, ArrowUpRight, Wallet } from "lucide-react";
+import {
+  buyCredits,
+  fetchListings,
+  fetchTransactions,
+  sellCredits,
+  type CreditListing,
+  type Transaction,
+} from "../../../lib/greenImpactApi";
+import { onGreenImpactUpdate } from "../../../lib/greenImpactEvents";
 
 function formatPoints(value: number) {
-  return `${value > 0 ? "+" : ""}${value} pts`;
+  return `${value > 0 ? "+" : ""}${value.toLocaleString()} bal`;
 }
 
 function CreditMarketCard({
-  title,
-  pointsPerCredit,
-  available,
-  trend,
-}: CreditCardItem) {
-  const isPositive = trend >= 0;
-
+  listing,
+  onBuy,
+  onSell,
+  busy,
+}: {
+  listing: CreditListing;
+  onBuy: () => void;
+  onSell: () => void;
+  busy: boolean;
+}) {
   return (
     <article className="w-full rounded-[18px] border border-[#E5E7EB] bg-[#FFFDF7] p-4 sm:p-5 lg:px-[26px] lg:pb-[22px] lg:pt-[24px]">
       <div className="flex items-start justify-between gap-3 sm:gap-4">
         <h3 className="min-w-0 flex-1 text-sm font-semibold leading-[1.25] tracking-[-0.02em] text-[#001F3F] sm:text-[14px]">
-          {title}
+          {listing.title}
         </h3>
-
-        <div
-          className={`mt-0.5 flex shrink-0 items-center gap-1.5 text-[15px] font-medium sm:text-[18px] ${
-            isPositive ? "text-[#00A63E]" : "text-[#E7000B]"
-          }`}
-        >
-          {isPositive ? (
-            <ArrowUpRight size={18} strokeWidth={2.2} />
-          ) : (
-            <ArrowDownRight size={18} strokeWidth={2.2} />
-          )}
-          <span>{`${isPositive ? "+" : ""}${trend}%`}</span>
-        </div>
+        {listing.ownedByMe > 0 && (
+          <span className="shrink-0 rounded-full bg-[#F3F4F6] px-2 py-1 text-[11px] font-medium text-[#4B5563]">
+            You own {listing.ownedByMe}
+          </span>
+        )}
       </div>
+
+      {listing.description && (
+        <p className="mt-2 text-[12px] leading-[1.4] text-[#6B7280]">{listing.description}</p>
+      )}
 
       <div className="mt-6 lg:mt-[28px]">
         <p className="text-[22px] font-semibold leading-none tracking-[-0.04em] text-[#001F3F] sm:text-[24px]">
-          {pointsPerCredit}
+          {listing.pointsPerCredit}
         </p>
 
         <p className="mt-3 text-[12px] leading-[1.3] text-[#6A7282] sm:mt-4">
-          Points per credit
+          Balance per credit
         </p>
 
         <p className="mt-2 text-[12px] leading-[1.3] text-[#99A1AF]">
-          {available} available
+          {listing.availableQuantity} available
         </p>
       </div>
 
       <div className="mt-5 grid grid-cols-2 gap-3 sm:gap-4 lg:mt-[26px]">
         <button
           type="button"
-          className="flex h-10 w-full items-center justify-center rounded-xl bg-[#E51F3D] text-[14px] font-medium text-white transition hover:opacity-95"
+          onClick={onBuy}
+          disabled={busy || listing.availableQuantity < 1}
+          className="flex h-10 w-full items-center justify-center rounded-xl bg-[#E51F3D] text-[14px] font-medium text-white transition hover:opacity-95 disabled:opacity-50"
         >
           Buy
         </button>
 
         <button
           type="button"
-          className="flex h-10 w-full items-center justify-center rounded-xl border-2 border-[#D7263D] bg-transparent text-[14px] font-medium text-[#001F3F] transition hover:bg-[#fff7f8]"
+          onClick={onSell}
+          disabled={busy || listing.ownedByMe < 1}
+          className="flex h-10 w-full items-center justify-center rounded-xl border-2 border-[#D7263D] bg-transparent text-[14px] font-medium text-[#001F3F] transition hover:bg-[#fff7f8] disabled:opacity-50"
         >
           Sell
         </button>
@@ -122,10 +79,10 @@ function CreditMarketCard({
   );
 }
 
-function TransactionRow({ title, date, points, type }: TransactionItem) {
+function TransactionRow({ title, date, points, type }: Transaction) {
   const isSell = type === "sell";
-  const iconBg = isSell ? "bg-[#FDE2E2]" : "bg-[#DDF7E8]";
-  const iconColor = isSell ? "text-[#FF2D2D]" : "text-[#16A34A]";
+  const iconBg = isSell ? "bg-[#DDF7E8]" : "bg-[#FDE2E2]";
+  const iconColor = isSell ? "text-[#16A34A]" : "text-[#FF2D2D]";
   const pointsColor = isSell ? "text-[#16A34A]" : "text-[#FF2D2D]";
 
   return (
@@ -146,7 +103,7 @@ function TransactionRow({ title, date, points, type }: TransactionItem) {
             {title}
           </p>
           <p className="mt-1.5 text-[12px] leading-none text-[#6A7282] sm:mt-2">
-            {date}
+            {new Date(date).toLocaleDateString()}
           </p>
         </div>
       </div>
@@ -159,6 +116,50 @@ function TransactionRow({ title, date, points, type }: TransactionItem) {
 }
 
 export default function GreenExchange() {
+  const [balance, setBalance] = useState<number | null>(null);
+  const [listings, setListings] = useState<CreditListing[] | null>(null);
+  const [transactions, setTransactions] = useState<Transaction[] | null>(null);
+  const [busyListingId, setBusyListingId] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const loadAll = () => {
+    fetchListings()
+      .then(setListings)
+      .catch(() => setListings([]));
+    fetchTransactions()
+      .then((res) => {
+        setBalance(res.balance);
+        setTransactions(res.transactions);
+      })
+      .catch(() => {
+        setBalance(null);
+        setTransactions([]);
+      });
+  };
+
+  useEffect(() => {
+    loadAll();
+    const unsubscribe = onGreenImpactUpdate(loadAll);
+    return unsubscribe;
+  }, []);
+
+  const handleTrade = async (listingId: string, action: "buy" | "sell") => {
+    setBusyListingId(listingId);
+    setError(null);
+    try {
+      if (action === "buy") {
+        await buyCredits(listingId, 1);
+      } else {
+        await sellCredits(listingId, 1);
+      }
+      loadAll();
+    } catch (err: any) {
+      setError(err?.response?.data?.message || "That trade couldn't be completed.");
+    } finally {
+      setBusyListingId(null);
+    }
+  };
+
   return (
     <section className="w-full rounded-[20px] border-[0.3px] border-[#001F3F73] bg-[#FFFDF7] px-4 py-5 shadow-[0px_2px_4px_-1px_rgba(0,31,63,0.06),0px_4px_6px_-1px_rgba(0,31,63,0.10)] sm:px-5 sm:py-6 lg:rounded-[24px] lg:px-9 lg:pb-[38px] lg:pt-[34px]">
       <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
@@ -168,7 +169,7 @@ export default function GreenExchange() {
           </h2>
 
           <p className="mt-3 max-w-2xl text-[14px] leading-[1.45] text-[#6B7280] sm:mt-4 sm:text-[16px]">
-            Trade carbon credits and grow your green portfolio
+            Trade your Green Exchange balance for credits — an in-platform reward, not real currency
           </p>
         </div>
 
@@ -177,18 +178,34 @@ export default function GreenExchange() {
             Wallet Balance
           </p>
           <p className="mt-2 text-[22px] font-semibold leading-none tracking-[-0.04em] text-[#D7263D] sm:mt-3 sm:text-[24px]">
-            15,680
+            {balance === null ? "—" : balance.toLocaleString()}
           </p>
           <p className="mt-2 text-[15px] leading-none text-[#6A7282] sm:mt-3 sm:text-[18px]">
-            Green Points
+            1 green point = 0.1 balance
           </p>
         </div>
       </div>
 
+      {error && (
+        <p className="mt-4 rounded-[10px] bg-[#FEF2F2] px-3 py-2 text-[13px] text-[#DC2626]">{error}</p>
+      )}
+
       <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:mt-[34px] xl:grid-cols-2 xl:gap-[30px] 2xl:grid-cols-3">
-        {credits.map((credit) => (
-          <CreditMarketCard key={credit.title} {...credit} />
-        ))}
+        {listings === null ? (
+          <p className="text-[13px] text-[#8B93A1]">Loading listings…</p>
+        ) : listings.length === 0 ? (
+          <p className="text-[13px] text-[#8B93A1]">No credit listings published yet.</p>
+        ) : (
+          listings.map((listing) => (
+            <CreditMarketCard
+              key={listing.id}
+              listing={listing}
+              busy={busyListingId === listing.id}
+              onBuy={() => handleTrade(listing.id, "buy")}
+              onSell={() => handleTrade(listing.id, "sell")}
+            />
+          ))
+        )}
       </div>
 
       <div className="mt-8 lg:mt-[42px]">
@@ -197,23 +214,23 @@ export default function GreenExchange() {
         </h3>
 
         <div className="mt-5 space-y-3 sm:space-y-4 lg:mt-[26px]">
-          {transactions.map((transaction) => (
-            <TransactionRow
-              key={`${transaction.title}-${transaction.date}`}
-              {...transaction}
-            />
-          ))}
+          {transactions === null ? (
+            <p className="text-[13px] text-[#8B93A1]">Loading…</p>
+          ) : transactions.length === 0 ? (
+            <p className="text-[13px] text-[#8B93A1]">No trades yet.</p>
+          ) : (
+            transactions.map((transaction) => (
+              <TransactionRow key={transaction.id} {...transaction} />
+            ))
+          )}
         </div>
       </div>
 
       <div className="mt-7 flex justify-center lg:mt-[34px]">
-        <button
-          type="button"
-          className="flex h-12 w-full max-w-[240px] items-center justify-center gap-3 rounded-[14px] bg-[#D7263D] px-5 text-[15px] font-medium text-white transition hover:opacity-95 sm:w-auto sm:max-w-none sm:px-7 sm:text-[16px]"
-        >
-          <Wallet size={24} strokeWidth={2.2} />
-          Trade Credits
-        </button>
+        <div className="flex h-12 w-full max-w-[280px] items-center justify-center gap-3 rounded-[14px] bg-[#F3F4F6] px-5 text-[14px] font-medium text-[#4B5563] sm:w-auto sm:max-w-none sm:px-7">
+          <Wallet size={22} strokeWidth={2.2} />
+          Buy/Sell above — 1 credit per click
+        </div>
       </div>
     </section>
   );
