@@ -40,6 +40,7 @@ import AdminEvents from './component/Admin/AdminEvents';
 import AdminCourses from './component/Admin/AdminCourses';
 import AdminGreenProjects from './component/Admin/AdminGreenProjects';
 import AdminHOF from './component/Admin/AdminHOF';
+import AdminOpportunities from './component/Admin/AdminOpportunities';
 import AIDashboardIndex from './component/MarketResearchDashboard/AIDashboardIndex';
 import BPTabs from './component/MarketResearchDashboard/BusinessPlanSection/BPTabs';
 import { IGDashboardSection } from './component/MarketResearchDashboard/IdeaGenerator/IGDashboardSection';
@@ -133,6 +134,7 @@ function AppLayout() {
               <Route path="courses" element={<AdminCourses />} />
               <Route path="green-projects" element={<AdminGreenProjects />} />
               <Route path="hall-of-fame" element={<AdminHOF />} />
+              <Route path="opportunities" element={<AdminOpportunities />} />
             </Route>
 
             {/* ── LIVE at launch: Dashboard, Academy, Green Impact, Hall of Fame ── */}
@@ -147,8 +149,8 @@ function AppLayout() {
 
             {/* ── Everything else: ComingSoon until rolled out. Imports kept
                  (not deleted) below so re-enabling later is a one-line swap. ── */}
-            <Route path="opportunities" element={<ComingSoon />} /> {/* <JobIndex /> */}
-            <Route path="opportunities/:id" element={<ComingSoon />} /> {/* <JobDetailsPage /> */}
+            <Route path="opportunities" element={<JobIndex />} />
+            <Route path="opportunities/:id" element={<JobDetailsPage />} />
             <Route path="careers" element={<Navigate to="/dashboard/opportunities" replace />} />
             <Route path="careers/:id" element={<LegacyJobRedirect />} />
 

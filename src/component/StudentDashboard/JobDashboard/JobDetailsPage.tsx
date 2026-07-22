@@ -1,24 +1,49 @@
 import { ArrowLeft, Clock3, ExternalLink, MapPin } from "lucide-react";
-import { Link, useLocation } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { Link, useLocation, useParams } from "react-router-dom";
+import { fetchOpportunity } from "./component/lib/jobs";
 import type { JobCardData } from "./component/types/jobs";
 
 export default function JobDetailsPage() {
   const location = useLocation();
-  const job = location.state?.job as JobCardData | undefined;
+  const { id } = useParams();
+  const stateJob = location.state?.job as JobCardData | undefined;
 
-  if (!job) {
+  const [job, setJob] = useState<JobCardData | undefined>(stateJob);
+  const [notFound, setNotFound] = useState(false);
+
+  // Card clicks pass the job via router state (instant, no refetch). A
+  // direct/shared link or a page refresh has no state, so fall back to
+  // fetching it by id.
+  useEffect(() => {
+    if (stateJob || !id) return;
+
+    fetchOpportunity(id)
+      .then(setJob)
+      .catch(() => setNotFound(true));
+  }, [id, stateJob]);
+
+  if (notFound || (!job && !id)) {
     return (
       <section className="mx-auto w-full max-w-[1400px] rounded-[16px] border border-[#D9DEE8] bg-[#FFFDF7] p-6 shadow-[0px_2px_4px_-1px_rgba(0,31,63,0.06),0px_4px_6px_-1px_rgba(0,31,63,0.10)] sm:rounded-[20px] sm:p-8">
-        <h2 className="text-xl font-semibold text-[#001F3F] sm:text-2xl">Job Details</h2>
+        <h2 className="text-xl font-semibold text-[#001F3F] sm:text-2xl">Opportunity Details</h2>
         <p className="mt-4 text-sm text-[#6A7282] sm:text-base">
-          No job selected yet. Search for a job first, then open its details.
+          This opportunity couldn't be found. It may have been removed.
         </p>
         <Link
           to="/dashboard/opportunities"
           className="mt-6 inline-flex h-11 items-center justify-center rounded-[10px] bg-[#D7263D] px-5 text-sm text-white sm:h-[44px]"
         >
-          Back to Jobs
+          Back to Opportunities
         </Link>
+      </section>
+    );
+  }
+
+  if (!job) {
+    return (
+      <section className="mx-auto w-full max-w-[1400px] rounded-[16px] border border-[#D9DEE8] bg-[#FFFDF7] p-6 shadow-[0px_2px_4px_-1px_rgba(0,31,63,0.06),0px_4px_6px_-1px_rgba(0,31,63,0.10)] sm:rounded-[20px] sm:p-8">
+        <p className="text-sm text-[#6A7282] sm:text-base">Loading…</p>
       </section>
     );
   }
@@ -49,7 +74,11 @@ export default function JobDetailsPage() {
         </div>
       </div>
 
-      <p className="mt-5 text-lg font-semibold text-[#001F3F] sm:mt-6 sm:text-xl">{job.salary}</p>
+      {job.isFeatured && (
+        <span className="mt-5 inline-block rounded-full bg-[#F8F0D2] px-3 py-1 text-xs font-medium text-[#8A6A00] sm:mt-6 sm:text-sm">
+          Featured
+        </span>
+      )}
 
       <div className="mt-5 flex flex-wrap gap-2 sm:mt-6">
         {job.tags.map((tag) => (
@@ -63,7 +92,7 @@ export default function JobDetailsPage() {
       </div>
 
       <div className="mt-6 rounded-[14px] bg-[#F9FAFB] p-4 sm:mt-8 sm:rounded-[16px] sm:p-6">
-        <h3 className="text-base font-semibold text-[#001F3F] sm:text-lg">Role Overview</h3>
+        <h3 className="text-base font-semibold text-[#001F3F] sm:text-lg">Overview</h3>
         <p className="mt-3 whitespace-pre-line text-sm leading-7 text-[#4A5565] sm:mt-4 sm:text-[15px]">
           {job.description}
         </p>

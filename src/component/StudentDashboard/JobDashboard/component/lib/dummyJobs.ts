@@ -1,5 +1,8 @@
 import type { JobCardData } from "../types/jobs";
 
+// Shown instantly while the first backend fetch is in flight, and as a
+// fallback if the opportunities table is genuinely empty (e.g. right after
+// launch, before an admin has added anything or a sync has run).
 export const dummyJobs: JobCardData[] = [
   {
     id: "dummy-1",
@@ -8,11 +11,11 @@ export const dummyJobs: JobCardData[] = [
     location: "Remote",
     postedAt: "2 hours ago",
     description: "Design user-centered interfaces and product experiences.",
-    salary: "$80,000 - $120,000",
     jobType: "Full-time",
-    tags: ["Full-time", "Remote", "External"],
-    match: 87,
+    category: "Jobs",
+    tags: ["Full-time", "Remote"],
     applyUrl: "#",
+    isFeatured: false,
     source: "dummy",
   },
   {
@@ -22,11 +25,11 @@ export const dummyJobs: JobCardData[] = [
     location: "New York, NY",
     postedAt: "5 hours ago",
     description: "Build modern frontend interfaces with React and TypeScript.",
-    salary: "$90,000 - $130,000",
     jobType: "Full-time",
+    category: "Jobs",
     tags: ["Full-time", "GMBTE"],
-    match: 76,
     applyUrl: "#",
+    isFeatured: false,
     source: "dummy",
   },
   {
@@ -36,11 +39,11 @@ export const dummyJobs: JobCardData[] = [
     location: "Remote",
     postedAt: "3 days ago",
     description: "Create mobile applications with React Native and APIs.",
-    salary: "$85,000 - $115,000",
     jobType: "Full-time",
-    tags: ["Full-time", "Remote", "External"],
-    match: 99,
+    category: "Jobs",
+    tags: ["Full-time", "Remote"],
     applyUrl: "#",
+    isFeatured: false,
     source: "dummy",
   },
   {
@@ -50,11 +53,11 @@ export const dummyJobs: JobCardData[] = [
     location: "Remote",
     postedAt: "1 week ago",
     description: "Assist with UI implementation and design systems.",
-    salary: "$20/hour",
     jobType: "Internship",
+    category: "Internships",
     tags: ["Internship", "Remote", "GMBTE"],
-    match: 87,
     applyUrl: "#",
+    isFeatured: false,
     source: "dummy",
   },
 ];

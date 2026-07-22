@@ -1,105 +1,70 @@
-import type { AdzunaJob, AdzunaResponse, JobCardData } from "../types/jobs";
-
-const APP_ID = import.meta.env.VITE_ADZUNA_APP_ID;
-const APP_KEY = import.meta.env.VITE_ADZUNA_APP_KEY;
-
-function formatSalary(min?: number, max?: number) {
-  if (!min && !max) return "Salary not specified";
-
-  const fmt = new Intl.NumberFormat("en-GB", {
-    style: "currency",
-    currency: "GBP",
-    maximumFractionDigits: 0,
-  });
-
-  if (min && max) {
-    if (Math.round(min) === Math.round(max)) return fmt.format(min);
-    return `${fmt.format(min)} - ${fmt.format(max)}`;
-  }
-
-  return fmt.format(min || max || 0);
-}
+import { api } from "../../../../../lib/api";
+import type { JobCardData, Opportunity } from "../types/jobs";
 
 function timeAgo(dateString: string) {
   const now = new Date().getTime();
   const then = new Date(dateString).getTime();
-  const diffMs = now - then;
+  const diffMs = Math.max(now - then, 0);
 
   const hours = Math.floor(diffMs / (1000 * 60 * 60));
   const days = Math.floor(diffMs / (1000 * 60 * 60 * 24));
 
-  if (hours < 24) return `${hours || 1} hours ago`;
-  if (days < 7) return `${days} days ago`;
+  if (hours < 1) return "Just posted";
+  if (hours < 24) return `${hours} hour${hours > 1 ? "s" : ""} ago`;
+  if (days < 7) return `${days} day${days > 1 ? "s" : ""} ago`;
   const weeks = Math.floor(days / 7);
   return `${weeks} week${weeks > 1 ? "s" : ""} ago`;
 }
 
-function guessTags(job: AdzunaJob) {
-  const text = `${job.title} ${job.description}`.toLowerCase();
-  const tags: string[] = [];
+export function transformOpportunity(op: Opportunity): JobCardData {
+  const tags = [op.type, op.category, op.source === "API" ? "External" : "GMBTE"].filter(
+    (t): t is string => Boolean(t),
+  );
 
-  if (job.contract_type?.toLowerCase().includes("permanent")) tags.push("Full-time");
-  if (text.includes("remote")) tags.push("Remote");
-  if (text.includes("hybrid")) tags.push("Hybrid");
-  if (text.includes("intern")) tags.push("Internship");
-  if (tags.length === 0) tags.push("External");
-
-  return tags.slice(0, 3);
-}
-
-function generateMatchScore(job: AdzunaJob) {
-  const text = `${job.title} ${job.description}`.toLowerCase();
-  let score = 70;
-
-  if (text.includes("frontend")) score += 8;
-  if (text.includes("react")) score += 6;
-  if (text.includes("typescript")) score += 5;
-  if (text.includes("remote")) score += 3;
-  if (job.salary_max && job.salary_max > 70000) score += 5;
-
-  return Math.min(score, 99);
-}
-
-export function transformAdzunaJob(job: AdzunaJob): JobCardData {
   return {
-    id: job.id,
-    title: job.title || "Untitled role",
-    company: job.company?.display_name || "Unknown company",
-    location: job.location?.display_name || "Location not specified",
-    postedAt: timeAgo(job.created),
-    description: job.description || "No description available",
-    salary: formatSalary(job.salary_min, job.salary_max),
-    salaryMin: job.salary_min,
-    salaryMax: job.salary_max,
-    jobType: job.contract_type || "Not specified",
-    tags: guessTags(job),
-    match: generateMatchScore(job),
-    applyUrl: job.redirect_url,
-    source: "live",
+    id: op.id,
+    title: op.title || "Untitled opportunity",
+    company: op.company || "Unknown organisation",
+    location: op.location || "Location not specified",
+    postedAt: timeAgo(op.postedAt),
+    description: op.description || "No description available",
+    jobType: op.type || "Not specified",
+    category: op.category || "General",
+    tags: Array.from(new Set(tags)).slice(0, 3),
+    applyUrl: op.applyUrl || "#",
+    isFeatured: op.isFeatured,
+    source: op.source,
   };
 }
 
-export async function fetchJobs(search: string) {
-  if (!APP_ID || !APP_KEY) {
-    throw new Error("Missing Adzuna API credentials");
-  }
+type FetchOpportunitiesParams = {
+  search?: string;
+  category?: string;
+};
 
-  const params = new URLSearchParams({
-    app_id: APP_ID,
-    app_key: APP_KEY,
-    results_per_page: "8",
-    what: search || "frontend developer",
-    "content-type": "application/json",
+/** Backed by the DB now (manual admin entries + Adzuna-synced rows), not a
+ *  direct client-side call to Adzuna — keeps the provider API key
+ *  server-side and lets search/category filter across both sources at
+ *  once. */
+export async function fetchOpportunities(params: FetchOpportunitiesParams = {}) {
+  const { data } = await api.get<Opportunity[]>("/opportunities", {
+    params: {
+      search: params.search || undefined,
+      category: params.category || undefined,
+    },
   });
+  return (data ?? []).map(transformOpportunity);
+}
 
-  const res = await fetch(
-    `https://api.adzuna.com/v1/api/jobs/gb/search/1?${params.toString()}`
-  );
+export async function fetchOpportunityCategories() {
+  const { data } = await api.get<string[]>("/opportunities/categories");
+  return data ?? [];
+}
 
-  if (!res.ok) {
-    throw new Error("Failed to fetch jobs");
-  }
-
-  const data = (await res.json()) as AdzunaResponse;
-  return data.results.map(transformAdzunaJob);
+/** Fallback for direct/refreshed links to a detail page — JobCard passes
+ *  the job via router state for the normal click-through, but a shared
+ *  link or a page refresh has no state to read. */
+export async function fetchOpportunity(id: string) {
+  const { data } = await api.get<Opportunity>(`/opportunities/${id}`);
+  return transformOpportunity(data);
 }
