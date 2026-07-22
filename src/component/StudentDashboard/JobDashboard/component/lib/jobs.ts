@@ -46,14 +46,20 @@ type FetchOpportunitiesParams = {
  *  direct client-side call to Adzuna — keeps the provider API key
  *  server-side and lets search/category filter across both sources at
  *  once. */
-export async function fetchOpportunities(params: FetchOpportunitiesParams = {}) {
-  const { data } = await api.get<Opportunity[]>("/opportunities", {
+export async function fetchOpportunities(
+  params: FetchOpportunitiesParams = {}
+) {
+  const response = await api.get("/opportunities", {
     params: {
       search: params.search || undefined,
       category: params.category || undefined,
     },
   });
-  return (data ?? []).map(transformOpportunity);
+
+  console.log("API Response:", response.data);
+  console.log("Is Array:", Array.isArray(response.data));
+
+  return (response.data ?? []).map(transformOpportunity);
 }
 
 export async function fetchOpportunityCategories() {
