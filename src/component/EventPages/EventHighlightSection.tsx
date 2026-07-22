@@ -1,11 +1,25 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { CalendarDays, MapPin } from "lucide-react";
 import { Link } from "react-router-dom";
+import { fetchUpcomingEvents, type UiEvent } from "../../lib/eventsApi";
 
 const EventHighlightSection: React.FC = () => {
+  // fetchUpcomingEvents() already sorts featured-first (backend orderBy),
+  // so the first result — if any event is marked featured — is the one
+  // to headline here. If nothing's featured, the hero just doesn't render
+  // rather than showing a fake placeholder event.
+  const [featured, setFeatured] = useState<UiEvent | null | undefined>(undefined);
+
+  useEffect(() => {
+    fetchUpcomingEvents()
+      .then((events) => setFeatured(events.find((e) => e.isFeatured) ?? null))
+      .catch(() => setFeatured(null));
+  }, []);
+
   return (
     <section className="w-full">
       {/* TOP BLUE SECTION */}
+      {featured && (
       <div className="bg-[#001F3F] text-white py-12 sm:py-16 px-4 sm:px-6 md:px-12 lg:px-16 flex flex-col-reverse md:flex-row items-center justify-between gap-8 sm:gap-10 overflow-hidden">
         {/* Left Content */}
         <div className="w-full md:w-1/2 md:mt-0 text-center md:text-left md:ml-10">
@@ -14,49 +28,62 @@ const EventHighlightSection: React.FC = () => {
           </span>
 
           <h2 className="text-[26px] sm:text-[30px] md:text-[34px] lg:text-[36px] font-bold mb-4 mt-4 leading-snug">
-            Greater Manchester Black Tech Expo 2025
+            {featured.title}
           </h2>
 
           <div className="flex flex-wrap justify-center md:justify-start items-center gap-4 text-[#FFD700] font-[15px] sm:font-[16px] mb-6">
             <div className="flex items-center gap-2">
               <CalendarDays className="w-4 h-4" />
-              <span>December 27 - 29, 2025</span>
+              <span>{featured.date}</span>
             </div>
             <div className="flex items-center gap-2">
               <MapPin className="w-4 h-4" />
-              <span>In-Person</span>
+              <span>{featured.format}</span>
             </div>
           </div>
 
           <p className="text-[#D1D5DC] text-[15px] sm:text-[18px] leading-relaxed mb-6">
-            Our flagship annual event brings together over 1,000 tech
-            professionals, entrepreneurs, and innovators for two days of
-            networking, workshops, and inspiration. Experience keynote
-            speakers, startup showcases, and countless opportunities to
-            connect with the community.
+            {featured.description}
           </p>
 
-          <p className="text-[14px] sm:text-[16px] text-[#99A1AF] mb-8">
-            <span className="font-semibold text-white">Location:</span>{" "}
-            Manchester Central Convention Complex
-          </p>
+          {featured.location && (
+            <p className="text-[14px] sm:text-[16px] text-[#99A1AF] mb-8">
+              <span className="font-semibold text-white">Location:</span>{" "}
+              {featured.location}
+            </p>
+          )}
 
           <div className="flex justify-center md:justify-start">
-            <button className="bg-[#FFD700] text-[#001F3F] text-[15px] sm:text-[16px] px-6 py-2.5 rounded-md hover:bg-yellow-300 transition-all shadow-md font-semibold">
-              Register
-            </button>
+            {featured.link ? (
+              <a
+                href={featured.link}
+                target="_blank"
+                rel="noreferrer"
+                className="bg-[#FFD700] text-[#001F3F] text-[15px] sm:text-[16px] px-6 py-2.5 rounded-md hover:bg-yellow-300 transition-all shadow-md font-semibold"
+              >
+                Register
+              </a>
+            ) : (
+              <Link
+                to="/events"
+                className="bg-[#FFD700] text-[#001F3F] text-[15px] sm:text-[16px] px-6 py-2.5 rounded-md hover:bg-yellow-300 transition-all shadow-md font-semibold"
+              >
+                View Details
+              </Link>
+            )}
           </div>
         </div>
 
         {/* Right Image */}
         <div className="w-full md:w-1/2 flex justify-center">
           <img
-            src="/events/eventhighlight.jpg"
-            alt="A speaker addresses a room full of seated attendees at a community event."
+            src={featured.image}
+            alt={featured.title}
             className="w-full max-w-full md:max-w-[650px] h-auto rounded-2xl shadow-lg object-cover"
           />
         </div>
       </div>
+      )}
 
       {/* YELLOW CTA SECTION */}
       <div className="bg-[#FFD700] text-center py-12 sm:py-16 px-4 sm:px-6">

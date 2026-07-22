@@ -9,10 +9,12 @@ type EventRow = {
   imageUrl: string | null;
   mode: string | null;
   link: string | null;
+  tags: string[];
   startsAt: string;
   endsAt: string | null;
   isActive: boolean;
   isFeatured: boolean;
+  isCompleted: boolean;
 };
 
 const EMPTY = {
@@ -22,6 +24,7 @@ const EMPTY = {
   imageUrl: "",
   mode: "In-Person",
   link: "",
+  tagsText: "",
   startsAt: "",
   endsAt: "",
   isFeatured: false,
@@ -63,6 +66,10 @@ export default function AdminEvents() {
         imageUrl: form.imageUrl || undefined,
         mode: form.mode || undefined,
         link: form.link || undefined,
+        tags: form.tagsText
+          .split(",")
+          .map((t) => t.trim())
+          .filter(Boolean),
         startsAt: new Date(form.startsAt).toISOString(),
         endsAt: form.endsAt ? new Date(form.endsAt).toISOString() : undefined,
         isFeatured: form.isFeatured,
@@ -83,6 +90,7 @@ export default function AdminEvents() {
       imageUrl: ev.imageUrl ?? "",
       mode: ev.mode ?? "In-Person",
       link: ev.link ?? "",
+      tagsText: ev.tags.join(", "),
       startsAt: toLocalInput(ev.startsAt),
       endsAt: toLocalInput(ev.endsAt),
       isFeatured: ev.isFeatured,
@@ -99,6 +107,10 @@ export default function AdminEvents() {
         imageUrl: editForm.imageUrl,
         mode: editForm.mode,
         link: editForm.link,
+        tags: editForm.tagsText
+          .split(",")
+          .map((t) => t.trim())
+          .filter(Boolean),
         startsAt: new Date(editForm.startsAt).toISOString(),
         endsAt: editForm.endsAt ? new Date(editForm.endsAt).toISOString() : null,
         isFeatured: editForm.isFeatured,
@@ -118,6 +130,19 @@ export default function AdminEvents() {
       } else {
         await api.patch(`/events/${ev.id}`, { isActive: true });
       }
+      load();
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  // Distinct from Remove/Restore (isActive) — a completed event stays on
+  // the record and in the public archive, it just drops off the upcoming
+  // list. Ticking it back off (un-completing) puts it back on Upcoming.
+  const toggleCompleted = async (ev: EventRow) => {
+    setSubmitting(true);
+    try {
+      await api.patch(`/events/${ev.id}`, { isCompleted: !ev.isCompleted });
       load();
     } finally {
       setSubmitting(false);
@@ -180,6 +205,12 @@ export default function AdminEvents() {
             value={form.link}
             onChange={(e) => setForm({ ...form, link: e.target.value })}
             className="rounded border border-gray-300 px-2 py-1 text-sm"
+          />
+          <input
+            placeholder="Tags, comma-separated (e.g. AI/ML, Networking)"
+            value={form.tagsText}
+            onChange={(e) => setForm({ ...form, tagsText: e.target.value })}
+            className="rounded border border-gray-300 px-2 py-1 text-sm sm:col-span-2"
           />
           <textarea
             placeholder="Description (optional)"
@@ -270,6 +301,12 @@ export default function AdminEvents() {
                       placeholder="Link (optional)"
                       className="rounded border border-gray-300 px-2 py-1 text-sm"
                     />
+                    <input
+                      value={editForm.tagsText}
+                      onChange={(e) => setEditForm({ ...editForm, tagsText: e.target.value })}
+                      placeholder="Tags, comma-separated"
+                      className="rounded border border-gray-300 px-2 py-1 text-sm sm:col-span-2"
+                    />
                     <textarea
                       value={editForm.description}
                       onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
@@ -310,7 +347,8 @@ export default function AdminEvents() {
                 >
                   <div>
                     <p className="font-medium text-[#001F3F]">
-                      {ev.title} {ev.isFeatured && <span className="text-xs text-[#D7263D]">★ Featured</span>}
+                      {ev.title} {ev.isFeatured && <span className="text-xs text-[#D7263D]">★ Featured</span>}{" "}
+                      {ev.isCompleted && <span className="text-xs text-green-700">✓ Completed</span>}
                     </p>
                     <p className="text-xs text-gray-500">
                       {new Date(ev.startsAt).toLocaleString()} · {ev.location || "Virtual"} · {ev.mode ?? "In-Person"}
@@ -323,6 +361,13 @@ export default function AdminEvents() {
                       className="rounded border border-gray-300 px-2 py-1 text-xs text-gray-600"
                     >
                       Edit
+                    </button>
+                    <button
+                      onClick={() => toggleCompleted(ev)}
+                      disabled={submitting}
+                      className="rounded border border-gray-300 px-2 py-1 text-xs text-gray-600 disabled:opacity-50"
+                    >
+                      {ev.isCompleted ? "Mark upcoming again" : "Mark completed"}
                     </button>
                     <button
                       onClick={() => toggleActive(ev)}

@@ -13,8 +13,11 @@ export default function EventsSection() {
     // Featured events are already sorted first by the backend, so the
     // top 4 here are "recommended" in the same sense the admin intends
     // when they mark something featured.
+    // Only featured events belong on the dashboard homepage — the full
+    // upcoming list lives on the real Events page, not duplicated here.
+    // Admins pick 1-2 at a time via the Featured checkbox in Admin > Events.
     fetchUpcomingEvents()
-      .then((all) => setEvents(all.slice(0, 4)))
+      .then((all) => setEvents(all.filter((e) => e.isFeatured).slice(0, 2)))
       .catch(() => setEvents([]));
 
     fetchMyEvents()
@@ -93,7 +96,7 @@ export default function EventsSection() {
           {events === null ? (
             <p className="text-sm text-[#6B7280] py-6">Loading events…</p>
           ) : events.length === 0 ? (
-            <p className="text-sm text-[#6B7280] py-6">No events have been published yet — check back soon.</p>
+            <p className="text-sm text-[#6B7280] py-6">No events are featured right now — check the <Link to="/events" className="underline">Events page</Link> for everything upcoming.</p>
           ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
             {events.map((event) => (
@@ -171,7 +174,7 @@ export default function EventsSection() {
                   </div>
 
                   <Link
-                    to="/dashboard/events"
+                    to="/events"
                     className="w-full bg-[#D7263D] hover:bg-[#D7263D] text-white font-medium py-2.5 sm:py-3 px-4 rounded-lg transition-colors flex items-center justify-center gap-2 text-sm sm:text-base"
                   >
                     View Details

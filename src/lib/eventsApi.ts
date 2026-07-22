@@ -8,10 +8,13 @@ export type BackendEvent = {
   location: string | null;
   imageUrl: string | null;
   mode: string | null;
+  link: string | null;
+  tags: string[];
   startsAt: string;
   endsAt: string | null;
   isActive: boolean;
   isFeatured: boolean;
+  isCompleted: boolean;
 };
 
 export type BackendAttendance = {
@@ -31,8 +34,11 @@ export type UiEvent = {
   time: string;
   format: EventFormat;
   location: string | null;
+  link: string | null;
+  tags: string[];
   image: string;
   isFeatured: boolean;
+  isCompleted: boolean;
   startsAt: string;
 };
 
@@ -84,8 +90,11 @@ function toUiEvent(event: BackendEvent): UiEvent {
     time,
     format: formatFor(event),
     location: event.location,
+    link: event.link,
+    tags: event.tags ?? [],
     image: event.imageUrl ?? placeholderImageFor(event.id),
     isFeatured: event.isFeatured,
+    isCompleted: event.isCompleted,
     startsAt: event.startsAt,
   };
 }
@@ -93,6 +102,14 @@ function toUiEvent(event: BackendEvent): UiEvent {
 /** GET /events — active, upcoming events open to everyone. */
 export async function fetchUpcomingEvents(): Promise<UiEvent[]> {
   const { data } = await api.get("/events");
+  const events: BackendEvent[] = data?.data ?? data;
+  return events.map(toUiEvent);
+}
+
+/** GET /events/all — the full archive (upcoming + completed), for "View
+ * All Events" on the public Events page. */
+export async function fetchAllEvents(): Promise<UiEvent[]> {
+  const { data } = await api.get("/events/all");
   const events: BackendEvent[] = data?.data ?? data;
   return events.map(toUiEvent);
 }
