@@ -1,4 +1,3 @@
-import CommunitySpotlight from "../DashboardSection/CommunitySpotlight";
 import AICareerTips from "./AICareerTips";
 // import CareerToolsSection from "./CareerToolsSection";
 import JobToolkit from "./component/JobToolkit";
@@ -12,7 +11,6 @@ export default function JobIndex() {
         <JobOpportunitiesPage />
         {/* <CareerToolsSection /> */}
         <AICareerTips />
-        <CommunitySpotlight />
       </div>
     </div>
   );

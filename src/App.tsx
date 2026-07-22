@@ -26,6 +26,7 @@ import PartnershipsIndex from './component/StudentDashboard/Partnerships/Partner
 import JobDetailsPage from './component/StudentDashboard/JobDashboard/JobDetailsPage';
 import JobIndex from './component/StudentDashboard/JobDashboard/JobIndex';
 import NotificationsPage from './component/StudentDashboard/NotificationsSection/NotificationsPage';
+import CommunityPage from './component/StudentDashboard/CommunitySection/CommunityPage';
 import { ToolkitsIndex } from './component/StudentDashboard/ToolkitsSection/ToolkitsIndex';
 import { ToolkIndex } from './component/StudentDashboard/ServicesSection/Toolkits/ToolkIndex';
 import ServicesIndexPage from './component/servicesPages/servicesIndex';
@@ -41,6 +42,7 @@ import AdminEvents from './component/Admin/AdminEvents';
 import AdminCourses from './component/Admin/AdminCourses';
 import AdminGreenProjects from './component/Admin/AdminGreenProjects';
 import AdminHOF from './component/Admin/AdminHOF';
+import AdminCommunity from './component/Admin/AdminCommunity';
 import AdminOpportunities from './component/Admin/AdminOpportunities';
 import AIDashboardIndex from './component/MarketResearchDashboard/AIDashboardIndex';
 import BPTabs from './component/MarketResearchDashboard/BusinessPlanSection/BPTabs';
@@ -135,6 +137,7 @@ function AppLayout() {
               <Route path="courses" element={<AdminCourses />} />
               <Route path="green-projects" element={<AdminGreenProjects />} />
               <Route path="hall-of-fame" element={<AdminHOF />} />
+              <Route path="community" element={<AdminCommunity />} />
               <Route path="opportunities" element={<AdminOpportunities />} />
             </Route>
 
@@ -173,7 +176,7 @@ function AppLayout() {
 
             <Route path="notifications" element={<NotificationsPage />} />
             <Route path="digital-trust" element={<ComingSoon />} /> {/* <DigitalTrustIndex /> */}
-            <Route path="community" element={<ComingSoon />} /> {/* <MentorIndex /> */}
+            <Route path="community" element={<CommunityPage />} />
             <Route path="events" element={<ComingSoon />} /> {/* <EventSectionIndex /> */}
             <Route path="mentors" element={<Navigate to="/dashboard/community" replace />} />
             <Route path="mentors-ai" element={<ComingSoon />} /> {/* <MentorIndexAI /> */}

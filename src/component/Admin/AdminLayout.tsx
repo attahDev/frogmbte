@@ -16,6 +16,7 @@ const TABS = [
   { to: "/dashboard/admin/courses", label: "Courses" },
   { to: "/dashboard/admin/green-projects", label: "Green Projects" },
   { to: "/dashboard/admin/hall-of-fame", label: "Hall of Fame" },
+  { to: "/dashboard/admin/community", label: "Community" },
   { to: "/dashboard/admin/opportunities", label: "Opportunities" },
 ];
 
