@@ -13,11 +13,28 @@ type Course = {
   isActive: boolean;
 };
 
+type ModuleSection = {
+  id: string;
+  title: string;
+  type: "content" | "example" | "case-study" | "activity" | "summary" | "questions";
+  paragraphs?: string[];
+  points?: string[];
+  media?: { type: "image" | "video"; url: string; caption?: string };
+};
+
+type ModuleContent = {
+  description?: string;
+  duration?: string;
+  learningOutcomes?: string[];
+  sections: ModuleSection[];
+};
+
 type CourseModule = {
   id: string;
   title: string;
   slug: string;
   order: number;
+  content?: ModuleContent;
 };
 
 const EMPTY_COURSE = { title: "", description: "", category: "climate", tagsText: "", isFeatured: false };
@@ -32,6 +49,10 @@ type SectionDraft = {
   type: "content" | "example" | "case-study" | "activity" | "summary" | "questions";
   paragraphsText: string;
   pointsText: string;
+  mediaType: "" | "image" | "video";
+  mediaUrl: string;
+  mediaCaption: string;
+  uploading: boolean;
 };
 
 const EMPTY_SECTION = (): SectionDraft => ({
@@ -40,6 +61,10 @@ const EMPTY_SECTION = (): SectionDraft => ({
   type: "content",
   paragraphsText: "",
   pointsText: "",
+  mediaType: "",
+  mediaUrl: "",
+  mediaCaption: "",
+  uploading: false,
 });
 
 const splitLines = (text: string) =>
@@ -59,6 +84,11 @@ export default function AdminCourses() {
   const [moduleDuration, setModuleDuration] = useState("");
   const [learningOutcomesText, setLearningOutcomesText] = useState("");
   const [sections, setSections] = useState<SectionDraft[]>([EMPTY_SECTION()]);
+  // null = building a brand-new chapter. Set = editing an existing one in
+  // the same form (submitModule PATCHes instead of POSTing).
+  const [editingModuleId, setEditingModuleId] = useState<string | null>(null);
+  const [extractingPdf, setExtractingPdf] = useState(false);
+  const [extractNotice, setExtractNotice] = useState<string | null>(null);
 
   const [submitting, setSubmitting] = useState(false);
 
@@ -194,31 +224,135 @@ export default function AdminCourses() {
   const updateSectionDraft = (id: string, patch: Partial<SectionDraft>) =>
     setSections((s) => s.map((sec) => (sec.id === id ? { ...sec, ...patch } : sec)));
 
-  const addModule = async () => {
+  const resetModuleForm = () => {
+    setEditingModuleId(null);
+    setModuleTitle("");
+    setModuleDescription("");
+    setModuleDuration("");
+    setLearningOutcomesText("");
+    setSections([EMPTY_SECTION()]);
+    setExtractNotice(null);
+  };
+
+  // Loads an existing chapter's full content into the builder above so it
+  // can be edited, instead of only ever renaming its title. Saving calls
+  // PATCH via submitModule() once editingModuleId is set.
+  const loadChapterForEdit = (courseId: string, m: CourseModule) => {
+    setSelectedCourseId(courseId);
+    setEditingModuleId(m.id);
+    setModuleTitle(m.title);
+    setModuleDescription(m.content?.description ?? "");
+    setModuleDuration(m.content?.duration ?? "");
+    setLearningOutcomesText((m.content?.learningOutcomes ?? []).join("\n"));
+    const loadedSections = (m.content?.sections ?? []).map((s) => ({
+      id: s.id,
+      title: s.title,
+      type: s.type ?? "content",
+      paragraphsText: (s.paragraphs ?? []).join("\n"),
+      pointsText: (s.points ?? []).join("\n"),
+      mediaType: s.media?.type ?? ("" as const),
+      mediaUrl: s.media?.url ?? "",
+      mediaCaption: s.media?.caption ?? "",
+      uploading: false,
+    }));
+    setSections(loadedSections.length > 0 ? loadedSections : [EMPTY_SECTION()]);
+    setExtractNotice(null);
+  };
+
+  const uploadSectionMedia = async (sectionId: string, file: File) => {
+    updateSectionDraft(sectionId, { uploading: true });
+    try {
+      const body = new FormData();
+      body.append("file", file);
+      const { data } = await api.post("/uploads/course-media", body, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      const result = data?.data ?? data;
+      updateSectionDraft(sectionId, {
+        mediaUrl: result.url,
+        mediaType: result.type,
+        uploading: false,
+      });
+    } catch {
+      updateSectionDraft(sectionId, { uploading: false });
+      alert("Upload failed — check the file type/size and try again.");
+    }
+  };
+
+  // Uploads a PDF, gets back a draft chapter from the server (Groq-structured
+  // text extraction) and drops it straight into the builder fields above for
+  // review/editing — nothing is saved until "Add chapter" / "Save changes"
+  // is clicked afterward.
+  const extractPdf = async (file: File) => {
+    setExtractingPdf(true);
+    setExtractNotice(null);
+    try {
+      const body = new FormData();
+      body.append("file", file);
+      const { data } = await api.post("/courses/extract-pdf", body, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      const result = data?.data ?? data;
+      setModuleTitle(result.suggestedTitle ?? "");
+      setModuleDescription(result.description ?? "");
+      setModuleDuration(result.duration ?? "");
+      setLearningOutcomesText((result.learningOutcomes ?? []).join("\n"));
+      setSections(
+        (result.sections ?? []).length > 0
+          ? result.sections.map((s: ModuleSection) => ({
+              id: s.id,
+              title: s.title,
+              type: s.type ?? "content",
+              paragraphsText: (s.paragraphs ?? []).join("\n"),
+              pointsText: (s.points ?? []).join("\n"),
+              mediaType: "" as const,
+              mediaUrl: "",
+              mediaCaption: "",
+              uploading: false,
+            }))
+          : [EMPTY_SECTION()],
+      );
+      setExtractNotice(
+        result.truncated
+          ? "Drafted from the first portion of this PDF (it was longer than one extraction pass covers) — review before saving."
+          : "Drafted from this PDF — review and edit before saving.",
+      );
+    } catch (err: any) {
+      alert(err?.response?.data?.message || "Extraction failed — the PDF may be scanned images rather than real text.");
+    } finally {
+      setExtractingPdf(false);
+    }
+  };
+
+  const submitModule = async () => {
     if (!selectedCourseId || !moduleTitle) return;
     setSubmitting(true);
     try {
-      await api.post(`/courses/${selectedCourseId}/modules`, {
-        title: moduleTitle,
-        content: {
-          description: moduleDescription || undefined,
-          duration: moduleDuration || undefined,
-          learningOutcomes: splitLines(learningOutcomesText),
-          sections: sections.map((s, i) => ({
-            id: s.id,
-            title: s.title || `Section ${i + 1}`,
-            type: s.type,
-            paragraphs: splitLines(s.paragraphsText),
-            points: splitLines(s.pointsText),
-            order: i,
-          })),
-        },
-      });
-      setModuleTitle("");
-      setModuleDescription("");
-      setModuleDuration("");
-      setLearningOutcomesText("");
-      setSections([EMPTY_SECTION()]);
+      const content = {
+        description: moduleDescription || undefined,
+        duration: moduleDuration || undefined,
+        learningOutcomes: splitLines(learningOutcomesText),
+        sections: sections.map((s, i) => ({
+          id: s.id,
+          title: s.title || `Section ${i + 1}`,
+          type: s.type,
+          paragraphs: splitLines(s.paragraphsText),
+          points: splitLines(s.pointsText),
+          media: s.mediaUrl ? { type: s.mediaType || "image", url: s.mediaUrl, caption: s.mediaCaption || undefined } : undefined,
+          order: i,
+        })),
+      };
+
+      if (editingModuleId) {
+        await api.patch(`/courses/${selectedCourseId}/modules/${editingModuleId}`, {
+          title: moduleTitle,
+          content,
+        });
+      } else {
+        await api.post(`/courses/${selectedCourseId}/modules`, { title: moduleTitle, content });
+      }
+
+      resetModuleForm();
       load();
       if (expandedCourseId === selectedCourseId) loadChaptersRefresh(selectedCourseId);
     } finally {
@@ -278,17 +412,42 @@ export default function AdminCourses() {
       </div>
 
       <div className="rounded-md border border-gray-300 bg-white p-4">
-        <h2 className="text-base font-semibold text-[#001F3F]">Add a chapter (module)</h2>
+        <h2 className="text-base font-semibold text-[#001F3F]">
+          {editingModuleId ? "Edit chapter" : "Add a chapter (module)"}
+        </h2>
         <p className="mt-1 text-xs text-gray-400">
           For uploading a whole course's worth of chapters at once instead of one at a time, use{" "}
           <code>gmbtebac/scripts/upload_course_content.py</code>.
         </p>
 
+        {!editingModuleId && (
+          <div className="mt-3 rounded border border-dashed border-gray-300 p-3">
+            <label className="text-xs font-medium text-gray-600">
+              Or draft this chapter from a PDF/book — extracts the text and has AI structure it into
+              description/outcomes/sections below for you to review before saving.
+            </label>
+            <input
+              type="file"
+              accept="application/pdf"
+              disabled={extractingPdf}
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) extractPdf(file);
+                e.target.value = "";
+              }}
+              className="mt-2 block w-full text-sm"
+            />
+            {extractingPdf && <p className="mt-1 text-xs text-gray-500">Extracting… this can take a minute for a long document.</p>}
+            {extractNotice && <p className="mt-1 text-xs text-green-700">{extractNotice}</p>}
+          </div>
+        )}
+
         <div className="mt-3 grid gap-2 sm:grid-cols-2">
           <select
             value={selectedCourseId}
             onChange={(e) => setSelectedCourseId(e.target.value)}
-            className="rounded border border-gray-300 px-2 py-1 text-sm"
+            disabled={!!editingModuleId}
+            className="rounded border border-gray-300 px-2 py-1 text-sm disabled:bg-gray-100"
           >
             <option value="">Select a course…</option>
             {(courses ?? []).map((c) => (
@@ -393,18 +552,68 @@ export default function AdminCourses() {
                     className="mt-1 w-full rounded border border-gray-300 px-2 py-1 text-sm"
                   />
                 </label>
+
+                <div className="mt-2 rounded border border-dashed border-gray-300 p-2">
+                  <label className="text-xs text-gray-500">Image or video for this section (optional)</label>
+                  {s.mediaUrl ? (
+                    <div className="mt-2 flex items-center gap-3">
+                      {s.mediaType === "video" ? (
+                        <video src={s.mediaUrl} controls className="h-20 rounded" />
+                      ) : (
+                        <img src={s.mediaUrl} alt="" className="h-20 w-20 rounded object-cover" />
+                      )}
+                      <input
+                        placeholder="Caption (optional)"
+                        value={s.mediaCaption}
+                        onChange={(e) => updateSectionDraft(s.id, { mediaCaption: e.target.value })}
+                        className="flex-1 rounded border border-gray-300 px-2 py-1 text-sm"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => updateSectionDraft(s.id, { mediaUrl: "", mediaType: "", mediaCaption: "" })}
+                        className="text-xs text-red-600"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  ) : (
+                    <input
+                      type="file"
+                      accept="image/*,video/*"
+                      disabled={s.uploading}
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) uploadSectionMedia(s.id, file);
+                        e.target.value = "";
+                      }}
+                      className="mt-1 block w-full text-sm"
+                    />
+                  )}
+                  {s.uploading && <p className="mt-1 text-xs text-gray-500">Uploading…</p>}
+                </div>
               </div>
             ))}
           </div>
         </div>
 
-        <button
-          onClick={addModule}
-          disabled={submitting || !selectedCourseId || !moduleTitle}
-          className="mt-4 rounded bg-[#001F3F] px-3 py-1.5 text-sm text-white disabled:opacity-50"
-        >
-          Add chapter
-        </button>
+        <div className="mt-4 flex gap-2">
+          <button
+            onClick={submitModule}
+            disabled={submitting || !selectedCourseId || !moduleTitle}
+            className="rounded bg-[#001F3F] px-3 py-1.5 text-sm text-white disabled:opacity-50"
+          >
+            {editingModuleId ? "Save changes" : "Add chapter"}
+          </button>
+          {editingModuleId && (
+            <button
+              onClick={resetModuleForm}
+              type="button"
+              className="rounded border border-gray-300 px-3 py-1.5 text-sm text-gray-600"
+            >
+              Cancel edit
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="rounded-md border border-gray-300 bg-white p-4">
@@ -548,10 +757,19 @@ export default function AdminCourses() {
                                     <span className="text-gray-700">{m.title}</span>
                                     <div className="flex gap-1">
                                       <button
+                                        onClick={() => {
+                                          loadChapterForEdit(c.id, m);
+                                          window.scrollTo({ top: 0, behavior: "smooth" });
+                                        }}
+                                        className="rounded border border-gray-300 px-2 py-1 text-gray-600"
+                                      >
+                                        Edit content
+                                      </button>
+                                      <button
                                         onClick={() => startEditChapter(m)}
                                         className="rounded border border-gray-300 px-2 py-1 text-gray-600"
                                       >
-                                        Edit
+                                        Rename
                                       </button>
                                       <button
                                         onClick={() => removeChapter(c.id, m.id)}
