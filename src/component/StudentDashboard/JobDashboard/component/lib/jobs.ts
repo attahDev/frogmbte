@@ -12,14 +12,17 @@ function timeAgo(dateString: string) {
   if (hours < 1) return "Just posted";
   if (hours < 24) return `${hours} hour${hours > 1 ? "s" : ""} ago`;
   if (days < 7) return `${days} day${days > 1 ? "s" : ""} ago`;
+
   const weeks = Math.floor(days / 7);
   return `${weeks} week${weeks > 1 ? "s" : ""} ago`;
 }
 
 export function transformOpportunity(op: Opportunity): JobCardData {
-  const tags = [op.type, op.category, op.source === "API" ? "External" : "GMBTE"].filter(
-    (t): t is string => Boolean(t),
-  );
+  const tags = [
+    op.type,
+    op.category,
+    op.source === "API" ? "External" : "GMBTE",
+  ].filter((t): t is string => Boolean(t));
 
   return {
     id: op.id,
@@ -42,35 +45,45 @@ type FetchOpportunitiesParams = {
   category?: string;
 };
 
-/** Backed by the DB now (manual admin entries + Adzuna-synced rows), not a
- *  direct client-side call to Adzuna — keeps the provider API key
- *  server-side and lets search/category filter across both sources at
- *  once. */
+type ApiResponse<T> = {
+  success: boolean;
+  data: T;
+  message: string;
+  timestamp: string;
+};
+
 export async function fetchOpportunities(
   params: FetchOpportunitiesParams = {}
-) {
-  const response = await api.get("/opportunities", {
-    params: {
-      search: params.search || undefined,
-      category: params.category || undefined,
-    },
-  });
+): Promise<JobCardData[]> {
+  const { data } = await api.get<ApiResponse<Opportunity[]>>(
+    "/opportunities",
+    {
+      params: {
+        search: params.search || undefined,
+        category: params.category || undefined,
+      },
+    }
+  );
 
-  console.log("API Response:", response.data);
-  console.log("Is Array:", Array.isArray(response.data));
+  const opportunities = Array.isArray(data.data) ? data.data : [];
 
-  return (response.data ?? []).map(transformOpportunity);
+  return opportunities.map(transformOpportunity);
 }
 
-export async function fetchOpportunityCategories() {
-  const { data } = await api.get<string[]>("/opportunities/categories");
-  return data ?? [];
+export async function fetchOpportunityCategories(): Promise<string[]> {
+  const { data } = await api.get<ApiResponse<string[]>>(
+    "/opportunities/categories"
+  );
+
+  return Array.isArray(data.data) ? data.data : [];
 }
 
-/** Fallback for direct/refreshed links to a detail page — JobCard passes
- *  the job via router state for the normal click-through, but a shared
- *  link or a page refresh has no state to read. */
-export async function fetchOpportunity(id: string) {
-  const { data } = await api.get<Opportunity>(`/opportunities/${id}`);
-  return transformOpportunity(data);
+export async function fetchOpportunity(
+  id: string
+): Promise<JobCardData> {
+  const { data } = await api.get<ApiResponse<Opportunity>>(
+    `/opportunities/${id}`
+  );
+
+  return transformOpportunity(data.data);
 }
