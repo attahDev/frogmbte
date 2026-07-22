@@ -1,7 +1,6 @@
 import {
   Award,
   BarChart3,
-  Bell,
   Building2,
   CalendarDays,
   ChevronDown,
@@ -30,7 +29,6 @@ import {
 import React, { useEffect, useMemo, useState } from 'react';
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/mainuseAuth';
-import { fetchMyUnreadCount } from '../../lib/notificationsApi';
 
 type NavItem = {
   name: string;
@@ -85,18 +83,6 @@ const Dashboard: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { logout, user } = useAuth();
-  const [unreadNotifications, setUnreadNotifications] = useState(0);
-
-  useEffect(() => {
-    let cancelled = false;
-    const load = () => fetchMyUnreadCount().then((count) => !cancelled && setUnreadNotifications(count)).catch(() => {});
-    load();
-    const interval = setInterval(load, 60000);
-    return () => {
-      cancelled = true;
-      clearInterval(interval);
-    };
-  }, [location.pathname]);
   const isMentorAiPage = location.pathname.includes('/mentors-ai');
   const isAiStudioRoute = AI_STUDIO_PATHS.some(
     (path) => location.pathname === path || location.pathname.startsWith(`${path}/`)
@@ -142,12 +128,6 @@ const Dashboard: React.FC = () => {
             name: 'Dashboard',
             icon: <DashboardIcon />,
             path: '/dashboard',
-          },
-          {
-            name: 'Notifications',
-            icon: <Bell className={iconClass} />,
-            path: '/dashboard/notifications',
-            badge: unreadNotifications > 0 ? String(unreadNotifications) : undefined,
           },
           {
             name: 'Academy',
@@ -199,15 +179,20 @@ const Dashboard: React.FC = () => {
             icon: <CalendarDays className={iconClass} />,
             path: '/dashboard/events',
           },
+          {
+            name: 'Community',
+            icon: <MessageSquare className={iconClass} />,
+            path: '/dashboard/community',
+          },
         ],
       },
       {
         title: 'MENTORS & COACHES',
         items: [
           {
-            name: 'My Mentors',
+            name: user?.role === 'MENTOR' ? 'My Mentees' : 'My Mentors',
             icon: <Users className={iconClass} />,
-            path: '/dashboard/community',
+            path: '/dashboard/mentors',
           },
           {
             name: 'Mentor AI',
@@ -292,7 +277,7 @@ const Dashboard: React.FC = () => {
         ],
       },
     ],
-    [user, unreadNotifications]
+    [user]
   );
   const showExpandedSidebar = isNarrow ? isMobileMenuOpen : !isSidebarCollapsed;
 

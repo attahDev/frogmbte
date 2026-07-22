@@ -25,8 +25,6 @@ import DigitalTrustIndex from './component/StudentDashboard/DigitalTrust/Digital
 import PartnershipsIndex from './component/StudentDashboard/Partnerships/PartnershipsIndex';
 import JobDetailsPage from './component/StudentDashboard/JobDashboard/JobDetailsPage';
 import JobIndex from './component/StudentDashboard/JobDashboard/JobIndex';
-import NotificationsPage from './component/StudentDashboard/NotificationsSection/NotificationsPage';
-import CommunityPage from './component/StudentDashboard/CommunitySection/CommunityPage';
 import { ToolkitsIndex } from './component/StudentDashboard/ToolkitsSection/ToolkitsIndex';
 import { ToolkIndex } from './component/StudentDashboard/ServicesSection/Toolkits/ToolkIndex';
 import ServicesIndexPage from './component/servicesPages/servicesIndex';
@@ -42,7 +40,6 @@ import AdminEvents from './component/Admin/AdminEvents';
 import AdminCourses from './component/Admin/AdminCourses';
 import AdminGreenProjects from './component/Admin/AdminGreenProjects';
 import AdminHOF from './component/Admin/AdminHOF';
-import AdminCommunity from './component/Admin/AdminCommunity';
 import AdminOpportunities from './component/Admin/AdminOpportunities';
 import AIDashboardIndex from './component/MarketResearchDashboard/AIDashboardIndex';
 import BPTabs from './component/MarketResearchDashboard/BusinessPlanSection/BPTabs';
@@ -50,7 +47,8 @@ import { IGDashboardSection } from './component/MarketResearchDashboard/IdeaGene
 import { MRDashboardSection } from './component/MarketResearchDashboard/MarketResearchSection/MRDashboardSection';
 import AIBusinessStudioSection from './component/MarketResearchDashboard/DashboardSection/AIDashboardSection';
 import { MentorIndexAI } from './component/StudentDashboard/MentorDashboard/MentorIndex';
-import { MentorIndex } from './component/StudentDashboard/MentorSections/MentorIndex';
+import MentorsRouteSwitch from './component/StudentDashboard/MentorSections/MentorsRouteSwitch';
+import CommunityPage from './component/StudentDashboard/CommunityPage/CommunityPage';
 import SmoothScroll from './component/utils/lenis';
 import BrandIdentityBuilder from './component/BrandIdentity/BrandIdentityBuilder';
 import CourseLessonPage from './component/StudentDashboard/ClimateDashboard/Component/CourseLessonPage';
@@ -137,7 +135,6 @@ function AppLayout() {
               <Route path="courses" element={<AdminCourses />} />
               <Route path="green-projects" element={<AdminGreenProjects />} />
               <Route path="hall-of-fame" element={<AdminHOF />} />
-              <Route path="community" element={<AdminCommunity />} />
               <Route path="opportunities" element={<AdminOpportunities />} />
             </Route>
 
@@ -174,11 +171,10 @@ function AppLayout() {
               element={<Navigate to="/dashboard/market-research" replace />}
             />
 
-            <Route path="notifications" element={<NotificationsPage />} />
             <Route path="digital-trust" element={<ComingSoon />} /> {/* <DigitalTrustIndex /> */}
             <Route path="community" element={<CommunityPage />} />
             <Route path="events" element={<ComingSoon />} /> {/* <EventSectionIndex /> */}
-            <Route path="mentors" element={<Navigate to="/dashboard/community" replace />} />
+            <Route path="mentors" element={<MentorsRouteSwitch />} />
             <Route path="mentors-ai" element={<ComingSoon />} /> {/* <MentorIndexAI /> */}
             <Route path="profile" element={<ComingSoon />} />
             <Route path="settings" element={<ComingSoon />} />

@@ -9,6 +9,7 @@ type Mentor = {
   bio: string | null;
   skills: string[];
   isActive: boolean;
+  userId: string | null;
 };
 
 const EMPTY = { name: "", role: "", company: "", bio: "", skills: "" };
@@ -61,6 +62,8 @@ export default function AdminMentors() {
         <h2 className="text-base font-semibold text-[#001F3F]">Add a mentor</h2>
         <p className="mt-1 text-xs text-gray-400">
           Mentors are added here by admin — there's no self-signup flow, as decided.
+          To turn an existing user account into a mentor (so they can log in and manage
+          mentees), use the "Promote to Mentor" button on the Users tab instead.
         </p>
 
         <div className="mt-3 grid gap-2 sm:grid-cols-2">
@@ -117,6 +120,7 @@ export default function AdminMentors() {
                 <th className="py-2 pr-3">Name</th>
                 <th className="py-2 pr-3">Role</th>
                 <th className="py-2 pr-3">Company</th>
+                <th className="py-2 pr-3">Account</th>
                 <th className="py-2 pr-3">Status</th>
                 <th className="py-2">Actions</th>
               </tr>
@@ -127,6 +131,17 @@ export default function AdminMentors() {
                   <td className="py-2 pr-3 whitespace-nowrap">{m.name}</td>
                   <td className="py-2 pr-3 whitespace-nowrap">{m.role}</td>
                   <td className="py-2 pr-3 whitespace-nowrap">{m.company || "—"}</td>
+                  <td className="py-2 pr-3">
+                    {m.userId ? (
+                      <span className="rounded bg-purple-100 px-2 py-0.5 text-xs font-medium text-purple-700">
+                        Linked login
+                      </span>
+                    ) : (
+                      <span className="rounded bg-gray-100 px-2 py-0.5 text-xs text-gray-500">
+                        Directory only
+                      </span>
+                    )}
+                  </td>
                   <td className="py-2 pr-3">
                     <span
                       className={`rounded px-2 py-0.5 text-xs font-medium ${
