@@ -16,6 +16,8 @@ export interface User {
     // NOTE: organization and role are crucial fields from your registration DTO
     organization: string;
     role: 'STUDENT' | 'PROFESSIONAL' | 'ENGINEER' | 'MENTOR' | 'ADMIN' | 'OTHER';
+    region?: string | null;
+    profileVisibility?: 'PUBLIC' | 'PRIVATE';
 
     // Status Fields
     isVerified: boolean;
