@@ -51,6 +51,7 @@ import AIBusinessStudioSection from './component/MarketResearchDashboard/Dashboa
 import { MentorIndexAI } from './component/StudentDashboard/MentorDashboard/MentorIndex';
 import MentorsRouteSwitch from './component/StudentDashboard/MentorSections/MentorsRouteSwitch';
 import FindMentor from './component/StudentDashboard/MentorSections/FindMentor';
+import NotificationsPage from './component/StudentDashboard/NotificationsSection/NotificationsPage';
 import CommunityPage from './component/StudentDashboard/CommunityPage/CommunityPage';
 import SmoothScroll from './component/utils/lenis';
 import BrandIdentityBuilder from './component/BrandIdentity/BrandIdentityBuilder';
@@ -193,6 +194,7 @@ function AppLayout() {
 
             <Route path="digital-trust" element={<ComingSoon />} /> {/* <DigitalTrustIndex /> */}
             <Route path="mentors/find" element={<FindMentor />} />
+            <Route path="notifications" element={<NotificationsPage />} />
             <Route path="community" element={<CommunityPage />} />
             <Route path="events" element={<ComingSoon />} /> {/* <EventSectionIndex /> */}
             <Route path="mentors" element={<MentorsRouteSwitch />} />
