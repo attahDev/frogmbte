@@ -16,14 +16,19 @@ const EMPTY = { name: "", role: "", company: "", bio: "", skills: "" };
 
 export default function AdminMentors() {
   const [mentors, setMentors] = useState<Mentor[] | null>(null);
+  const [loadError, setLoadError] = useState(false);
   const [form, setForm] = useState(EMPTY);
   const [submitting, setSubmitting] = useState(false);
 
   const load = () => {
+    setLoadError(false);
     api
       .get("/mentors")
       .then(({ data }) => setMentors(data?.data ?? data ?? []))
-      .catch(() => setMentors([]));
+      .catch(() => {
+        setLoadError(true);
+        setMentors([]);
+      });
   };
 
   useEffect(load, []);
@@ -113,6 +118,15 @@ export default function AdminMentors() {
 
         {mentors === null ? (
           <p className="mt-3 text-sm text-gray-500">Loading…</p>
+        ) : loadError ? (
+          <div className="mt-3 text-sm text-[#8A1F1F]">
+            Couldn't load mentors — the request failed.{" "}
+            <button onClick={load} className="underline">
+              Retry
+            </button>
+          </div>
+        ) : mentors.length === 0 ? (
+          <p className="mt-3 text-sm text-gray-500">No mentors yet.</p>
         ) : (
           <table className="mt-3 w-full text-left text-sm">
             <thead>

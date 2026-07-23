@@ -97,6 +97,7 @@ export default function AdminCourses() {
   const [editForm, setEditForm] = useState({ title: "", description: "", tagsText: "", isFeatured: false });
 
   // Expanded course's chapter list, for editing/removing chapters
+  const [coursesLoadError, setCoursesLoadError] = useState(false);
   const [expandedCourseId, setExpandedCourseId] = useState<string | null>(null);
   const [chapters, setChapters] = useState<CourseModule[] | null>(null);
   const [chaptersLoading, setChaptersLoading] = useState(false);
@@ -104,10 +105,14 @@ export default function AdminCourses() {
   const [chapterTitleDraft, setChapterTitleDraft] = useState("");
 
   const load = () => {
+    setCoursesLoadError(false);
     api
       .get("/courses", { params: { includeInactive: "true" } })
       .then(({ data }) => setCourses(data?.data ?? data ?? []))
-      .catch(() => setCourses([]));
+      .catch(() => {
+        setCoursesLoadError(true);
+        setCourses([]);
+      });
   };
 
   useEffect(load, []);
@@ -620,6 +625,13 @@ export default function AdminCourses() {
         <h2 className="text-base font-semibold text-[#001F3F]">Courses</h2>
         {courses === null ? (
           <p className="mt-3 text-sm text-gray-500">Loading…</p>
+        ) : coursesLoadError ? (
+          <div className="mt-3 text-sm text-[#8A1F1F]">
+            Couldn't load courses — the request failed.{" "}
+            <button onClick={load} className="underline">
+              Retry
+            </button>
+          </div>
         ) : courses.length === 0 ? (
           <p className="mt-3 text-sm text-gray-500">No courses created yet.</p>
         ) : (

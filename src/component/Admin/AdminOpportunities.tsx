@@ -34,6 +34,7 @@ const CATEGORY_SUGGESTIONS = ["Jobs", "Internships", "Grants", "Fellowships", "S
 
 export default function AdminOpportunities() {
   const [opportunities, setOpportunities] = useState<OpportunityRow[] | null>(null);
+  const [loadError, setLoadError] = useState(false);
   const [form, setForm] = useState(EMPTY);
   const [submitting, setSubmitting] = useState(false);
   const [syncQuery, setSyncQuery] = useState("sustainability");
@@ -44,10 +45,14 @@ export default function AdminOpportunities() {
   const [editForm, setEditForm] = useState(EMPTY);
 
   const load = () => {
+    setLoadError(false);
     api
       .get("/opportunities", { params: { includeInactive: "true" } })
       .then(({ data }) => setOpportunities(data?.data ?? data ?? []))
-      .catch(() => setOpportunities([]));
+      .catch(() => {
+        setLoadError(true);
+        setOpportunities([]);
+      });
   };
 
   useEffect(load, []);
@@ -257,6 +262,13 @@ export default function AdminOpportunities() {
 
         {opportunities === null ? (
           <p className="mt-3 text-sm text-gray-500">Loading…</p>
+        ) : loadError ? (
+          <div className="mt-3 text-sm text-[#8A1F1F]">
+            Couldn't load opportunities — the request failed.{" "}
+            <button onClick={load} className="underline">
+              Retry
+            </button>
+          </div>
         ) : opportunities.length === 0 ? (
           <p className="mt-3 text-sm text-gray-500">No opportunities yet.</p>
         ) : (

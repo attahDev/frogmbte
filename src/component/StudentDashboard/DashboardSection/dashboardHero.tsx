@@ -308,7 +308,7 @@ export default function DashboardHero() {
                     You haven't connected with a mentor yet. Find one who matches your goals to get started.
                   </p>
                   <Link
-                    to="/dashboard/community"
+                    to="/dashboard/mentors"
                     className="inline-flex items-center gap-2 rounded-full bg-[#D7263D] px-4 py-2 text-xs sm:text-sm font-semibold text-white hover:bg-[#b91f33]"
                   >
                     Find a Mentor <ArrowRight className="w-4 h-4" />

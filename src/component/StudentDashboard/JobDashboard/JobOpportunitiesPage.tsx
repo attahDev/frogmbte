@@ -12,6 +12,11 @@ export default function JobOpportunitiesPage() {
   const [jobs, setJobs] = useState<JobCardData[]>(dummyJobs);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
+  // Dummy jobs are only ever a "still loading the very first time" placeholder.
+  // Once the first real fetch settles (success OR failure) we never want fake
+  // listings standing in for real data again — an error should look like an
+  // error, not like a working page full of stale placeholder jobs.
+  const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
   const [categories, setCategories] = useState<string[]>([]);
   const [selectedCategory, setSelectedCategory] = useState("");
   const [selectedJobTypes, setSelectedJobTypes] = useState<string[]>([]);
@@ -42,9 +47,15 @@ export default function JobOpportunitiesPage() {
       .catch(() => {
         if (cancelled) return;
         setLoadError(true);
+        // Don't leave fake listings on screen dressed up as real results —
+        // an errored fetch should look empty/errored, not "working".
+        setJobs([]);
       })
       .finally(() => {
-        if (!cancelled) setLoading(false);
+        if (!cancelled) {
+          setLoading(false);
+          setHasLoadedOnce(true);
+        }
       });
 
     return () => {
@@ -129,11 +140,11 @@ export default function JobOpportunitiesPage() {
         <div className="min-w-0 space-y-5 sm:space-y-7">
           {loadError && (
             <div className="rounded-[16px] border border-[#F3C6C6] bg-[#FDF0F0] p-4 text-sm text-[#8A1F1F]">
-              Couldn't load live opportunities right now — showing recent picks instead.
+              Couldn't load opportunities right now. Please try again in a moment.
             </div>
           )}
 
-          {loading && jobs === dummyJobs && (
+          {loading && !hasLoadedOnce && (
             <p className="text-sm text-[#6A7282] sm:text-[14px]">Loading opportunities…</p>
           )}
 
@@ -141,9 +152,11 @@ export default function JobOpportunitiesPage() {
             <JobCard key={job.id} job={job} />
           ))}
 
-          {!loading && filteredJobs.length === 0 && (
+          {!loading && !loadError && filteredJobs.length === 0 && (
             <div className="rounded-[16px] border border-[#E5E7EB] bg-[#F9FAFB] p-6 text-center text-sm text-[#6A7282] sm:p-8 sm:text-[14px]">
-              No opportunities found for this filter combination.
+              {jobs.length === 0
+                ? "No opportunities available right now — check back soon."
+                : "No opportunities found for this filter combination."}
             </div>
           )}
         </div>

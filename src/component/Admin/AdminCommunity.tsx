@@ -3,12 +3,17 @@ import { fetchPendingPosts, approvePost, rejectPost, type CommunityPost } from "
 
 export default function AdminCommunity() {
   const [pending, setPending] = useState<CommunityPost[] | null>(null);
+  const [loadError, setLoadError] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
 
   const load = () => {
+    setLoadError(false);
     fetchPendingPosts()
       .then(setPending)
-      .catch(() => setPending([]));
+      .catch(() => {
+        setLoadError(true);
+        setPending([]);
+      });
   };
 
   useEffect(load, []);
@@ -44,6 +49,13 @@ export default function AdminCommunity() {
 
         {pending === null ? (
           <p className="mt-3 text-sm text-gray-500">Loading…</p>
+        ) : loadError ? (
+          <div className="mt-3 text-sm text-[#8A1F1F]">
+            Couldn't load pending posts — the request failed.{" "}
+            <button onClick={load} className="underline">
+              Retry
+            </button>
+          </div>
         ) : pending.length === 0 ? (
           <p className="mt-3 text-sm text-gray-500">Nothing pending — you're caught up.</p>
         ) : (
