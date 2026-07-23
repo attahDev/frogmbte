@@ -42,6 +42,7 @@ import AdminCourses from './component/Admin/AdminCourses';
 import AdminGreenProjects from './component/Admin/AdminGreenProjects';
 import AdminHOF from './component/Admin/AdminHOF';
 import AdminOpportunities from './component/Admin/AdminOpportunities';
+import AdminCommunity from './component/Admin/AdminCommunity';
 import AIDashboardIndex from './component/MarketResearchDashboard/AIDashboardIndex';
 import BPTabs from './component/MarketResearchDashboard/BusinessPlanSection/BPTabs';
 import { IGDashboardSection } from './component/MarketResearchDashboard/IdeaGenerator/IGDashboardSection';
@@ -49,6 +50,7 @@ import { MRDashboardSection } from './component/MarketResearchDashboard/MarketRe
 import AIBusinessStudioSection from './component/MarketResearchDashboard/DashboardSection/AIDashboardSection';
 import { MentorIndexAI } from './component/StudentDashboard/MentorDashboard/MentorIndex';
 import MentorsRouteSwitch from './component/StudentDashboard/MentorSections/MentorsRouteSwitch';
+import FindMentor from './component/StudentDashboard/MentorSections/FindMentor';
 import CommunityPage from './component/StudentDashboard/CommunityPage/CommunityPage';
 import SmoothScroll from './component/utils/lenis';
 import BrandIdentityBuilder from './component/BrandIdentity/BrandIdentityBuilder';
@@ -134,7 +136,8 @@ function AppLayout() {
               <Route path="mentors" element={<AdminMentors />} />
               <Route path="events" element={<AdminEvents />} />
               <Route path="courses" element={<AdminCourses />} />
-              <Route path="green-projects" element={<AdminGreenProjects />} />
+              <Route path="opportunities" element={<AdminOpportunities />} />
+              <Route path="community" element={<AdminCommunity />} />
               <Route path="hall-of-fame" element={<AdminHOF />} />
               <Route path="opportunities" element={<AdminOpportunities />} />
             </Route>
@@ -189,6 +192,7 @@ function AppLayout() {
             />
 
             <Route path="digital-trust" element={<ComingSoon />} /> {/* <DigitalTrustIndex /> */}
+            <Route path="mentors/find" element={<FindMentor />} />
             <Route path="community" element={<CommunityPage />} />
             <Route path="events" element={<ComingSoon />} /> {/* <EventSectionIndex /> */}
             <Route path="mentors" element={<MentorsRouteSwitch />} />
