@@ -52,7 +52,7 @@ import { MentorIndexAI } from './component/StudentDashboard/MentorDashboard/Ment
 import MentorsRouteSwitch from './component/StudentDashboard/MentorSections/MentorsRouteSwitch';
 import FindMentor from './component/StudentDashboard/MentorSections/FindMentor';
 import NotificationsPage from './component/StudentDashboard/NotificationsSection/NotificationsPage';
-import CommunityPage from './component/StudentDashboard/CommunityPage/CommunityPage';
+import CommunityPage from './component/StudentDashboard/CommunitySection/CommunityPage';
 import SmoothScroll from './component/utils/lenis';
 import BrandIdentityBuilder from './component/BrandIdentity/BrandIdentityBuilder';
 import CourseLessonPage from './component/StudentDashboard/ClimateDashboard/Component/CourseLessonPage';
