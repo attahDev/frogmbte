@@ -16,11 +16,13 @@ import {
 type LessonNavigationProps = {
   course: SustainabilityCourse;
   lessonSlug: string;
+  basePath?: string;
 };
 
 export function LessonNavigation({
   course,
   lessonSlug,
+  basePath = "/dashboard/green-impact",
 }: LessonNavigationProps) {
   const [completed, setCompleted] = useState(false);
 
@@ -45,8 +47,7 @@ export function LessonNavigation({
       ? course.lessons[currentIndex + 1]
       : null;
 
-  const courseBasePath =
-    `/dashboard/green-impact/${course.slug}`;
+  const courseBasePath = `${basePath}/${course.slug}`;
 
   function handleCompletionToggle() {
     const newCompletedState =
@@ -56,6 +57,15 @@ export function LessonNavigation({
       );
 
     setCompleted(newCompletedState);
+  }
+
+  // Moving on to the next lesson (or finishing the module) implies you're
+  // done with this one — mark it complete so progress advances just from
+  // reading through, not only from the explicit "Mark as Complete" toggle.
+  function handleAdvance() {
+    if (!isLessonCompleted(course.slug, lessonSlug)) {
+      toggleLessonCompletion(course.slug, lessonSlug);
+    }
   }
 
   return (
@@ -102,7 +112,8 @@ export function LessonNavigation({
         {nextLesson ? (
           <Link
             to={`${courseBasePath}/${nextLesson.slug}`}
-            className="flex min-h-[48px] items-center justify-center gap-2 rounded-[12px] bg-[#D7263D] px-5 text-[14px] font-semibold text-white"
+            onClick={handleAdvance}
+            className="flex min-h-[48px] items-center justify-center gap-2 rounded-[12px] bg-[#D7263D] px-5 text-[14px] font-semibold text-white transition hover:bg-[#BE1F34]"
           >
             Next Lesson
             <ArrowRight size={17} />
@@ -110,7 +121,8 @@ export function LessonNavigation({
         ) : (
           <Link
             to={courseBasePath}
-            className="flex min-h-[48px] items-center justify-center gap-2 rounded-[12px] bg-[#001F3F] px-5 text-[14px] font-semibold text-white"
+            onClick={handleAdvance}
+            className="flex min-h-[48px] items-center justify-center gap-2 rounded-[12px] bg-[#001F3F] px-5 text-[14px] font-semibold text-white transition hover:bg-[#001F3F]/90"
           >
             Finish Module
             <ArrowRight size={17} />

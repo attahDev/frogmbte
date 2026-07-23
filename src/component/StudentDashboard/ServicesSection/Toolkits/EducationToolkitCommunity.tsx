@@ -4,12 +4,14 @@ import {
     Clock,
     ArrowRight,
 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { fetchUpcomingEvents, type UiEvent } from "../../../../lib/eventsApi";
 
 export default function EducationToolkitCommunity() {
     // "Related Events" used to be three events hard-typed into JSX with
     // fixed dates — now real upcoming events, featured ones first.
     const [events, setEvents] = useState<UiEvent[] | null>(null);
+    const navigate = useNavigate();
 
     useEffect(() => {
         fetchUpcomingEvents()
@@ -18,15 +20,18 @@ export default function EducationToolkitCommunity() {
     }, []);
 
     return (
-        <div className="px-10 py-16 bg-[#FFFDF7] space-y-16">
+        <div className="px-4 sm:px-6 md:px-10 py-8 sm:py-12 md:py-16 bg-[#FFFDF7] space-y-10 sm:space-y-12 md:space-y-16">
             {/* ---------------- Related Events ---------------- */}
             <section>
-                <div className="flex items-center justify-between mb-8">
-                    <h2 className="text-[28px] font-semibold text-[#001F3F]">
+                <div className="flex flex-wrap items-center justify-between gap-3 mb-6 sm:mb-8">
+                    <h2 className="text-xl sm:text-2xl md:text-[28px] font-semibold text-[#001F3F]">
                         Related Events
                     </h2>
 
-                    <button className="border border-[#001F3F] px-6 py-2 rounded-full text-[#001F3F] font-medium hover:bg-[#001F3F] hover:text-white transition">
+                    <button
+                        onClick={() => navigate("/dashboard/events")}
+                        className="border border-[#001F3F] px-4 sm:px-6 py-2 rounded-full text-[#001F3F] text-sm sm:text-base font-medium hover:bg-[#001F3F] hover:text-white transition"
+                    >
                         View All Events
                     </button>
                 </div>
@@ -36,7 +41,7 @@ export default function EducationToolkitCommunity() {
                 ) : events.length === 0 ? (
                     <p className="text-sm text-[#6B7280]">No events have been published yet — check back soon.</p>
                 ) : (
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6 md:gap-8">
                     {events.map((event) => (
                         <EventCard
                             key={event.id}
@@ -46,6 +51,7 @@ export default function EducationToolkitCommunity() {
                             date={event.date}
                             time={event.time}
                             image={event.image}
+                            onView={() => navigate("/dashboard/events")}
                         />
                     ))}
                 </div>
@@ -67,6 +73,7 @@ function EventCard({
     date,
     time,
     image,
+    onView,
 }: {
     tag: string;
     icon?: React.ReactNode;
@@ -75,6 +82,7 @@ function EventCard({
     date: string;
     time: string;
     image: string;
+    onView: () => void;
 }) {
     return (
         <div className="bg-white rounded-2xl shadow-sm border border-[#E2E8F0] overflow-hidden">
@@ -82,26 +90,26 @@ function EventCard({
                 <img
                     src={image}
                     alt={title}
-                    className="h-48 w-full object-cover"
+                    className="h-40 sm:h-48 w-full object-cover"
                 />
 
-                <span className="absolute top-4 right-4 bg-[#FFD700] text-[#001F3F] px-4 py-1 rounded-full text-sm font-semibold flex items-center gap-2">
+                <span className="absolute top-3 sm:top-4 right-3 sm:right-4 bg-[#FFD700] text-[#001F3F] px-3 sm:px-4 py-1 rounded-full text-xs sm:text-sm font-semibold flex items-center gap-2">
                     <span className="flex items-center">{icon}</span>
                     <span>{tag}</span>
                 </span>
 
             </div>
 
-            <div className="p-6">
-                <h3 className="text-[20px] font-semibold text-[#001F3F] mb-2">
+            <div className="p-4 sm:p-6">
+                <h3 className="text-lg sm:text-[20px] font-semibold text-[#001F3F] mb-2">
                     {title}
                 </h3>
 
-                <p className="text-[#64748B] text-sm mb-4">
+                <p className="text-[#64748B] text-sm mb-4 line-clamp-2">
                     {desc}
                 </p>
 
-                <div className="flex flex-col gap-2 text-sm text-[#001F3F] mb-6">
+                <div className="flex flex-col gap-2 text-sm text-[#001F3F] mb-5 sm:mb-6">
                     <span className="flex items-center gap-2">
                         <Calendar size={16} className="text-[#D7263D]" />
                         {date}
@@ -113,7 +121,10 @@ function EventCard({
                     </span>
                 </div>
 
-                <button className="w-full bg-[#D7263D] text-white py-3 rounded-xl font-medium flex items-center justify-center gap-2">
+                <button
+                    onClick={onView}
+                    className="w-full bg-[#D7263D] text-white py-2.5 sm:py-3 rounded-xl font-medium text-sm sm:text-base flex items-center justify-center gap-2 transition hover:bg-[#BE1F34]"
+                >
                     View Details <ArrowRight size={16} />
                 </button>
             </div>

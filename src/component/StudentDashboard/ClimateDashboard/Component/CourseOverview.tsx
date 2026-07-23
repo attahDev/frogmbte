@@ -14,9 +14,10 @@ import type { SustainabilityCourse } from "../types/sustainability";
 
 type CourseOverviewProps = {
     course: SustainabilityCourse;
+    basePath?: string;
 };
 
-export function CourseOverview({ course }: CourseOverviewProps) {
+export function CourseOverview({ course, basePath = "/dashboard/green-impact" }: CourseOverviewProps) {
     const firstLesson = course.lessons[0];
     const safeProgress = Math.min(Math.max(course.progress, 0), 100);
 
@@ -26,7 +27,7 @@ export function CourseOverview({ course }: CourseOverviewProps) {
                 <div className="grid lg:grid-cols-[1.1fr_0.9fr]">
                     <div className="flex flex-col justify-center px-5 py-8 sm:px-8 lg:px-10 lg:py-12">
                         <span className="w-fit rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-[12px] font-medium uppercase tracking-[0.12em] text-[#FFD700]">
-                            Sustainability course
+                            {basePath.includes("academy") ? "Academy course" : "Sustainability course"}
                         </span>
 
                         <h1 className="mt-5 max-w-[700px] text-[31px] font-semibold leading-[1.12] tracking-[-0.04em] sm:text-[40px] lg:text-[48px]">
@@ -49,7 +50,7 @@ export function CourseOverview({ course }: CourseOverviewProps) {
 
                         {firstLesson && (
                             <Link
-                               to={`/dashboard/green-impact/${course.slug}/${firstLesson.slug}`}
+                               to={`${basePath}/${course.slug}/${firstLesson.slug}`}
                                 className="mt-8 flex h-[50px] w-fit items-center justify-center gap-2 rounded-[12px] bg-[#D7263D] px-6 text-[15px] font-semibold text-white transition hover:bg-[#BE1F34]"
                             >
                                 {safeProgress > 0 ? "Continue Learning" : "Start Course"}
@@ -141,7 +142,7 @@ export function CourseOverview({ course }: CourseOverviewProps) {
                     {course.lessons.map((lesson, index) => (
                         <Link
                             key={lesson.slug}
-                            to={`/dashboard/green-impact/${course.slug}/${lesson.slug}`}
+                            to={`${basePath}/${course.slug}/${lesson.slug}`}
                             className="group flex flex-col gap-4 rounded-[15px] border border-[#E6E8EB] p-4 transition hover:border-[#D7B900] hover:bg-[#FFFDF1] sm:flex-row sm:items-center sm:p-5"
                         >
                             <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#001F3F] text-[14px] font-semibold text-white">

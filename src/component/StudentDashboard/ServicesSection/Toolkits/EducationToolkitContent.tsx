@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { BookOpen, Calendar, Video, ExternalLink } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
 import { fetchCourses } from "../../../../lib/coursesApi";
 import type { SustainabilityCourse } from "../../ClimateDashboard/types/sustainability";
 
@@ -9,6 +10,7 @@ export default function EducationToolkitContent() {
   // whatever's actually in the education category, with each user's own
   // real progress.
   const [courses, setCourses] = useState<SustainabilityCourse[] | null>(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchCourses("education")
@@ -40,12 +42,18 @@ export default function EducationToolkitContent() {
 
           {/* Actions */}
           <div className="flex flex-wrap gap-3 sm:gap-4 mb-8 sm:mb-12">
-            <button className="flex items-center gap-2 sm:gap-3 bg-[#D7263D] text-white px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl font-medium text-sm sm:text-base">
+            <button
+              onClick={() => navigate("/dashboard/academy/courses")}
+              className="flex items-center gap-2 sm:gap-3 bg-[#D7263D] text-white px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl font-medium text-sm sm:text-base transition hover:bg-[#BE1F34]"
+            >
               <BookOpen size={16} className="sm:w-[18px] sm:h-[18px]" />
               View Resources
             </button>
 
-            <button className="flex items-center gap-2 sm:gap-3 bg-[#001F3F] text-[#FFD700] px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl font-medium text-sm sm:text-base">
+            <button
+              onClick={() => navigate("/dashboard/events")}
+              className="flex items-center gap-2 sm:gap-3 bg-[#001F3F] text-[#FFD700] px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl font-medium text-sm sm:text-base transition hover:bg-[#001F3F]/90"
+            >
               <Calendar size={16} className="sm:w-[18px] sm:h-[18px]" />
               Join Event
             </button>
@@ -53,12 +61,22 @@ export default function EducationToolkitContent() {
             {/* FLEX LINE BREAK */}
             <div className="w-full" />
 
-            <button className="flex items-center gap-2 sm:gap-3 border-2 border-[#FFD700] px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl font-medium text-[#001F3F] text-sm sm:text-base">
+            <button
+              disabled
+              title="GMBTE Connect is coming soon"
+              className="flex items-center gap-2 sm:gap-3 border-2 border-[#FFD700]/50 px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl font-medium text-[#001F3F]/50 text-sm sm:text-base cursor-not-allowed"
+            >
               <Video size={16} className="sm:w-[18px] sm:h-[18px]" />
               Launch GMBTE Connect
+              <span className="ml-1 rounded-full bg-[#F1F5F9] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[#94A3B8]">
+                Soon
+              </span>
             </button>
 
-            <button className="flex items-center gap-2 sm:gap-3 border-2 border-[#001F3F] px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl font-medium text-[#001F3F] text-sm sm:text-base">
+            <button
+              onClick={() => navigate("/dashboard/academy/courses")}
+              className="flex items-center gap-2 sm:gap-3 border-2 border-[#001F3F] px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl font-medium text-[#001F3F] text-sm sm:text-base transition hover:bg-[#001F3F] hover:text-[#FFD700]"
+            >
               <BookOpen size={16} className="sm:w-[18px] sm:h-[18px]" />
               Access Guides
             </button>
@@ -80,6 +98,7 @@ export default function EducationToolkitContent() {
               courses.map((c) => (
                 <LearningPath
                   key={c.slug}
+                  slug={c.slug}
                   title={c.title}
                   modules={c.lessons.length}
                   progress={c.progress}
@@ -103,6 +122,7 @@ export default function EducationToolkitContent() {
             title="eLearning Portal"
             desc="Access all courses and learning materials"
             iconBg="bg-[#FFD700]"
+            to="/dashboard/academy/courses"
           />
 
           <QuickTool
@@ -115,6 +135,7 @@ export default function EducationToolkitContent() {
             title="Certifications"
             desc="Browse certification programs and requirements"
             iconBg="bg-[#D7263D]"
+            comingSoon
           />
 
           <QuickTool
@@ -127,6 +148,7 @@ export default function EducationToolkitContent() {
             title="GMBTE Connect"
             desc="Join video sessions with mentors"
             iconBg="bg-[#001F3F]"
+            comingSoon
           />
 
           <QuickTool
@@ -141,6 +163,7 @@ export default function EducationToolkitContent() {
             title="Mentorship Hub"
             desc="Connect with industry professionals"
             iconBg="bg-[#FFD700]"
+            to="/dashboard/mentors"
           />
         </div>
       </div>
@@ -148,9 +171,12 @@ export default function EducationToolkitContent() {
   );
 }
 
-function LearningPath({ title, modules, progress }: {title:string, modules:number, progress: number }) {
+function LearningPath({ slug, title, modules, progress }: {slug:string, title:string, modules:number, progress: number }) {
   return (
-    <div className="border border-[#FFD700] rounded-xl p-4 sm:p-6 bg-[#FFF8E1]">
+    <Link
+      to={`/dashboard/academy/courses/${slug}`}
+      className="block border border-[#FFD700] rounded-xl p-4 sm:p-6 bg-[#FFF8E1] transition hover:border-[#D7263D] hover:bg-[#FFF3C4]"
+    >
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-3 gap-1 sm:gap-0">
         <p className="font-medium text-[#001F3F] text-sm sm:text-base">{title}</p>
         <span className="text-[#64748B] text-xs sm:text-sm">{modules} modules</span>
@@ -163,11 +189,25 @@ function LearningPath({ title, modules, progress }: {title:string, modules:numbe
       <p className="text-right text-[#D7263D] text-xs sm:text-sm mt-2">
         {progress}%
       </p>
-    </div>
+    </Link>
   );
 }
 
-function QuickTool({ icon, title, desc, iconBg = "bg-[#FFD700]" }: {icon: React.ReactNode, title:string, desc: string, iconBg: string}) {
+function QuickTool({
+  icon,
+  title,
+  desc,
+  iconBg = "bg-[#FFD700]",
+  to,
+  comingSoon = false,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  desc: string;
+  iconBg: string;
+  to?: string;
+  comingSoon?: boolean;
+}) {
   return (
     <div className="border border-[#001F3F] rounded-xl sm:rounded-2xl p-5 sm:p-8 bg-[#FFFCF7]">
       <div className="flex items-start gap-3 sm:gap-4 mb-4 sm:mb-6">
@@ -176,17 +216,37 @@ function QuickTool({ icon, title, desc, iconBg = "bg-[#FFD700]" }: {icon: React.
         </div>
 
         <div>
-          <h4 className="text-lg sm:text-[20px] font-semibold mb-1 sm:mb-2 text-[#001F3F]">
-            {title}
-          </h4>
+          <div className="flex items-center gap-2 mb-1 sm:mb-2">
+            <h4 className="text-lg sm:text-[20px] font-semibold text-[#001F3F]">
+              {title}
+            </h4>
+            {comingSoon && (
+              <span className="rounded-full bg-[#F1F5F9] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[#94A3B8]">
+                Soon
+              </span>
+            )}
+          </div>
           <p className="text-[#64748B] text-xs sm:text-sm mt-1 mb-2">{desc}</p>
         </div>
       </div>
 
-      <button className="w-full flex items-center justify-center gap-2 sm:gap-3 bg-[#001F3F] text-[#FFD700] py-2.5 sm:py-3 rounded-xl font-medium text-sm sm:text-base">
-        Open Tool
-        <ExternalLink size={14} className="sm:w-4 sm:h-4" />
-      </button>
+      {comingSoon || !to ? (
+        <button
+          disabled
+          title={`${title} is coming soon`}
+          className="w-full flex items-center justify-center gap-2 sm:gap-3 bg-[#EEF2F7] text-[#94A3B8] py-2.5 sm:py-3 rounded-xl font-medium text-sm sm:text-base cursor-not-allowed"
+        >
+          Coming Soon
+        </button>
+      ) : (
+        <Link
+          to={to}
+          className="w-full flex items-center justify-center gap-2 sm:gap-3 bg-[#001F3F] text-[#FFD700] py-2.5 sm:py-3 rounded-xl font-medium text-sm sm:text-base transition hover:bg-[#001F3F]/90"
+        >
+          Open Tool
+          <ExternalLink size={14} className="sm:w-4 sm:h-4" />
+        </Link>
+      )}
     </div>
   );
 }

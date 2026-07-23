@@ -6,7 +6,11 @@ import { LessonContent } from "../Component/LessonContent";
 import { LessonNavigation } from "../Component/LessonNavigation";
 import { fetchLessonBySlug, toggleSectionComplete } from "../../../../lib/coursesApi";
 
-export default function CourseLessonPage() {
+type CourseLessonPageProps = {
+  basePath?: string;
+};
+
+export default function CourseLessonPage({ basePath = "/dashboard/green-impact" }: CourseLessonPageProps) {
   const { courseSlug, lessonSlug } = useParams<{
     courseSlug: string;
     lessonSlug: string;
@@ -25,7 +29,7 @@ export default function CourseLessonPage() {
   });
 
   if (!courseSlug || !lessonSlug) {
-    return <Navigate to="/sustainability" replace />;
+    return <Navigate to={basePath} replace />;
   }
 
   if (isLoading) {
@@ -37,7 +41,7 @@ export default function CourseLessonPage() {
   }
 
   if (!data) {
-    return <Navigate to="/sustainability" replace />;
+    return <Navigate to={basePath} replace />;
   }
 
   const { course, lesson } = data;
@@ -71,6 +75,7 @@ export default function CourseLessonPage() {
         <CourseSidebar
           course={course}
           activeLessonSlug={lesson.slug}
+          basePath={basePath}
         />
 
         <div className="min-w-0 flex-1">
@@ -83,6 +88,7 @@ export default function CourseLessonPage() {
           <LessonNavigation
             course={course}
             lessonSlug={lesson.slug}
+            basePath={basePath}
           />
         </div>
       </div>

@@ -27,6 +27,7 @@ import JobDetailsPage from './component/StudentDashboard/JobDashboard/JobDetails
 import JobIndex from './component/StudentDashboard/JobDashboard/JobIndex';
 import { ToolkitsIndex } from './component/StudentDashboard/ToolkitsSection/ToolkitsIndex';
 import { ToolkIndex } from './component/StudentDashboard/ServicesSection/Toolkits/ToolkIndex';
+import AcademyAllCourses from './component/StudentDashboard/ServicesSection/Toolkits/AcademyAllCourses';
 import ServicesIndexPage from './component/servicesPages/servicesIndex';
 import { Toaster } from "react-hot-toast";
 import ComingSoon from './component/Authentication/Soon';
@@ -140,6 +141,15 @@ function AppLayout() {
 
             {/* ── LIVE at launch: Dashboard, Academy, Green Impact, Hall of Fame ── */}
             <Route path="academy" element={<ToolkIndex />} />
+            <Route path="academy/courses" element={<AcademyAllCourses />} />
+            <Route
+              path="academy/courses/:courseSlug"
+              element={<CourseOverviewPage basePath="/dashboard/academy/courses" />}
+            />
+            <Route
+              path="academy/courses/:courseSlug/:lessonSlug"
+              element={<CourseLessonPage basePath="/dashboard/academy/courses" />}
+            />
             <Route
                 path="hall-of-fame"
                 element={<HallOfFameEmbed />}
