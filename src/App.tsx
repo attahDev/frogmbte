@@ -167,7 +167,14 @@ function AppLayout() {
 
             <Route path="business" element={<ComingSoon />} /> {/* <ToolkitsIndex /> */}
             <Route path="partnerships" element={<ComingSoon />} /> {/* <PartnershipsIndex /> */}
-            <Route path="pitch-deck" element={<ComingSoon />} />
+            <Route
+              path="pitch-deck"
+              element={
+                <Suspense fallback={<ToolFallback />}>
+                  <PitchDeckGenerator />
+                </Suspense>
+              }
+            />
             <Route
               path="proposal-builder"
               element={
@@ -188,7 +195,7 @@ function AppLayout() {
             <Route path="mentors-ai" element={<ComingSoon />} /> {/* <MentorIndexAI /> */}
             <Route path="profile" element={<ComingSoon />} />
             <Route path="settings" element={<ComingSoon />} />
-            <Route path="brand-identity" element={<ComingSoon />} /> {/* <BrandIdentityBuilder /> */}
+            <Route path="brand-identity" element={<BrandIdentityBuilder />} />
             <Route path="ai-studio" element={<ComingSoon />} /> {/* <AIBusinessStudioSection /> */}
             <Route path="idea-generator" element={<ComingSoon />} /> {/* <IGDashboardSection /> */}
             <Route
