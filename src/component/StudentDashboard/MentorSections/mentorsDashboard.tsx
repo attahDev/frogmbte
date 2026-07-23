@@ -144,7 +144,7 @@ export default function MentorsDashboard(): JSX.Element {
           title="No mentors yet"
           description="You haven't connected with a mentor yet. Head to Find a Mentor to browse the directory and send a connection request."
           buttonText="Find a Mentor"
-          buttonHref="/dashboard/community/find"
+          buttonHref="/dashboard/mentors/find"
         />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
