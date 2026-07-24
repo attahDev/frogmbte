@@ -149,3 +149,49 @@ export async function unsaveEvent(eventId: string) {
   const { data } = await api.delete(`/events/${eventId}/save`);
   return data;
 }
+
+export type CommunityEventInput = {
+  title: string;
+  description?: string;
+  location?: string;
+  mode?: EventFormat;
+  link?: string;
+  tags?: string[];
+  startsAt: string; // ISO
+  endsAt?: string; // ISO
+  image?: File;
+};
+
+/** "Host an Event" — POST /events/community, multipart (matches how
+ * community post photos upload). Always lands PENDING on the backend;
+ * won't show up on fetchUpcomingEvents/fetchAllEvents until an admin
+ * approves it. */
+export async function submitCommunityEvent(input: CommunityEventInput) {
+  const form = new FormData();
+  form.append("title", input.title);
+  if (input.description) form.append("description", input.description);
+  if (input.location) form.append("location", input.location);
+  if (input.mode) form.append("mode", input.mode);
+  if (input.link) form.append("link", input.link);
+  if (input.tags?.length) form.append("tags", input.tags.join(","));
+  form.append("startsAt", input.startsAt);
+  if (input.endsAt) form.append("endsAt", input.endsAt);
+  if (input.image) form.append("image", input.image);
+
+  const { data } = await api.post("/events/community", form, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+  return data;
+}
+
+export type SubmissionStatus = "PENDING" | "APPROVED" | "REJECTED";
+
+export type UiSubmission = UiEvent & { reviewStatus: SubmissionStatus };
+
+/** GET /events/community/mine — the current user's own "Host an Event"
+ * submissions, whatever their review state, so they can track status. */
+export async function fetchMySubmissions(): Promise<UiSubmission[]> {
+  const { data } = await api.get("/events/community/mine");
+  const events: (BackendEvent & { reviewStatus: SubmissionStatus })[] = data?.data ?? data;
+  return events.map((e) => ({ ...toUiEvent(e), reviewStatus: e.reviewStatus }));
+}

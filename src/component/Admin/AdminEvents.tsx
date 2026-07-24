@@ -17,6 +17,10 @@ type EventRow = {
   isCompleted: boolean;
 };
 
+// Same shape as EventRow, minus the admin-only flags a member submission
+// never has — "Host an Event" doesn't expose isFeatured/isActive/isCompleted.
+type PendingSubmission = Omit<EventRow, "isActive" | "isFeatured" | "isCompleted">;
+
 const EMPTY = {
   title: "",
   description: "",
@@ -46,6 +50,9 @@ export default function AdminEvents() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState(EMPTY);
 
+  const [pending, setPending] = useState<PendingSubmission[] | null>(null);
+  const [moderatingId, setModeratingId] = useState<string | null>(null);
+
   const load = () => {
     api
       .get("/events", { params: { includeInactive: "true" } })
@@ -53,7 +60,38 @@ export default function AdminEvents() {
       .catch(() => setEvents([]));
   };
 
-  useEffect(load, []);
+  const loadPending = () => {
+    api
+      .get("/events/admin/pending")
+      .then(({ data }) => setPending(data?.data ?? data ?? []))
+      .catch(() => setPending([]));
+  };
+
+  useEffect(() => {
+    load();
+    loadPending();
+  }, []);
+
+  const approveSubmission = async (id: string) => {
+    setModeratingId(id);
+    try {
+      await api.patch(`/events/admin/${id}/approve`);
+      loadPending();
+      load(); // approved event now shows up in the main Events list below
+    } finally {
+      setModeratingId(null);
+    }
+  };
+
+  const rejectSubmission = async (id: string) => {
+    setModeratingId(id);
+    try {
+      await api.patch(`/events/admin/${id}/reject`);
+      loadPending();
+    } finally {
+      setModeratingId(null);
+    }
+  };
 
   const create = async () => {
     if (!form.title || !form.startsAt) return;
@@ -235,6 +273,54 @@ export default function AdminEvents() {
         >
           Create event
         </button>
+      </div>
+
+      <div className="rounded-md border border-gray-300 bg-white p-4">
+        <h2 className="text-base font-semibold text-[#001F3F]">
+          Pending Submissions{" "}
+          {pending && pending.length > 0 && (
+            <span className="ml-1 rounded-full bg-[#D7263D] px-2 py-0.5 text-xs text-white">{pending.length}</span>
+          )}
+        </h2>
+        <p className="mt-1 text-xs text-gray-500">
+          Events members submitted via "Host an Event" — not visible anywhere until you approve them.
+        </p>
+
+        {pending === null ? (
+          <p className="mt-3 text-sm text-gray-500">Loading…</p>
+        ) : pending.length === 0 ? (
+          <p className="mt-3 text-sm text-gray-500">Nothing waiting on review.</p>
+        ) : (
+          <div className="mt-3 space-y-3">
+            {pending.map((ev) => (
+              <div key={ev.id} className="flex flex-wrap items-center justify-between gap-2 rounded border border-gray-200 p-3 text-sm">
+                <div>
+                  <p className="font-medium text-[#001F3F]">{ev.title}</p>
+                  <p className="text-xs text-gray-500">
+                    {new Date(ev.startsAt).toLocaleString()} · {ev.location || "Virtual"} · {ev.mode ?? "In-Person"}
+                  </p>
+                  {ev.description && <p className="mt-1 text-xs text-gray-600">{ev.description}</p>}
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => approveSubmission(ev.id)}
+                    disabled={moderatingId === ev.id}
+                    className="rounded bg-[#001F3F] px-2 py-1 text-xs text-white disabled:opacity-50"
+                  >
+                    Approve
+                  </button>
+                  <button
+                    onClick={() => rejectSubmission(ev.id)}
+                    disabled={moderatingId === ev.id}
+                    className="rounded border border-gray-300 px-2 py-1 text-xs text-gray-600 disabled:opacity-50"
+                  >
+                    Reject
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       <div className="rounded-md border border-gray-300 bg-white p-4">
