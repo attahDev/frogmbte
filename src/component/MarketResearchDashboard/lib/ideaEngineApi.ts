@@ -3,7 +3,7 @@
 // page, and the Opportunity Insights page. One generated Idea record
 // feeds all three; Business Plan links back to it via sourceIdeaId.
 
-const BASE = "https://gmbte-idea-engine.onrender.com".replace(/\/+$/, "");
+const BASE = "https://idea-engine-dniw.onrender.com".replace(/\/+$/, "");
 
 console.log("Idea Engine API:", BASE);
 
