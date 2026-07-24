@@ -19,7 +19,7 @@ import {
   Wand2,
 } from "lucide-react";
 import AIDashboardCard from "../MarketResearchDashboard/ui/AIDashboardCard";
-import { api } from "../../lib/api"; 
+import { brandIdentityApi as api } from "./api/brandIdentityApi";
 
 type ToolKey =
   | "business-card"
