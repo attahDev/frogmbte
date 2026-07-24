@@ -16,7 +16,9 @@ import {
   RefreshCw,
   Sparkles,
   Trophy,
+  UploadCloud,
   Wand2,
+  X,
 } from "lucide-react";
 import AIDashboardCard from "../MarketResearchDashboard/ui/AIDashboardCard";
 import { brandIdentityApi as api } from "./api/brandIdentityApi";
@@ -50,6 +52,8 @@ type ToolConfig = {
   icon: React.ElementType;
   fields: FieldConfig[];
   colors: boolean;
+  /** Whether this asset accepts a user-uploaded logo (maps to `logo_url` on the backend) */
+  logoUpload?: boolean;
 };
 
 const presetColors = [
@@ -71,6 +75,7 @@ const tools: ToolConfig[] = [
     subtitle: "Front & back card design with your brand",
     icon: IdCard,
     colors: true,
+    logoUpload: true,
     fields: [
       { id: "name", label: "Full Name", placeholder: "e.g. Johnson Kate" },
       { id: "role", label: "Job Title / Role", placeholder: "e.g. CEO" },
@@ -114,6 +119,7 @@ const tools: ToolConfig[] = [
     subtitle: "Official document header for correspondence",
     icon: FileText,
     colors: true,
+    logoUpload: true,
     fields: [
       { id: "company", label: "Company Name" },
       { id: "address", label: "Company Address", placeholder: "12 Tech Street, Lagos" },
@@ -122,6 +128,15 @@ const tools: ToolConfig[] = [
       { id: "website", label: "Website", optional: true },
       { id: "tagline", label: "Tagline", optional: true },
       { id: "registrationNumber", label: "Company Registration Number", placeholder: "e.g. RC-123456", optional: true },
+      { id: "social", label: "Social / Website Handle", placeholder: "e.g. linkedin.com/company/acme", optional: true },
+      {
+        id: "body",
+        label: "Letter Body",
+        placeholder: "Dear [Recipient],\n\n...",
+        type: "textarea",
+        optional: true,
+        full: true,
+      },
     ],
   },
   {
@@ -131,6 +146,7 @@ const tools: ToolConfig[] = [
     subtitle: "Branded sign-off block for your emails",
     icon: Mail,
     colors: true,
+    logoUpload: true,
     fields: [
       { id: "name", label: "Full Name" },
       { id: "role", label: "Job Title" },
@@ -148,6 +164,7 @@ const tools: ToolConfig[] = [
     subtitle: "Branded payment request document",
     icon: Receipt,
     colors: true,
+    logoUpload: true,
     fields: [
       { id: "company", label: "Company Name" },
       { id: "address", label: "Company Address" },
@@ -171,6 +188,7 @@ const tools: ToolConfig[] = [
     subtitle: "Pricing proposal document for clients",
     icon: ClipboardList,
     colors: true,
+    logoUpload: true,
     fields: [
       { id: "company", label: "Company Name" },
       { id: "address", label: "Address" },
@@ -258,9 +276,15 @@ function cleanObject(obj: Record<string, any>) {
   );
 }
 
-function buildPayload(toolKey: ToolKey, values: Record<string, string>, colors: string[]) {
+function buildPayload(
+  toolKey: ToolKey,
+  values: Record<string, string>,
+  colors: string[],
+  logoUrl?: string
+) {
   const primary_color = colors[0] || "#001F3F";
   const secondary_color = colors[1] || "#FFD700";
+  const logo_url = logoUrl || undefined;
 
   switch (toolKey) {
     case "logo":
@@ -284,6 +308,7 @@ function buildPayload(toolKey: ToolKey, values: Record<string, string>, colors: 
         phone: values.phone,
         website: values.website,
         registration_number: values.registrationNumber,
+        logo_url,
         primary_color,
         secondary_color,
       });
@@ -297,6 +322,9 @@ function buildPayload(toolKey: ToolKey, values: Record<string, string>, colors: 
         website: values.website,
         tagline: values.tagline,
         registration_number: values.registrationNumber,
+        social_link: values.social,
+        content_body: values.body,
+        logo_url,
         primary_color,
         secondary_color,
       });
@@ -310,6 +338,7 @@ function buildPayload(toolKey: ToolKey, values: Record<string, string>, colors: 
         phone: values.phone,
         social_link: values.social,
         registration_number: values.registrationNumber,
+        logo_url,
         primary_color,
         secondary_color,
       });
@@ -324,6 +353,7 @@ function buildPayload(toolKey: ToolKey, values: Record<string, string>, colors: 
         website: values.website,
         registration_number: values.registrationNumber,
         footer_note: values.note,
+        logo_url,
         primary_color,
         secondary_color,
       });
@@ -339,6 +369,7 @@ function buildPayload(toolKey: ToolKey, values: Record<string, string>, colors: 
         payment_terms: values.terms,
         registration_number: values.registrationNumber,
         currency: "NGN ₦",
+        logo_url,
         primary_color,
         secondary_color,
       });
@@ -401,11 +432,20 @@ function validateTool(tool: ToolConfig, values: Record<string, string>) {
 export default function BrandIdentityBuilder() {
   const [activeTool, setActiveTool] = useState<ToolKey | null>(null);
   const [values, setValues] = useState<Record<string, string>>({});
-  const [selectedColors, setSelectedColors] = useState<string[]>(["#001F3F", "#FFD700", "#FFB84D"]);
+  const [primaryColor, setPrimaryColor] = useState("#001F3F");
+  const [secondaryColor, setSecondaryColor] = useState("#FFD700");
+  const [logoUrl, setLogoUrl] = useState("");
+  const [logoUploading, setLogoUploading] = useState(false);
+  const [logoError, setLogoError] = useState("");
   const [view, setView] = useState<"empty" | "form" | "loading" | "result">("empty");
   const [error, setError] = useState("");
   const [assetStatus, setAssetStatus] = useState<any>(null);
   const [exportsData, setExportsData] = useState<any>(null);
+
+  const selectedColors = useMemo(
+    () => [primaryColor, secondaryColor],
+    [primaryColor, secondaryColor]
+  );
 
   const pollingRef = useRef<number | null>(null);
 
@@ -429,10 +469,44 @@ export default function BrandIdentityBuilder() {
     setError("");
     setAssetStatus(null);
     setExportsData(null);
+    setLogoUrl("");
+    setLogoError("");
   };
 
   const updateValue = (id: string, value: string) => {
     setValues((prev) => ({ ...prev, [id]: value }));
+  };
+
+  const handleLogoUpload = async (file: File) => {
+    const MAX_MB = 5;
+    if (file.size > MAX_MB * 1024 * 1024) {
+      setLogoError(`File too large (max ${MAX_MB}MB).`);
+      return;
+    }
+    if (!["image/png", "image/jpeg", "image/jpg", "image/svg+xml"].includes(file.type)) {
+      setLogoError("Only PNG, JPG or SVG files are allowed.");
+      return;
+    }
+
+    setLogoError("");
+    setLogoUploading(true);
+
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const result = await api.post("/assets/upload/logo", formData);
+      const url = result.data?.logo_url;
+
+      if (!url) throw new Error("No logo_url returned from upload.");
+      setLogoUrl(url);
+    } catch (err: any) {
+      setLogoError(
+        err?.response?.data?.detail || err?.message || "Logo upload failed."
+      );
+    } finally {
+      setLogoUploading(false);
+    }
   };
 
   const fetchExports = async (assetId: string) => {
@@ -489,7 +563,7 @@ export default function BrandIdentityBuilder() {
       setExportsData(null);
       setView("loading");
 
-      const payload = buildPayload(activeTool, values, selectedColors);
+      const payload = buildPayload(activeTool, values, selectedColors, logoUrl);
       const assetType = assetTypeMap[activeTool];
 
       const result = await api.post(
@@ -620,15 +694,19 @@ export default function BrandIdentityBuilder() {
             <FormPanel
               tool={currentTool}
               values={values}
-              selectedColors={selectedColors}
+              primaryColor={primaryColor}
+              secondaryColor={secondaryColor}
+              onPrimaryColorChange={setPrimaryColor}
+              onSecondaryColorChange={setSecondaryColor}
+              logoUrl={logoUrl}
+              logoUploading={logoUploading}
+              logoError={logoError}
+              onLogoUpload={handleLogoUpload}
+              onLogoClear={() => {
+                setLogoUrl("");
+                setLogoError("");
+              }}
               onValueChange={updateValue}
-              onColorToggle={(color) =>
-                setSelectedColors((prev) =>
-                  prev.includes(color)
-                    ? prev.filter((item) => item !== color)
-                    : [...prev, color]
-                )
-              }
               onGenerate={generate}
             />
           )}
@@ -653,6 +731,44 @@ export default function BrandIdentityBuilder() {
   );
 }
 
+function ColorPickerField({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  onChange: (color: string) => void;
+}) {
+  const isValidHex = /^#[0-9A-Fa-f]{6}$/.test(value);
+
+  return (
+    <div>
+      <label className="mb-1.5 block text-xs font-semibold text-[#4A5568]">
+        {label}
+      </label>
+      <div className="flex items-center gap-2 rounded-xl border border-[#E0E5EC] bg-[#F9FAFC] px-2 py-1.5 focus-within:border-[#001F3F] focus-within:ring-4 focus-within:ring-[#001F3F]/10">
+        <input
+          type="color"
+          value={isValidHex ? value : "#000000"}
+          onChange={(e) => onChange(e.target.value.toUpperCase())}
+          className="h-8 w-9 shrink-0 cursor-pointer rounded-md border-0 bg-transparent p-0"
+          aria-label={`${label} color wheel`}
+        />
+        <input
+          type="text"
+          value={value}
+          maxLength={7}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder="#001F3F"
+          className="w-full bg-transparent text-sm font-medium uppercase tracking-wide text-[#1A2332] outline-none"
+          aria-label={`${label} hex value`}
+        />
+      </div>
+    </div>
+  );
+}
+
 function EmptyState() {
   return (
     <div className="flex min-h-[430px] flex-col items-center justify-center rounded-3xl border border-dashed border-[#D7DEE8] bg-white text-center">
@@ -670,16 +786,30 @@ function EmptyState() {
 function FormPanel({
   tool,
   values,
-  selectedColors,
+  primaryColor,
+  secondaryColor,
+  onPrimaryColorChange,
+  onSecondaryColorChange,
+  logoUrl,
+  logoUploading,
+  logoError,
+  onLogoUpload,
+  onLogoClear,
   onValueChange,
-  onColorToggle,
   onGenerate,
 }: {
   tool: ToolConfig;
   values: Record<string, string>;
-  selectedColors: string[];
+  primaryColor: string;
+  secondaryColor: string;
+  onPrimaryColorChange: (color: string) => void;
+  onSecondaryColorChange: (color: string) => void;
+  logoUrl: string;
+  logoUploading: boolean;
+  logoError: string;
+  onLogoUpload: (file: File) => void;
+  onLogoClear: () => void;
   onValueChange: (id: string, value: string) => void;
-  onColorToggle: (color: string) => void;
   onGenerate: () => void;
 }) {
   const Icon = tool.icon;
@@ -750,21 +880,84 @@ function FormPanel({
             Brand Colors <span className="font-normal normal-case">optional</span>
           </p>
 
-          <div className="flex flex-wrap gap-3">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <ColorPickerField
+              label="Primary"
+              value={primaryColor}
+              onChange={onPrimaryColorChange}
+            />
+            <ColorPickerField
+              label="Secondary"
+              value={secondaryColor}
+              onChange={onSecondaryColorChange}
+            />
+          </div>
+
+          <div className="mt-4 flex flex-wrap gap-2">
             {presetColors.map((color) => (
               <button
                 key={color}
-                onClick={() => onColorToggle(color)}
-                className={`h-8 w-8 rounded-full border transition ${
-                  selectedColors.includes(color)
-                    ? "ring-2 ring-[#001F3F] ring-offset-2"
-                    : "ring-0"
-                }`}
+                type="button"
+                onClick={() => onPrimaryColorChange(color)}
+                className="h-7 w-7 rounded-full border border-black/5 transition hover:ring-2 hover:ring-[#001F3F] hover:ring-offset-2"
                 style={{ backgroundColor: color }}
-                aria-label={color}
+                aria-label={`Use ${color} as primary`}
+                title={color}
               />
             ))}
           </div>
+        </AIDashboardCard>
+      )}
+
+      {tool.logoUpload && (
+        <AIDashboardCard variant="panel" padding="lg" className="mt-4 bg-white">
+          <p className="mb-4 text-xs font-bold uppercase tracking-[0.1em] text-[#8A94A6]">
+            Logo <span className="font-normal normal-case">optional</span>
+          </p>
+
+          {logoUrl ? (
+            <div className="flex items-center gap-4 rounded-xl border border-[#E0E5EC] p-3">
+              <img
+                src={logoUrl}
+                alt="Uploaded logo"
+                className="h-14 w-14 rounded-lg border border-[#E0E5EC] object-contain"
+              />
+              <div className="flex-1">
+                <p className="text-sm font-semibold text-[#1A2332]">Logo uploaded</p>
+                <p className="truncate text-xs text-[#8A94A6]">{logoUrl}</p>
+              </div>
+              <button
+                type="button"
+                onClick={onLogoClear}
+                className="flex h-8 w-8 items-center justify-center rounded-lg border border-[#E0E5EC] text-[#8A94A6] hover:bg-[#F4F6F9]"
+                aria-label="Remove logo"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+          ) : (
+            <label className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-[#D7DEE8] bg-[#F9FAFC] px-4 py-6 text-center transition hover:border-[#001F3F]/40">
+              <input
+                type="file"
+                accept="image/png,image/jpeg,image/svg+xml"
+                className="hidden"
+                disabled={logoUploading}
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) onLogoUpload(file);
+                  e.target.value = "";
+                }}
+              />
+              <UploadCloud className="h-6 w-6 text-[#8A94A6]" />
+              <span className="text-sm font-semibold text-[#1A2332]">
+                {logoUploading ? "Uploading…" : "Click to upload PNG, JPG or SVG (max 5MB)"}
+              </span>
+            </label>
+          )}
+
+          {logoError && (
+            <p className="mt-2 text-xs font-medium text-red-600">{logoError}</p>
+          )}
         </AIDashboardCard>
       )}
 
