@@ -16,6 +16,7 @@ execution plan here.'
           />
         }
         buttonText='Go to dashboard'
+        buttonHref='/dashboard/ai-studio'
       />
     </div>
   );
