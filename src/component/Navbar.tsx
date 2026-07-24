@@ -354,6 +354,21 @@ const NavBar = () => {
                 {/* Mobile Controls */}
                 <div className="flex items-center gap-2 lg:hidden shrink-0">
                     {isAuthenticated && user && (
+                        <Link
+                            to="/dashboard/notifications"
+                            aria-label="Notifications"
+                            className="relative flex items-center text-black p-2 hover:bg-gray-50 rounded-full transition duration-150"
+                        >
+                            <Bell size={22} strokeWidth={2} />
+                            {unreadNotifications > 0 && (
+                                <span className="absolute -top-1 -right-1 bg-[#D7263D] text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                                    {unreadNotifications > 9 ? "9+" : unreadNotifications}
+                                </span>
+                            )}
+                        </Link>
+                    )}
+
+                    {isAuthenticated && user && (
                         <div ref={profileMobileRef} className="relative">
                             <button
                                 type="button"
