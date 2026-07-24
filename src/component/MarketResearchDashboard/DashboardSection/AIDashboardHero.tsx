@@ -2,6 +2,7 @@
 "use client";
 
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { ArrowRight, FileText, Search } from "lucide-react";
 import BeeWatermark from "../ui/BeeWatermark";
 import AIDashboardButton from "../ui/AIDashboardButton";
@@ -11,6 +12,8 @@ import {
   generateBusinessPlan,
   type GeneratePlanPayload,
 } from "../lib/businessPlannerApi";
+import { generateIdea, type GenerateIdeaPayload } from "../lib/ideaEngineApi";
+import { setCurrentIdeaId, getCurrentIdeaId } from "../lib/currentIdea";
 import { GeneratedPlanResult } from "./generatedplan";
 
 type Props = {
@@ -29,12 +32,15 @@ const initialForm: GeneratePlanPayload = {
   goal: "",
 };
 
+type Action = "idea" | "validate" | "plan" | null;
+
 export default function DashboardHero({
   hasContent = true,
   onPlanGenerated,
 }: Props) {
+  const navigate = useNavigate();
   const [form, setForm] = useState<GeneratePlanPayload>(initialForm);
-  const [loading, setLoading] = useState(false);
+  const [activeAction, setActiveAction] = useState<Action>(null);
   const [error, setError] = useState("");
   const [generatedPlan, setGeneratedPlan] = useState<any>(null);
 
@@ -56,22 +62,78 @@ export default function DashboardHero({
     return "";
   };
 
-  const handleGeneratePlan = async () => {
-    const validationError = validateForm();
+  const toIdeaPayload = (): GenerateIdeaPayload => ({
+    business_idea: form.business_idea,
+    industry: form.industry,
+    target_audience: form.target_audience,
+    skills: form.skills,
+    budget: form.budget,
+    location: form.location,
+    experience_level: form.experience_level,
+    goal: form.goal,
+  });
 
+  // "Generate ideas for me" — creates a new idea via idea-engine and takes
+  // the user to the Idea Generator page to see the full result.
+  const handleGenerateIdeas = async () => {
+    const validationError = validateForm();
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
+    try {
+      setActiveAction("idea");
+      setError("");
+      const idea = await generateIdea(toIdeaPayload());
+      setCurrentIdeaId(idea.id);
+      navigate("/dashboard/idea-generator");
+    } catch (err: any) {
+      setError(err?.message || "Something went wrong generating your idea. Please try again.");
+    } finally {
+      setActiveAction(null);
+    }
+  };
+
+  // "Validate Idea" — same idea-engine generation (it already produces the
+  // market validation/opportunity data), routed to Opportunity Insights.
+  const handleValidateIdea = async () => {
+    const validationError = validateForm();
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
+    try {
+      setActiveAction("validate");
+      setError("");
+      const idea = await generateIdea(toIdeaPayload());
+      setCurrentIdeaId(idea.id);
+      navigate("/dashboard/opportunity-insights");
+    } catch (err: any) {
+      setError(err?.message || "Something went wrong validating your idea. Please try again.");
+    } finally {
+      setActiveAction(null);
+    }
+  };
+
+  // "Build Plan" — the original business-planner flow. If the user already
+  // has a generated idea in this session, link the plan back to it.
+  const handleBuildPlan = async () => {
+    const validationError = validateForm();
     if (validationError) {
       setError(validationError);
       return;
     }
 
     try {
-      setLoading(true);
+      setActiveAction("plan");
       setError("");
       setGeneratedPlan(null);
 
-      const result = await generateBusinessPlan(form);
-
-      console.log("AI BUSINESS PLAN RESPONSE:", result);
+      const sourceIdeaId = getCurrentIdeaId();
+      const result = await generateBusinessPlan({
+        ...form,
+        ...(sourceIdeaId ? { source_idea_id: sourceIdeaId } : {}),
+      });
 
       if (!result?.success) {
         throw new Error(result?.error || "Failed to generate business plan.");
@@ -80,8 +142,6 @@ export default function DashboardHero({
       setGeneratedPlan(result.data);
       onPlanGenerated?.(result.data);
     } catch (err: any) {
-      console.log("AI BUSINESS PLAN ERROR:", err);
-
       setError(
         err?.response?.data?.error ||
           err?.response?.data?.message ||
@@ -89,9 +149,11 @@ export default function DashboardHero({
           "Something went wrong. Please try again."
       );
     } finally {
-      setLoading(false);
+      setActiveAction(null);
     }
   };
+
+  const loading = activeAction !== null;
 
   return (
     <AIDashboardCard
@@ -194,10 +256,10 @@ export default function DashboardHero({
               icon={ArrowRight}
               iconPosition="right"
               className="px-6 py-4 text-base"
-              onClick={handleGeneratePlan}
+              onClick={handleGenerateIdeas}
               disabled={loading}
             >
-              {loading ? "Generating..." : "Generate ideas for me"}
+              {activeAction === "idea" ? "Generating..." : "Generate ideas for me"}
             </AIDashboardButton>
 
             <AIDashboardButton
@@ -205,10 +267,10 @@ export default function DashboardHero({
               icon={Search}
               iconPosition="left"
               className="px-6 py-4 text-base"
-              onClick={handleGeneratePlan}
+              onClick={handleValidateIdea}
               disabled={loading}
             >
-              {loading ? "Validating..." : "Validate Idea"}
+              {activeAction === "validate" ? "Validating..." : "Validate Idea"}
             </AIDashboardButton>
 
             <AIDashboardButton
@@ -216,10 +278,10 @@ export default function DashboardHero({
               icon={FileText}
               iconPosition="left"
               className="px-6 py-4 text-base"
-              onClick={handleGeneratePlan}
+              onClick={handleBuildPlan}
               disabled={loading}
             >
-              {loading ? "Building..." : "Build Plan"}
+              {activeAction === "plan" ? "Building..." : "Build Plan"}
             </AIDashboardButton>
           </div>
 

@@ -1,45 +1,58 @@
 import { TrendingUp } from 'lucide-react'
 import AIDashboardCard from '../ui/AIDashboardCard'
 import BeeWatermark from '../ui/BeeWatermark'
+import type { IdeaContent } from '../lib/ideaEngineApi'
 
-type StatChip = {
-  label: string
-  value: string
-  sub: string
-  color: string
-  showTrend?: boolean
+type Props = {
+  content?: IdeaContent
 }
 
-const stats: StatChip[] = [
-  {
-    label: 'CONFIDENCE SCORE',
-    value: '82/100',
-    sub: 'Strong opportunity',
-    color: 'text-[#FFD700]',
-  },
-  {
-    label: 'MARKET DEMAND',
-    value: 'High',
-    sub: '8/10',
-    color: 'text-[#FFD700]',
-    showTrend: true,
-  },
-  {
-    label: 'DIFFICULTY',
-    value: 'Moderate',
-    sub: 'Achievable',
-    color: 'text-[#FFB84D]',
-  },
-  {
-    label: 'PROFIT POTENTIAL',
-    value: 'High',
-    sub: 'Scalable SaaS',
-    color: 'text-[#FFD700]',
-    showTrend: true,
-  },
-]
+export default function IGResultHero({ content }: Props) {
+  const summary = content?.summary_card ?? {
+    title: 'AI-Powered Fitness Coaching Platform',
+    description: 'Smart Analysis. Real Insights. Better Decisions.',
+    confidence_score: 82,
+  }
+  const demand = content?.market_insights.demand ?? { label: 'High', score: 8 }
+  const difficulty = content?.feasibility_card.difficulty ?? 'Moderate'
+  const profitPotential = content?.market_insights.profit_potential ?? 'High'
 
-export default function IGResultHero() {
+  const confidenceLabel =
+    summary.confidence_score >= 70
+      ? 'Strong opportunity'
+      : summary.confidence_score >= 40
+        ? 'Moderate opportunity'
+        : 'Needs work'
+
+  const stats = [
+    {
+      label: 'CONFIDENCE SCORE',
+      value: `${summary.confidence_score}/100`,
+      sub: confidenceLabel,
+      color: 'text-[#FFD700]',
+    },
+    {
+      label: 'MARKET DEMAND',
+      value: demand.label,
+      sub: `${demand.score}/10`,
+      color: 'text-[#FFD700]',
+      showTrend: true,
+    },
+    {
+      label: 'DIFFICULTY',
+      value: difficulty,
+      sub: difficulty === 'Easy' ? 'Straightforward' : difficulty === 'Hard' ? 'Challenging' : 'Achievable',
+      color: 'text-[#FFB84D]',
+    },
+    {
+      label: 'PROFIT POTENTIAL',
+      value: profitPotential,
+      sub: 'Scalable',
+      color: 'text-[#FFD700]',
+      showTrend: true,
+    },
+  ]
+
   return (
     <AIDashboardCard
       variant="panel"
@@ -58,10 +71,10 @@ export default function IGResultHero() {
           </div>
 
           <h2 className="text-xl font-extrabold leading-tight tracking-tight text-white sm:text-2xl lg:text-[28px]">
-            AI-Powered Fitness Coaching Platform
+            {summary.title}
           </h2>
           <p className="mt-1.5 text-xs text-white/55 sm:mt-2 sm:text-sm">
-            Smart Analysis. Real Insights. Better Decisions.
+            {summary.description}
           </p>
         </div>
 

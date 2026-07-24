@@ -196,14 +196,14 @@ function AppLayout() {
             <Route path="mentors/find" element={<FindMentor />} />
             <Route path="notifications" element={<NotificationsPage />} />
             <Route path="community" element={<CommunityPage />} />
-            <Route path="events" element={<EventSectionIndex />} />
+            <Route path="events" element={<ComingSoon />} /> {/* <EventSectionIndex /> */}
             <Route path="mentors" element={<MentorsRouteSwitch />} />
             <Route path="mentors-ai" element={<ComingSoon />} /> {/* <MentorIndexAI /> */}
             <Route path="profile" element={<ComingSoon />} />
             <Route path="settings" element={<ComingSoon />} />
             <Route path="brand-identity" element={<BrandIdentityBuilder />} />
-            <Route path="ai-studio" element={<ComingSoon />} /> {/* <AIBusinessStudioSection /> */}
-            <Route path="idea-generator" element={<ComingSoon />} /> {/* <IGDashboardSection /> */}
+            <Route path="ai-studio" element={<AIBusinessStudioSection />} />
+            <Route path="idea-generator" element={<IGDashboardSection />} />
             <Route
               path="market-research"
               element={
@@ -212,7 +212,7 @@ function AppLayout() {
                 </Suspense>
               }
             />
-            <Route path="opportunity-insights" element={<ComingSoon />} /> {/* <MRDashboardSection /> */}
+            <Route path="opportunity-insights" element={<MRDashboardSection />} />
             <Route path="business-plan" element={<ComingSoon />} /> {/* <BPTabs /> */}
 
             <Route path="services" element={<Navigate to="/dashboard/business" replace />} />
@@ -231,7 +231,7 @@ function AppLayout() {
             <Route path="services/toolkits/jobs/:id" element={<LegacyJobRedirect />} />
           </Route>
           <Route path="ai-dashboard" element={<AIDashboardIndex />}>
-            <Route index element={<ComingSoon />} /> {/* <AIBusinessStudioSection /> */}
+            <Route index element={<AIBusinessStudioSection />} />
             <Route path="id-generator" element={<Navigate to="/dashboard/idea-generator" replace />} />
             <Route path="market-research" element={<Navigate to="/dashboard/opportunity-insights" replace />} />
             <Route path="business-plan" element={<Navigate to="/dashboard/business-plan" replace />} />
