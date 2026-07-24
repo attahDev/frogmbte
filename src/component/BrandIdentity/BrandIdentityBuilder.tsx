@@ -515,8 +515,25 @@ export default function BrandIdentityBuilder() {
     }
   };
 
-  const handleDownload = (url: string) => {
-    window.open(url, "_blank", "noopener,noreferrer");
+  const handleDownload = async (url: string) => {
+    try {
+      const response = await fetch(url);
+      const blob = await response.blob();
+      const blobUrl = window.URL.createObjectURL(blob);
+      const filename = url.split("/").pop() || "download";
+
+      const link = document.createElement("a");
+      link.href = blobUrl;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(blobUrl);
+    } catch (err) {
+      // Fall back to opening in a new tab if the fetch/blob approach fails
+      // (e.g. CORS on the storage host) — better than a silent no-op.
+      window.open(url, "_blank", "noopener,noreferrer");
+    }
   };
 
   return (
@@ -834,7 +851,33 @@ function ResultPanel({
 
       {!isFailed && (
         <>
-          <Preview tool={tool.key} values={values} colors={colors} />
+          {assetStatus?.png_url ? (
+            <div className="flex flex-wrap gap-6">
+              <img
+                src={assetStatus.png_url}
+                alt={`${tool.title} — front`}
+                className="max-w-full rounded-2xl border border-[#E0E5EC] shadow-xl sm:max-w-[340px]"
+              />
+              {assetStatus.png_transparent_url && (
+                <img
+                  src={assetStatus.png_transparent_url}
+                  alt={`${tool.title} — back`}
+                  className="max-w-full rounded-2xl border border-[#E0E5EC] shadow-xl sm:max-w-[340px]"
+                />
+              )}
+            </div>
+          ) : assetStatus?.pdf_url ? (
+            <a
+              href={assetStatus.pdf_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 rounded-xl border border-[#E0E5EC] bg-white px-4 py-3 text-sm font-semibold text-[#001F3F] hover:bg-[#F4F6F9]"
+            >
+              View generated PDF
+            </a>
+          ) : (
+            <Preview tool={tool.key} values={values} colors={colors} />
+          )}
 
           <div className="mt-5 grid grid-cols-1 gap-3 md:grid-cols-3">
             {tool.fields.slice(0, 6).map((field) => (
