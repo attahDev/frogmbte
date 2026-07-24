@@ -31,8 +31,6 @@ import AcademyAllCourses from './component/StudentDashboard/ServicesSection/Tool
 import ServicesIndexPage from './component/servicesPages/servicesIndex';
 import { Toaster } from "react-hot-toast";
 import ComingSoon from './component/Authentication/Soon';
-import ProfilePage from './component/StudentDashboard/ProfileSection/ProfilePage';
-import SettingsPage from './component/StudentDashboard/ProfileSection/SettingsPage';
 import HallOfFameEmbed from './component/StudentDashboard/HOFAI/HallOfFameEmbed';
 import HallOfFameLandingEmbed from './component/StudentDashboard/HOFAI/HallOfFameLandingEmbed';
 import AdminLayout from './component/Admin/AdminLayout';
@@ -198,11 +196,11 @@ function AppLayout() {
             <Route path="mentors/find" element={<FindMentor />} />
             <Route path="notifications" element={<NotificationsPage />} />
             <Route path="community" element={<CommunityPage />} />
-            <Route path="events" element={<ComingSoon />} /> {/* <EventSectionIndex /> */}
+            <Route path="events" element={<EventSectionIndex />} />
             <Route path="mentors" element={<MentorsRouteSwitch />} />
             <Route path="mentors-ai" element={<ComingSoon />} /> {/* <MentorIndexAI /> */}
-            <Route path="profile" element={<ProfilePage />} />
-            <Route path="settings" element={<SettingsPage />} />
+            <Route path="profile" element={<ComingSoon />} />
+            <Route path="settings" element={<ComingSoon />} />
             <Route path="brand-identity" element={<BrandIdentityBuilder />} />
             <Route path="ai-studio" element={<ComingSoon />} /> {/* <AIBusinessStudioSection /> */}
             <Route path="idea-generator" element={<ComingSoon />} /> {/* <IGDashboardSection /> */}

@@ -1,6 +1,13 @@
 import { useEffect, useState } from "react";
 import { api } from "../../lib/api";
 
+type EventRecap = {
+  summary: string;
+  speakers: string[];
+  achievements: string[];
+  gallery: string[];
+};
+
 type EventRow = {
   id: string;
   title: string;
@@ -15,6 +22,7 @@ type EventRow = {
   isActive: boolean;
   isFeatured: boolean;
   isCompleted: boolean;
+  recap: EventRecap | null;
 };
 
 // Same shape as EventRow, minus the admin-only flags a member submission
@@ -52,6 +60,12 @@ export default function AdminEvents() {
 
   const [pending, setPending] = useState<PendingSubmission[] | null>(null);
   const [moderatingId, setModeratingId] = useState<string | null>(null);
+
+  const [recapEditingId, setRecapEditingId] = useState<string | null>(null);
+  const [recapForm, setRecapForm] = useState({ summary: "", speakersText: "", achievementsText: "" });
+  const [recapKeepGallery, setRecapKeepGallery] = useState<string[]>([]);
+  const [recapNewFiles, setRecapNewFiles] = useState<File[]>([]);
+  const [recapSubmitting, setRecapSubmitting] = useState(false);
 
   const load = () => {
     api
@@ -184,6 +198,39 @@ export default function AdminEvents() {
       load();
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const startRecapEdit = (ev: EventRow) => {
+    setRecapEditingId(ev.id);
+    setRecapForm({
+      summary: ev.recap?.summary ?? "",
+      speakersText: ev.recap?.speakers?.join(", ") ?? "",
+      achievementsText: ev.recap?.achievements?.join(", ") ?? "",
+    });
+    setRecapKeepGallery(ev.recap?.gallery ?? []);
+    setRecapNewFiles([]);
+  };
+
+  // Also flips isCompleted server-side — writing up a recap implies the
+  // event happened, even if that toggle wasn't hit separately.
+  const saveRecap = async (id: string) => {
+    setRecapSubmitting(true);
+    try {
+      const fd = new FormData();
+      fd.append("summary", recapForm.summary);
+      fd.append("speakers", recapForm.speakersText);
+      fd.append("achievements", recapForm.achievementsText);
+      fd.append("keepGallery", JSON.stringify(recapKeepGallery));
+      recapNewFiles.forEach((f) => fd.append("gallery", f));
+
+      await api.patch(`/events/admin/${id}/recap`, fd, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      setRecapEditingId(null);
+      load();
+    } finally {
+      setRecapSubmitting(false);
     }
   };
 
@@ -424,6 +471,71 @@ export default function AdminEvents() {
                     </button>
                   </div>
                 </div>
+              ) : recapEditingId === ev.id ? (
+                <div key={ev.id} className="rounded border border-[#D7263D] p-3">
+                  <p className="text-sm font-medium text-[#001F3F]">Recap: {ev.title}</p>
+                  <div className="mt-2 space-y-2">
+                    <textarea
+                      value={recapForm.summary}
+                      onChange={(e) => setRecapForm({ ...recapForm, summary: e.target.value })}
+                      placeholder="What happened…"
+                      rows={3}
+                      className="w-full rounded border border-gray-300 px-2 py-1 text-sm"
+                    />
+                    <input
+                      value={recapForm.speakersText}
+                      onChange={(e) => setRecapForm({ ...recapForm, speakersText: e.target.value })}
+                      placeholder="Speakers, comma-separated"
+                      className="w-full rounded border border-gray-300 px-2 py-1 text-sm"
+                    />
+                    <input
+                      value={recapForm.achievementsText}
+                      onChange={(e) => setRecapForm({ ...recapForm, achievementsText: e.target.value })}
+                      placeholder="Achievements, comma-separated"
+                      className="w-full rounded border border-gray-300 px-2 py-1 text-sm"
+                    />
+
+                    {recapKeepGallery.length > 0 && (
+                      <div className="flex flex-wrap gap-2">
+                        {recapKeepGallery.map((url) => (
+                          <div key={url} className="relative">
+                            <img src={url} alt="" className="w-16 h-16 object-cover rounded border border-gray-200" />
+                            <button
+                              onClick={() => setRecapKeepGallery(recapKeepGallery.filter((u) => u !== url))}
+                              className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-gray-800 text-white text-xs flex items-center justify-center"
+                              aria-label="Remove image"
+                            >
+                              ✕
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    <input
+                      type="file"
+                      accept="image/png,image/jpeg,image/webp,image/gif"
+                      multiple
+                      onChange={(e) => setRecapNewFiles(Array.from(e.target.files ?? []))}
+                      className="w-full text-xs text-gray-600 file:mr-3 file:rounded file:border-0 file:bg-gray-100 file:px-2 file:py-1 file:text-xs file:font-semibold file:text-gray-700"
+                    />
+                  </div>
+                  <div className="mt-3 flex gap-2">
+                    <button
+                      onClick={() => saveRecap(ev.id)}
+                      disabled={recapSubmitting}
+                      className="rounded bg-[#D7263D] px-3 py-1.5 text-sm text-white disabled:opacity-50"
+                    >
+                      Save Recap
+                    </button>
+                    <button
+                      onClick={() => setRecapEditingId(null)}
+                      className="rounded border border-gray-300 px-3 py-1.5 text-sm text-gray-600"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
               ) : (
                 <div
                   key={ev.id}
@@ -454,6 +566,12 @@ export default function AdminEvents() {
                       className="rounded border border-gray-300 px-2 py-1 text-xs text-gray-600 disabled:opacity-50"
                     >
                       {ev.isCompleted ? "Mark upcoming again" : "Mark completed"}
+                    </button>
+                    <button
+                      onClick={() => startRecapEdit(ev)}
+                      className="rounded border border-gray-300 px-2 py-1 text-xs text-gray-600"
+                    >
+                      {ev.recap ? "Edit recap" : "Add recap"}
                     </button>
                     <button
                       onClick={() => toggleActive(ev)}

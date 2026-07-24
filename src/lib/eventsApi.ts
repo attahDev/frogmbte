@@ -1,5 +1,12 @@
 import { api } from "./api";
 
+export type EventRecap = {
+  summary: string;
+  speakers: string[];
+  achievements: string[];
+  gallery: string[];
+};
+
 /** Raw shape coming back from the NestJS backend's Event model. */
 export type BackendEvent = {
   id: string;
@@ -15,6 +22,7 @@ export type BackendEvent = {
   isActive: boolean;
   isFeatured: boolean;
   isCompleted: boolean;
+  recap: EventRecap | null;
 };
 
 export type BackendAttendance = {
@@ -40,6 +48,7 @@ export type UiEvent = {
   isFeatured: boolean;
   isCompleted: boolean;
   startsAt: string;
+  recap: EventRecap | null;
 };
 
 /** Older events created before the imageUrl column existed can still have
@@ -96,6 +105,7 @@ function toUiEvent(event: BackendEvent): UiEvent {
     isFeatured: event.isFeatured,
     isCompleted: event.isCompleted,
     startsAt: event.startsAt,
+    recap: event.recap ?? null,
   };
 }
 
@@ -110,6 +120,15 @@ export async function fetchUpcomingEvents(): Promise<UiEvent[]> {
  * All Events" on the public Events page. */
 export async function fetchAllEvents(): Promise<UiEvent[]> {
   const { data } = await api.get("/events/all");
+  const events: BackendEvent[] = data?.data ?? data;
+  return events.map(toUiEvent);
+}
+
+/** GET /events/past — completed events with (optionally) a recap, for
+ * "Our Past Events / Highlights from Previous Editions" on the public
+ * Events page. */
+export async function fetchPastEvents(): Promise<UiEvent[]> {
+  const { data } = await api.get("/events/past");
   const events: BackendEvent[] = data?.data ?? data;
   return events.map(toUiEvent);
 }

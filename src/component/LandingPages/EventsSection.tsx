@@ -62,6 +62,8 @@ export default function EventsSection() {
   const [events, setEvents] = useState<UiEvent[] | null>(null);
   const [showingAll, setShowingAll] = useState(false);
   const [loadingAll, setLoadingAll] = useState(false);
+  const [selectedEvent, setSelectedEvent] = useState<UiEvent | null>(null);
+  const PAGE_SIZE = 9;
 
   useEffect(() => {
     fetchUpcomingEvents()
@@ -94,6 +96,10 @@ export default function EventsSection() {
     if (activeFilter === "all") return list;
     return list.filter((e) => formatToType(e.format) === activeFilter);
   }, [events, activeFilter]);
+
+  // Clip to the first 9 until "View All Events" is clicked — that button
+  // both fetches the fuller archive AND lifts the clip in one action.
+  const visible = showingAll ? filtered : filtered.slice(0, PAGE_SIZE);
 
   return (
     <section className="w-full bg-[#FFFDF7] py-12 sm:py-16 mt-12 sm:mt-16 md:mt-20">
@@ -162,7 +168,7 @@ export default function EventsSection() {
           </p>
         ) : (
         <div className="mt-14 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-10">
-          {filtered.map((ev) => {
+          {visible.map((ev) => {
             const type = formatToType(ev.format);
             return (
             <article
@@ -228,15 +234,13 @@ export default function EventsSection() {
                     </div>
                   )}
 
-                  <a
-                    href={ev.link ?? "#"}
-                    target={ev.link ? "_blank" : undefined}
-                    rel={ev.link ? "noreferrer" : undefined}
+                  <button
+                    onClick={() => setSelectedEvent(ev)}
                     className="w-full inline-flex items-center justify-center gap-2 sm:gap-3 bg-[#D7263D] text-white px-4 py-2 sm:py-3 rounded-lg shadow-md hover:bg-[#A31F32] transition-all duration-300"
                   >
                     View Details
                     <ArrowRight className="w-4 h-4" />
-                  </a>
+                  </button>
                 </div>
               </div>
             </article>
@@ -265,6 +269,94 @@ export default function EventsSection() {
         </div>
         )}
       </div>
+
+      {selectedEvent && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4"
+          onClick={() => setSelectedEvent(null)}
+        >
+          <div
+            className="w-full max-w-xl rounded-2xl bg-white overflow-hidden max-h-[90vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="relative h-[220px] sm:h-[260px]">
+              <img
+                src={selectedEvent.image}
+                alt={selectedEvent.title}
+                className="w-full h-full object-cover"
+              />
+              <button
+                onClick={() => setSelectedEvent(null)}
+                aria-label="Close"
+                className="absolute top-3 right-3 w-8 h-8 rounded-full bg-black/50 text-white flex items-center justify-center hover:bg-black/70"
+              >
+                ✕
+              </button>
+              <div className="absolute top-3 left-3">
+                <TypePill type={formatToType(selectedEvent.format)} />
+              </div>
+              {selectedEvent.isCompleted && (
+                <div className="absolute bottom-3 left-3 bg-slate-900/80 text-white text-xs font-medium px-3 py-1 rounded-full">
+                  Completed
+                </div>
+              )}
+            </div>
+
+            <div className="p-5 sm:p-6">
+              <h3 className="text-xl sm:text-2xl font-bold text-[#001F3F]">{selectedEvent.title}</h3>
+
+              <ul className="mt-4 space-y-2 text-sm text-[#4B5563]">
+                <li className="flex items-center gap-3">
+                  <Calendar className="w-4 h-4 text-[#C1283C]" />
+                  <span>{selectedEvent.date}</span>
+                </li>
+                <li className="flex items-center gap-3">
+                  <Clock className="w-4 h-4 text-[#C1283C]" />
+                  <span>{selectedEvent.time}</span>
+                </li>
+                <li className="flex items-center gap-3">
+                  <MapPin className="w-4 h-4 text-[#C1283C]" />
+                  <span>{selectedEvent.location || "Virtual"}</span>
+                </li>
+              </ul>
+
+              {selectedEvent.description && (
+                <p className="mt-4 text-sm sm:text-[15px] text-[#6B7280] leading-relaxed whitespace-pre-line">
+                  {selectedEvent.description}
+                </p>
+              )}
+
+              {selectedEvent.tags.length > 0 && (
+                <div className="flex flex-wrap gap-2 mt-4">
+                  {selectedEvent.tags.map((t) => (
+                    <span key={t} className="text-xs bg-slate-100 text-slate-700 px-2 py-1 rounded-full">
+                      {t}
+                    </span>
+                  ))}
+                </div>
+              )}
+
+              <div className="mt-6">
+                {selectedEvent.link ? (
+                  <a
+                    href={selectedEvent.link}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="w-full inline-flex items-center justify-center gap-2 bg-[#D7263D] text-white px-4 py-3 rounded-lg shadow-md hover:bg-[#A31F32] transition-all duration-300"
+                  >
+                    Register / Learn More
+                    <ArrowRight className="w-4 h-4" />
+                  </a>
+                ) : (
+                  <p className="text-sm text-gray-500 text-center">
+                    No registration link yet — check back closer to the date.
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   );
 }
