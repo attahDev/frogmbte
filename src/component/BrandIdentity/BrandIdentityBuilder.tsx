@@ -446,17 +446,17 @@ export default function BrandIdentityBuilder() {
     pollingRef.current = window.setInterval(async () => {
       try {
         const result = await api.get(`/assets/${assetId}/status`);
-        const statusData = result.data.data;
+        const statusData = result.data;
 
         setAssetStatus(statusData);
 
-        if (statusData?.status === "done") {
+        if (statusData?.status?.toLowerCase() === "done") {
           clearPolling();
           await fetchExports(assetId);
           setView("result");
         }
 
-        if (statusData?.status === "failed") {
+        if (statusData?.status?.toLowerCase() === "failed") {
           clearPolling();
           setView("result");
           setError(statusData?.error_message || "Asset generation failed.");
@@ -793,7 +793,7 @@ function ResultPanel({
   onRegenerate: () => void;
   onDownload: (url: string) => void;
 }) {
-  const isFailed = assetStatus?.status === "failed";
+  const isFailed = assetStatus?.status?.toLowerCase() === "failed";
   const exports = exportsData?.exports || {};
 
   return (
