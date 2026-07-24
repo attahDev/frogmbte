@@ -28,12 +28,30 @@ export default function CareerReadinessCard() {
 
   useEffect(load, []);
 
+  const [pathsLoading, setPathsLoading] = useState(false);
+  const [pathsLoadFailed, setPathsLoadFailed] = useState(false);
+
   const openPicker = () => {
     setChoosing(true);
     if (paths.length === 0) {
+      setPathsLoading(true);
+      setPathsLoadFailed(false);
       fetchActiveCareerPaths()
-        .then(setPaths)
-        .catch(() => setPaths([]));
+        .then((result) => {
+          setPaths(result);
+          // The directory is AI-generated on first request — an empty
+          // result right after opening usually means generation is still
+          // running server-side. One quiet retry covers that case.
+          if (result.length === 0) {
+            setTimeout(() => {
+              fetchActiveCareerPaths()
+                .then(setPaths)
+                .catch(() => setPathsLoadFailed(true));
+            }, 4000);
+          }
+        })
+        .catch(() => setPathsLoadFailed(true))
+        .finally(() => setPathsLoading(false));
     }
   };
 
@@ -66,13 +84,29 @@ export default function CareerReadinessCard() {
             Pick where you're headed and we'll track your readiness against the skills that path actually needs.
           </p>
 
-          {paths.length === 0 ? (
+          {!choosing && paths.length === 0 ? (
             <button
               onClick={openPicker}
               className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
             >
               Browse career paths
             </button>
+          ) : choosing && paths.length === 0 ? (
+            pathsLoadFailed ? (
+              <div className="space-y-2">
+                <p className="text-sm text-red-500">Couldn't load career paths. Try again.</p>
+                <button
+                  onClick={openPicker}
+                  className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+                >
+                  Retry
+                </button>
+              </div>
+            ) : (
+              <p className="text-sm text-gray-400">
+                {pathsLoading ? "Loading career paths…" : "Setting up career paths for the first time — one moment…"}
+              </p>
+            )
           ) : (
             <div className="space-y-2">
               <select

@@ -12,11 +12,12 @@ interface Mentor {
   avatarUrl: string | null;
   bio: string | null;
   skills: string[];
+  category: string;
 }
 
-const FILTERS = ["UI/UX", "Engineering", "Marketing", "AI", "Cybersecurity"];
-
 export default function FindMentor() {
+  // Backend already sorts by category, so this comes back grouped —
+  // /mentors admin panel is what assigns each mentor's category.
   const { data: mentors, loading, error } = useApiGet<Mentor[]>("/mentors", []);
   const [activeFilter, setActiveFilter] = useState<string | null>(null);
   const [search, setSearch] = useState("");
@@ -24,10 +25,17 @@ export default function FindMentor() {
   const [connectedIds, setConnectedIds] = useState<Set<string>>(new Set());
   const [connectError, setConnectError] = useState<string | null>(null);
 
+  // Filter pills are derived from whatever categories admins have actually
+  // assigned, instead of a hardcoded list that drifts from real data.
+  const categories = useMemo(() => {
+    const set = new Set((mentors ?? []).map((m) => m.category || "General"));
+    return Array.from(set).sort();
+  }, [mentors]);
+
   const filteredMentors = useMemo(() => {
     const list = mentors ?? [];
     return list.filter((m) => {
-      const matchesFilter = !activeFilter || m.skills.some((s) => s.toLowerCase().includes(activeFilter.toLowerCase()));
+      const matchesFilter = !activeFilter || (m.category || "General") === activeFilter;
       const q = search.trim().toLowerCase();
       const matchesSearch =
         !q || m.name.toLowerCase().includes(q) || m.role.toLowerCase().includes(q) || m.skills.some((s) => s.toLowerCase().includes(q));
@@ -64,7 +72,7 @@ export default function FindMentor() {
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 sm:gap-6 mb-6 sm:mb-8 lg:mb-10">
         {/* Filters (LEFT) */}
         <div className="flex gap-2 sm:gap-3 lg:gap-4 flex-wrap">
-          {FILTERS.map((filter) => {
+          {categories.map((filter) => {
             const isActive = activeFilter === filter;
             return (
               <button

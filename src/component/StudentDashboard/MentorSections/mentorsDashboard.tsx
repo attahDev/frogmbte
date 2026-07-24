@@ -1,4 +1,4 @@
-import { useState, type JSX } from "react";
+import { useEffect, useRef, useState, type JSX } from "react";
 import { Users, MessageCircle } from "lucide-react";
 import { useApiGet } from "../hooks/useApiGet";
 import CardSkeleton from "../shared/CardSkeleton";
@@ -97,6 +97,16 @@ export default function MentorsDashboard(): JSX.Element {
   const myMentors = mentors ?? [];
   const [activeChat, setActiveChat] = useState<MyMentorEntry | null>(null);
   const [initialTab, setInitialTab] = useState<"chat" | "sessions">("chat");
+  const activeChatRef = useRef<HTMLDivElement>(null);
+
+  // The panel renders above the mentor card grid — without this, clicking
+  // "Schedule Session" on a card further down the page opens the panel
+  // off-screen and looks like the button did nothing.
+  useEffect(() => {
+    if (activeChat) {
+      activeChatRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }, [activeChat]);
 
   return (
     <div className="mx-auto max-w-[1400px] px-4 py-6 sm:px-6 sm:py-8 lg:px-8 lg:py-10">
@@ -142,7 +152,7 @@ export default function MentorsDashboard(): JSX.Element {
       <p className="text-[#6B7280] text-sm sm:text-base mb-6 sm:mb-8">Stay connected with mentors guiding your journey.</p>
 
       {activeChat && (
-        <div className="mb-6 max-w-md">
+        <div ref={activeChatRef} className="mb-6 max-w-md scroll-mt-6">
           <ConnectionPanel
             connectionId={activeChat.connectionId}
             otherPartyName={activeChat.mentor.name}

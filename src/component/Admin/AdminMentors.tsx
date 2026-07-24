@@ -10,6 +10,7 @@ type Mentor = {
   skills: string[];
   isActive: boolean;
   userId: string | null;
+  category: string;
 };
 
 type Spotlight = {
@@ -21,7 +22,8 @@ type Spotlight = {
   mentor: Mentor;
 };
 
-const EMPTY = { name: "", role: "", company: "", bio: "", skills: "" };
+const EMPTY = { name: "", role: "", company: "", bio: "", skills: "", category: "" };
+const COMMON_CATEGORIES = ["Engineering", "Design", "Product", "Data", "Cybersecurity", "Marketing", "General"];
 const EMPTY_SPOTLIGHT = { mentorId: "", shoutout: "", endDate: "" };
 
 export default function AdminMentors() {
@@ -67,6 +69,7 @@ export default function AdminMentors() {
         company: form.company || undefined,
         bio: form.bio || undefined,
         skills: form.skills ? form.skills.split(",").map((s) => s.trim()).filter(Boolean) : [],
+        category: form.category.trim() || undefined,
       });
       setForm(EMPTY);
       load();
@@ -77,6 +80,12 @@ export default function AdminMentors() {
 
   const toggleActive = async (m: Mentor) => {
     await api.patch(`/mentors/${m.id}`, { isActive: !m.isActive });
+    load();
+  };
+
+  const changeCategory = async (m: Mentor, category: string) => {
+    if (!category || category === m.category) return;
+    await api.patch(`/mentors/${m.id}`, { category });
     load();
   };
 
@@ -146,6 +155,18 @@ export default function AdminMentors() {
             onChange={(e) => setForm({ ...form, skills: e.target.value })}
             className="rounded border border-gray-300 px-2 py-1 text-sm"
           />
+          <input
+            list="mentor-categories"
+            placeholder="Category (e.g. Engineering) — defaults to General"
+            value={form.category}
+            onChange={(e) => setForm({ ...form, category: e.target.value })}
+            className="rounded border border-gray-300 px-2 py-1 text-sm"
+          />
+          <datalist id="mentor-categories">
+            {COMMON_CATEGORIES.map((c) => (
+              <option key={c} value={c} />
+            ))}
+          </datalist>
           <textarea
             placeholder="Bio (optional)"
             value={form.bio}
@@ -184,6 +205,7 @@ export default function AdminMentors() {
                 <th className="py-2 pr-3">Name</th>
                 <th className="py-2 pr-3">Role</th>
                 <th className="py-2 pr-3">Company</th>
+                <th className="py-2 pr-3">Category</th>
                 <th className="py-2 pr-3">Account</th>
                 <th className="py-2 pr-3">Status</th>
                 <th className="py-2">Actions</th>
@@ -195,6 +217,21 @@ export default function AdminMentors() {
                   <td className="py-2 pr-3 whitespace-nowrap">{m.name}</td>
                   <td className="py-2 pr-3 whitespace-nowrap">{m.role}</td>
                   <td className="py-2 pr-3 whitespace-nowrap">{m.company || "—"}</td>
+                  <td className="py-2 pr-3">
+                    <select
+                      value={m.category}
+                      onChange={(e) => changeCategory(m, e.target.value)}
+                      className="rounded border border-gray-300 px-1.5 py-1 text-xs"
+                    >
+                      {(COMMON_CATEGORIES.includes(m.category) ? COMMON_CATEGORIES : [m.category, ...COMMON_CATEGORIES]).map(
+                        (c) => (
+                          <option key={c} value={c}>
+                            {c}
+                          </option>
+                        ),
+                      )}
+                    </select>
+                  </td>
                   <td className="py-2 pr-3">
                     {m.userId ? (
                       <span className="rounded bg-purple-100 px-2 py-0.5 text-xs font-medium text-purple-700">

@@ -8,6 +8,7 @@ export type Mentor = {
   avatarUrl: string | null;
   bio: string | null;
   skills: string[];
+  category: string;
 };
 
 /** GET /mentors — the public mentor directory. */
