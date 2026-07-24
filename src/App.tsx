@@ -31,6 +31,8 @@ import AcademyAllCourses from './component/StudentDashboard/ServicesSection/Tool
 import ServicesIndexPage from './component/servicesPages/servicesIndex';
 import { Toaster } from "react-hot-toast";
 import ComingSoon from './component/Authentication/Soon';
+import ProfilePage from './component/StudentDashboard/ProfileSection/ProfilePage';
+import SettingsPage from './component/StudentDashboard/ProfileSection/SettingsPage';
 import HallOfFameEmbed from './component/StudentDashboard/HOFAI/HallOfFameEmbed';
 import HallOfFameLandingEmbed from './component/StudentDashboard/HOFAI/HallOfFameLandingEmbed';
 import AdminLayout from './component/Admin/AdminLayout';
@@ -199,11 +201,11 @@ function AppLayout() {
             <Route path="events" element={<ComingSoon />} /> {/* <EventSectionIndex /> */}
             <Route path="mentors" element={<MentorsRouteSwitch />} />
             <Route path="mentors-ai" element={<ComingSoon />} /> {/* <MentorIndexAI /> */}
-            <Route path="profile" element={<ComingSoon />} />
-            <Route path="settings" element={<ComingSoon />} />
+            <Route path="profile" element={<ProfilePage />} />
+            <Route path="settings" element={<SettingsPage />} />
             <Route path="brand-identity" element={<BrandIdentityBuilder />} />
-            <Route path="ai-studio" element={<AIBusinessStudioSection />} />
-            <Route path="idea-generator" element={<IGDashboardSection />} />
+            <Route path="ai-studio" element={<ComingSoon />} /> {/* <AIBusinessStudioSection /> */}
+            <Route path="idea-generator" element={<ComingSoon />} /> {/* <IGDashboardSection /> */}
             <Route
               path="market-research"
               element={
@@ -212,8 +214,8 @@ function AppLayout() {
                 </Suspense>
               }
             />
-            <Route path="opportunity-insights" element={<MRDashboardSection />} />
-            <Route path="business-plan" element={<BPTabs />} />
+            <Route path="opportunity-insights" element={<ComingSoon />} /> {/* <MRDashboardSection /> */}
+            <Route path="business-plan" element={<ComingSoon />} /> {/* <BPTabs /> */}
 
             <Route path="services" element={<Navigate to="/dashboard/business" replace />} />
             <Route path="services/toolkits" element={<Navigate to="/dashboard/business" replace />} />
@@ -231,7 +233,7 @@ function AppLayout() {
             <Route path="services/toolkits/jobs/:id" element={<LegacyJobRedirect />} />
           </Route>
           <Route path="ai-dashboard" element={<AIDashboardIndex />}>
-            <Route index element={<AIBusinessStudioSection />} />
+            <Route index element={<ComingSoon />} /> {/* <AIBusinessStudioSection /> */}
             <Route path="id-generator" element={<Navigate to="/dashboard/idea-generator" replace />} />
             <Route path="market-research" element={<Navigate to="/dashboard/opportunity-insights" replace />} />
             <Route path="business-plan" element={<Navigate to="/dashboard/business-plan" replace />} />
