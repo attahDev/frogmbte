@@ -4,6 +4,7 @@ import { useAuth } from "../../../contexts/mainuseAuth";
 import { useApiGet } from '../hooks/useApiGet';
 import { useCountdown } from '../hooks/useCountdown';
 import { InlineSkeleton } from '../shared/CardSkeleton';
+import MentorSpotlightBanner from './MentorSpotlightBanner';
 
 const cardClass =
   "block bg-[#FFFDF7] rounded-xl sm:rounded-2xl p-5 sm:p-6 shadow-sm hover:shadow-md transition-shadow cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#001F3F]";
@@ -136,6 +137,8 @@ export default function DashboardHero() {
               </div>
             </div>
           </div>
+
+          <MentorSpotlightBanner />
 
           {/* Cards Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">

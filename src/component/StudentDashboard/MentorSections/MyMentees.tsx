@@ -1,16 +1,13 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { Users, MessageCircle, Calendar, Send, ChevronLeft } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { Users, MessageCircle, Calendar } from "lucide-react";
 import { useApiGet } from "../hooks/useApiGet";
 import CardSkeleton from "../shared/CardSkeleton";
 import EmptyState from "../../MarketResearchDashboard/ui/EmptyState";
 import { Card, CardContent, Button } from "./mentorsDashboard";
-import { useAuth } from "../../../contexts/mainuseAuth";
+import ConnectionPanel from "./ConnectionPanel";
 import {
-  fetchMenteeMessages,
-  sendMenteeMessage,
   updateMenteeConnection,
   type MenteeConnection,
-  type MenteeMessage,
   type MentorConnectionStatus,
 } from "../../../lib/mentorsApi";
 
@@ -31,119 +28,15 @@ function formatDate(iso: string | null) {
 }
 
 // ------------------------------------------------------------
-// Chat panel — messages within one mentor <-> mentee connection
-// ------------------------------------------------------------
-function MenteeChatPanel({ connection, onBack }: { connection: MenteeConnection; onBack: () => void }) {
-  const { user } = useAuth();
-  const [messages, setMessages] = useState<MenteeMessage[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [draft, setDraft] = useState("");
-  const [sending, setSending] = useState(false);
-  const bottomRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-    setLoading(true);
-    fetchMenteeMessages(connection.connectionId)
-      .then((data) => !cancelled && setMessages(data))
-      .catch(() => !cancelled && setMessages([]))
-      .finally(() => !cancelled && setLoading(false));
-    return () => {
-      cancelled = true;
-    };
-  }, [connection.connectionId]);
-
-  useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
-
-  const handleSend = async () => {
-    const content = draft.trim();
-    if (!content || sending) return;
-    setSending(true);
-    setDraft("");
-    try {
-      const message = await sendMenteeMessage(connection.connectionId, content);
-      setMessages((prev) => [...prev, message]);
-    } catch {
-      setDraft(content); // restore on failure so the message isn't lost
-    } finally {
-      setSending(false);
-    }
-  };
-
-  return (
-    <Card className="flex h-[520px] flex-col">
-      <div className="flex items-center gap-3 border-b border-gray-100 p-4">
-        <button onClick={onBack} className="rounded-lg p-1 hover:bg-gray-100 lg:hidden" aria-label="Back to list">
-          <ChevronLeft className="h-5 w-5 text-gray-500" />
-        </button>
-        <div className="flex h-9 w-9 items-center justify-center rounded-full bg-blue-100 text-sm font-semibold text-blue-700">
-          {initials(connection.mentee.firstname, connection.mentee.lastname)}
-        </div>
-        <div className="min-w-0">
-          <p className="truncate text-sm font-semibold text-[#001F3F]">
-            {connection.mentee.firstname} {connection.mentee.lastname}
-          </p>
-          <p className="truncate text-xs text-gray-500">{connection.mentee.email}</p>
-        </div>
-      </div>
-
-      <div className="flex-1 space-y-3 overflow-y-auto p-4">
-        {loading ? (
-          <CardSkeleton />
-        ) : messages.length === 0 ? (
-          <p className="mt-8 text-center text-sm text-gray-400">
-            No messages yet — say hi to get the mentorship started.
-          </p>
-        ) : (
-          messages.map((m) => {
-            const isMe = m.senderId === user?.id;
-            return (
-              <div key={m.id} className={`flex ${isMe ? "justify-end" : "justify-start"}`}>
-                <div
-                  className={`max-w-[75%] rounded-2xl px-3 py-2 text-sm ${
-                    isMe ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-800"
-                  }`}
-                >
-                  <p className="whitespace-pre-wrap break-words">{m.content}</p>
-                  <p className={`mt-1 text-[10px] ${isMe ? "text-blue-100" : "text-gray-400"}`}>
-                    {new Date(m.createdAt).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" })}
-                  </p>
-                </div>
-              </div>
-            );
-          })
-        )}
-        <div ref={bottomRef} />
-      </div>
-
-      <div className="flex items-center gap-2 border-t border-gray-100 p-3">
-        <input
-          value={draft}
-          onChange={(e) => setDraft(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && (e.preventDefault(), handleSend())}
-          placeholder="Write a message…"
-          className="flex-1 rounded-xl border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-        />
-        <Button onClick={handleSend} disabled={!draft.trim() || sending}>
-          <Send className="h-4 w-4" />
-        </Button>
-      </div>
-    </Card>
-  );
-}
-
-// ------------------------------------------------------------
 // One mentee row — status control, sessions, next session, chat entry
 // ------------------------------------------------------------
 function MenteeRow({
   connection,
-  onOpenChat,
+  onOpenPanel,
   onUpdated,
 }: {
   connection: MenteeConnection;
-  onOpenChat: () => void;
+  onOpenPanel: (tab: "chat" | "sessions") => void;
   onUpdated: (updated: MenteeConnection) => void;
 }) {
   const [busy, setBusy] = useState(false);
@@ -153,18 +46,6 @@ function MenteeRow({
     try {
       const updated = await updateMenteeConnection(connection.connectionId, { status });
       onUpdated({ ...connection, status: updated.status ?? status });
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const logSession = async () => {
-    setBusy(true);
-    try {
-      const updated = await updateMenteeConnection(connection.connectionId, {
-        sessionsCompleted: connection.sessionsCompleted + 1,
-      });
-      onUpdated({ ...connection, sessionsCompleted: updated.sessionsCompleted ?? connection.sessionsCompleted + 1 });
     } finally {
       setBusy(false);
     }
@@ -201,8 +82,11 @@ function MenteeRow({
         </div>
 
         <div className="mt-4 flex flex-wrap gap-2">
-          <Button onClick={onOpenChat} variant="outline">
+          <Button onClick={() => onOpenPanel("chat")} variant="outline">
             <MessageCircle className="h-4 w-4" /> Chat
+          </Button>
+          <Button onClick={() => onOpenPanel("sessions")} variant="outline">
+            <Calendar className="h-4 w-4" /> Sessions
           </Button>
           {connection.status === "PENDING" && (
             <>
@@ -215,14 +99,9 @@ function MenteeRow({
             </>
           )}
           {connection.status === "ACTIVE" && (
-            <>
-              <Button onClick={logSession} disabled={busy} variant="outline">
-                Log session
-              </Button>
-              <Button onClick={() => setStatus("COMPLETED")} disabled={busy} variant="outline">
-                Mark complete
-              </Button>
-            </>
+            <Button onClick={() => setStatus("COMPLETED")} disabled={busy} variant="outline">
+              Mark complete
+            </Button>
           )}
         </div>
       </CardContent>
@@ -237,6 +116,7 @@ export default function MyMentees() {
   const { data, loading, error, refetch } = useApiGet<MenteeConnection[]>("/mentors/my-mentees", []);
   const [localConnections, setLocalConnections] = useState<MenteeConnection[] | null>(null);
   const [activeChatId, setActiveChatId] = useState<string | null>(null);
+  const [initialTab, setInitialTab] = useState<"chat" | "sessions">("chat");
   const [filter, setFilter] = useState<MentorConnectionStatus | "ALL">("ALL");
 
   useEffect(() => {
@@ -314,7 +194,10 @@ export default function MyMentees() {
                 <MenteeRow
                   key={c.connectionId}
                   connection={c}
-                  onOpenChat={() => setActiveChatId(c.connectionId)}
+                  onOpenPanel={(tab) => {
+                    setInitialTab(tab);
+                    setActiveChatId(c.connectionId);
+                  }}
                   onUpdated={handleUpdated}
                 />
               ))
@@ -323,7 +206,14 @@ export default function MyMentees() {
 
           <div className="lg:col-span-2">
             {activeChat ? (
-              <MenteeChatPanel connection={activeChat} onBack={() => setActiveChatId(null)} />
+              <ConnectionPanel
+                connectionId={activeChat.connectionId}
+                otherPartyName={`${activeChat.mentee.firstname} ${activeChat.mentee.lastname}`}
+                otherPartySubtitle={activeChat.mentee.email}
+                viewerRole="mentor"
+                initialTab={initialTab}
+                onBack={() => setActiveChatId(null)}
+              />
             ) : (
               <Card className="flex h-[520px] items-center justify-center p-6 text-center">
                 <div>

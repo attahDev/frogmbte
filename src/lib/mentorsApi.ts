@@ -67,6 +67,113 @@ export async function sendMenteeMessage(connectionId: string, content: string): 
   return data?.data ?? data;
 }
 
+export type SkillLog = {
+  id: string;
+  connectionId: string;
+  menteeId: string;
+  skillName: string;
+  notes: string | null;
+  confirmedByMentor: boolean;
+  createdAt: string;
+};
+
+/** Either party on a connection can view the skills logged so far. */
+export async function fetchSkillLogs(connectionId: string): Promise<SkillLog[]> {
+  const { data } = await api.get(`/mentors/mentees/${connectionId}/skills`);
+  return data?.data ?? data;
+}
+
+/** Mentee logs a skill they learned within this mentorship. */
+export async function logSkill(connectionId: string, skillName: string, notes?: string): Promise<SkillLog> {
+  const { data } = await api.post(`/mentors/mentees/${connectionId}/skills`, { skillName, notes });
+  return data?.data ?? data;
+}
+
+/** Mentor confirms a mentee's self-reported skill. */
+export async function confirmSkillLog(skillLogId: string): Promise<SkillLog> {
+  const { data } = await api.patch(`/mentors/skills/${skillLogId}/confirm`);
+  return data?.data ?? data;
+}
+
+export type SessionStatus = "PENDING" | "SCHEDULED" | "COMPLETED" | "CANCELLED" | "NO_SHOW";
+
+export type MentorSession = {
+  id: string;
+  connectionId: string;
+  status: SessionStatus;
+  proposedFor: string;
+  scheduledFor: string | null;
+  durationMins: number | null;
+  agenda: string | null;
+  mentorNotes: string | null;
+  menteeNotes: string | null;
+  createdAt: string;
+};
+
+export async function fetchSessions(connectionId: string): Promise<MentorSession[]> {
+  const { data } = await api.get(`/mentors/mentees/${connectionId}/sessions`);
+  return data?.data ?? data;
+}
+
+/** Mentee proposes a session time. proposedFor is an ISO datetime string. */
+export async function requestSession(
+  connectionId: string,
+  payload: { proposedFor: string; durationMins?: number; agenda?: string },
+): Promise<MentorSession> {
+  const { data } = await api.post(`/mentors/mentees/${connectionId}/sessions`, payload);
+  return data?.data ?? data;
+}
+
+export async function updateSession(
+  sessionId: string,
+  updates: Partial<{
+    status: SessionStatus;
+    scheduledFor: string;
+    mentorNotes: string;
+    menteeNotes: string;
+  }>,
+): Promise<MentorSession> {
+  const { data } = await api.patch(`/mentors/sessions/${sessionId}`, updates);
+  return data?.data ?? data;
+}
+
+// ───────────────────────── Career paths ─────────────────────────
+
+export type CareerPathSkill = { id: string; skillName: string; weight: number };
+
+export type CareerPath = {
+  id: string;
+  title: string;
+  description: string | null;
+  isActive: boolean;
+  requiredSkills: CareerPathSkill[];
+};
+
+export type CareerReadiness =
+  | { hasGoal: false }
+  | {
+      hasGoal: true;
+      careerPath: { id: string; title: string; description: string | null };
+      readinessPercent: number;
+      matched: { skillName: string; weight: number; confirmed: boolean }[];
+      missing: { skillName: string; weight: number }[];
+      aiSummary: { summary: string; priorities: string[] } | null;
+    };
+
+export async function fetchActiveCareerPaths(): Promise<CareerPath[]> {
+  const { data } = await api.get("/career-paths");
+  return data?.data ?? data;
+}
+
+export async function fetchMyReadiness(): Promise<CareerReadiness> {
+  const { data } = await api.get("/career-paths/my-goal/readiness");
+  return data?.data ?? data;
+}
+
+export async function setMyCareerGoal(careerPathId: string): Promise<void> {
+  await api.post("/career-paths/my-goal", { careerPathId });
+}
+
 /** Admin: promote an existing user to mentor (keeps their own login). */
 export async function promoteToMentor(payload: {
   userId: string;

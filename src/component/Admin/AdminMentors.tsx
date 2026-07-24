@@ -12,13 +12,27 @@ type Mentor = {
   userId: string | null;
 };
 
+type Spotlight = {
+  id: string;
+  shoutout: string;
+  isActive: boolean;
+  startDate: string;
+  endDate: string | null;
+  mentor: Mentor;
+};
+
 const EMPTY = { name: "", role: "", company: "", bio: "", skills: "" };
+const EMPTY_SPOTLIGHT = { mentorId: "", shoutout: "", endDate: "" };
 
 export default function AdminMentors() {
   const [mentors, setMentors] = useState<Mentor[] | null>(null);
   const [loadError, setLoadError] = useState(false);
   const [form, setForm] = useState(EMPTY);
   const [submitting, setSubmitting] = useState(false);
+
+  const [spotlights, setSpotlights] = useState<Spotlight[] | null>(null);
+  const [spotlightForm, setSpotlightForm] = useState(EMPTY_SPOTLIGHT);
+  const [submittingSpotlight, setSubmittingSpotlight] = useState(false);
 
   const load = () => {
     setLoadError(false);
@@ -31,7 +45,17 @@ export default function AdminMentors() {
       });
   };
 
-  useEffect(load, []);
+  const loadSpotlights = () => {
+    api
+      .get("/mentors/spotlight/admin")
+      .then(({ data }) => setSpotlights(data?.data ?? data ?? []))
+      .catch(() => setSpotlights([]));
+  };
+
+  useEffect(() => {
+    load();
+    loadSpotlights();
+  }, []);
 
   const create = async () => {
     if (!form.name || !form.role) return;
@@ -59,6 +83,32 @@ export default function AdminMentors() {
   const remove = async (id: string) => {
     await api.delete(`/mentors/${id}`);
     load();
+  };
+
+  const createSpotlight = async () => {
+    if (!spotlightForm.mentorId || !spotlightForm.shoutout) return;
+    setSubmittingSpotlight(true);
+    try {
+      await api.post("/mentors/spotlight", {
+        mentorId: spotlightForm.mentorId,
+        shoutout: spotlightForm.shoutout,
+        endDate: spotlightForm.endDate || undefined,
+      });
+      setSpotlightForm(EMPTY_SPOTLIGHT);
+      loadSpotlights();
+    } finally {
+      setSubmittingSpotlight(false);
+    }
+  };
+
+  const toggleSpotlightActive = async (s: Spotlight) => {
+    await api.patch(`/mentors/spotlight/${s.id}`, { isActive: !s.isActive });
+    loadSpotlights();
+  };
+
+  const removeSpotlight = async (id: string) => {
+    await api.delete(`/mentors/spotlight/${id}`);
+    loadSpotlights();
   };
 
   return (
@@ -174,6 +224,101 @@ export default function AdminMentors() {
                     </button>
                     <button
                       onClick={() => remove(m.id)}
+                      className="rounded border border-red-300 px-2 py-1 text-xs text-red-600"
+                    >
+                      Remove
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
+
+      <div className="rounded-md border border-gray-300 bg-white p-4">
+        <h2 className="text-base font-semibold text-[#001F3F]">Mentor Spotlight</h2>
+        <p className="mt-1 text-xs text-gray-400">
+          Pick a mentor from the directory and write a short shoutout — shown on the dashboard while active.
+        </p>
+
+        <div className="mt-3 grid gap-2 sm:grid-cols-2">
+          <select
+            value={spotlightForm.mentorId}
+            onChange={(e) => setSpotlightForm({ ...spotlightForm, mentorId: e.target.value })}
+            className="rounded border border-gray-300 px-2 py-1 text-sm"
+          >
+            <option value="">Select a mentor…</option>
+            {(mentors ?? []).map((m) => (
+              <option key={m.id} value={m.id}>
+                {m.name} — {m.role}
+              </option>
+            ))}
+          </select>
+          <input
+            type="date"
+            value={spotlightForm.endDate}
+            onChange={(e) => setSpotlightForm({ ...spotlightForm, endDate: e.target.value })}
+            title="Optional end date — leave blank to run indefinitely until you deactivate it"
+            className="rounded border border-gray-300 px-2 py-1 text-sm"
+          />
+          <textarea
+            placeholder="Shoutout text, e.g. “Huge thanks to Jane for logging 12 sessions this month!”"
+            value={spotlightForm.shoutout}
+            onChange={(e) => setSpotlightForm({ ...spotlightForm, shoutout: e.target.value })}
+            className="rounded border border-gray-300 px-2 py-1 text-sm sm:col-span-2"
+          />
+        </div>
+
+        <button
+          onClick={createSpotlight}
+          disabled={submittingSpotlight || !spotlightForm.mentorId || !spotlightForm.shoutout}
+          className="mt-3 rounded bg-[#001F3F] px-3 py-1.5 text-sm text-white disabled:opacity-50"
+        >
+          Publish spotlight
+        </button>
+
+        {spotlights === null ? (
+          <p className="mt-4 text-sm text-gray-500">Loading…</p>
+        ) : spotlights.length === 0 ? (
+          <p className="mt-4 text-sm text-gray-500">No spotlights yet.</p>
+        ) : (
+          <table className="mt-4 w-full text-left text-sm">
+            <thead>
+              <tr className="border-b border-gray-200 text-gray-500">
+                <th className="py-2 pr-3">Mentor</th>
+                <th className="py-2 pr-3">Shoutout</th>
+                <th className="py-2 pr-3">Ends</th>
+                <th className="py-2 pr-3">Status</th>
+                <th className="py-2">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {spotlights.map((s) => (
+                <tr key={s.id} className="border-b border-gray-100 align-top">
+                  <td className="py-2 pr-3 whitespace-nowrap">{s.mentor.name}</td>
+                  <td className="py-2 pr-3 max-w-xs">{s.shoutout}</td>
+                  <td className="py-2 pr-3 whitespace-nowrap">
+                    {s.endDate ? new Date(s.endDate).toLocaleDateString() : "No end date"}
+                  </td>
+                  <td className="py-2 pr-3">
+                    <span
+                      className={`rounded px-2 py-0.5 text-xs font-medium ${
+                        s.isActive ? "bg-green-100 text-green-700" : "bg-gray-200 text-gray-600"
+                      }`}
+                    >
+                      {s.isActive ? "Active" : "Inactive"}
+                    </span>
+                  </td>
+                  <td className="py-2 flex gap-2">
+                    <button
+                      onClick={() => toggleSpotlightActive(s)}
+                      className="rounded border border-gray-300 px-2 py-1 text-xs"
+                    >
+                      {s.isActive ? "Deactivate" : "Reactivate"}
+                    </button>
+                    <button
+                      onClick={() => removeSpotlight(s.id)}
                       className="rounded border border-red-300 px-2 py-1 text-xs text-red-600"
                     >
                       Remove
