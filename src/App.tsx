@@ -198,7 +198,7 @@ function AppLayout() {
             <Route path="mentors/find" element={<FindMentor />} />
             <Route path="notifications" element={<NotificationsPage />} />
             <Route path="community" element={<CommunityPage />} />
-            <Route path="events" element={<ComingSoon />} /> {/* <EventSectionIndex /> */}
+            <Route path="events" element={<ComingSoon />} {/* <EventSectionIndex /> */}
             <Route path="mentors" element={<MentorsRouteSwitch />} />
             <Route path="mentors-ai" element={<ComingSoon />} /> {/* <MentorIndexAI /> */}
             <Route path="profile" element={<ProfilePage />} />
