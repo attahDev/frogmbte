@@ -43,12 +43,13 @@ export const BotComp = () => {
   }, [messages, loading]);
 
   const handleSelectType = (type: UserType) => {
-    if (!type) return;
     setUserType(type);
     setMessages([
       {
         from: "bot",
-        text: `Got it, a ${type.toLowerCase()} — good to have you here! What would you like to do?`,
+        text: type
+          ? `Got it, a ${type.toLowerCase()} — good to have you here! What would you like to do?`
+          : "What would you like to do?",
       },
     ]);
   };
@@ -187,7 +188,7 @@ export const BotComp = () => {
                   {messages.map((msg, index) => (
                     <div
                       key={index}
-                      className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm ${
+                      className={`max-w-[80%] whitespace-pre-line rounded-2xl px-4 py-3 text-sm ${
                         msg.from === "bot"
                           ? "bg-[#F3F4F6] text-[#001F3F]"
                           : "ml-auto bg-[#00264D] text-white"

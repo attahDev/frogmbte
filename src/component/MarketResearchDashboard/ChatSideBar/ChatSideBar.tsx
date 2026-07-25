@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Bot, Circle, Loader2, Send, X } from 'lucide-react';
 import AIDashboardButton from '../ui/AIDashboardButton';
 import AIDashboardCard from '../ui/AIDashboardCard';
-import { sendMentorMessage } from '../lib/mentorAiApi';
+import { sendMentorMessage, BUSINESS_MENTOR_CHAT_ID_KEY, readStoredBusinessMentorChatId } from '../lib/mentorAiApi';
 
 const prompts = [
   'I want to start a business...',
@@ -22,8 +22,6 @@ type Props = {
   isMobileOverlay?: boolean;
 };
 
-const CHAT_ID_KEY = 'gmbte_mentor_chat_id';
-
 const timeNow = () =>
   new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
@@ -39,9 +37,7 @@ export default function BusinessMentorChat({ onClose, isMobileOverlay = false }:
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const chatIdRef = useRef<string | undefined>(
-    typeof window !== 'undefined' ? sessionStorage.getItem(CHAT_ID_KEY) || undefined : undefined
-  );
+  const chatIdRef = useRef<string | undefined>(readStoredBusinessMentorChatId());
   const bottomRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -63,7 +59,7 @@ export default function BusinessMentorChat({ onClose, isMobileOverlay = false }:
     try {
       const { reply, chatId } = await sendMentorMessage(messageText, chatIdRef.current);
       chatIdRef.current = chatId;
-      if (typeof window !== 'undefined') sessionStorage.setItem(CHAT_ID_KEY, chatId);
+      if (typeof window !== 'undefined' && chatId) sessionStorage.setItem(BUSINESS_MENTOR_CHAT_ID_KEY, chatId);
 
       setMessages((prev) => [
         ...prev,

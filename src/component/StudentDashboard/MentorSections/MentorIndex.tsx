@@ -4,7 +4,7 @@ import FindMentor from "./FindMentor";
 import MentorsDashboard from "./mentorsDashboard";
 import MentorshipProgress from "./MentorshipProgress";
 import MentorSpotlight from "./MentorSpotlight";
-import BusinessMentorChat from "../../MarketResearchDashboard/ChatSideBar/ChatSideBar";
+import { MentorIndexAI as BusinessMentorAI } from "../MentorDashboard/MentorIndex";
 
 type Tab = "mentors" | "ai";
 
@@ -48,8 +48,8 @@ export const MentorIndex = () => {
           <MentorSpotlight />
         </>
       ) : (
-        <div className="mx-auto h-[calc(100dvh-180px)] max-w-3xl px-4 py-4 sm:px-6">
-          <BusinessMentorChat />
+        <div className="mx-auto h-[calc(100dvh-180px)] max-w-4xl px-4 py-4 sm:px-6">
+          <BusinessMentorAI />
         </div>
       )}
     </div>

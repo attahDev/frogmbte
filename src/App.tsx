@@ -31,7 +31,6 @@ import AcademyAllCourses from './component/StudentDashboard/ServicesSection/Tool
 import ServicesIndexPage from './component/servicesPages/servicesIndex';
 import { Toaster } from "react-hot-toast";
 import ComingSoon from './component/Authentication/Soon';
-import MentorIndexAI from './component/StudentDashboard/MentorSections/MentorIndexAI';
 import ProfilePage from './component/StudentDashboard/ProfileSection/ProfilePage';
 import SettingsPage from './component/StudentDashboard/ProfileSection/SettingsPage';
 import HallOfFameEmbed from './component/StudentDashboard/HOFAI/HallOfFameEmbed';
@@ -51,6 +50,7 @@ import BPTabs from './component/MarketResearchDashboard/BusinessPlanSection/BPTa
 import { IGDashboardSection } from './component/MarketResearchDashboard/IdeaGenerator/IGDashboardSection';
 import { MRDashboardSection } from './component/MarketResearchDashboard/MarketResearchSection/MRDashboardSection';
 import AIBusinessStudioSection from './component/MarketResearchDashboard/DashboardSection/AIDashboardSection';
+import { MentorIndexAI } from './component/StudentDashboard/MentorDashboard/MentorIndex';
 import MentorsRouteSwitch from './component/StudentDashboard/MentorSections/MentorsRouteSwitch';
 import FindMentor from './component/StudentDashboard/MentorSections/FindMentor';
 import NotificationsPage from './component/StudentDashboard/NotificationsSection/NotificationsPage';
