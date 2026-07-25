@@ -24,6 +24,14 @@ type Props = {
 
 const CHAT_ID_KEY = 'gmbte_mentor_chat_id';
 
+const readStoredChatId = (): string | undefined => {
+  if (typeof window === 'undefined') return undefined;
+  const stored = sessionStorage.getItem(CHAT_ID_KEY);
+  // Guard against a previously-poisoned value (the literal string
+  // "undefined") written by an older, buggy build.
+  return stored && stored !== 'undefined' ? stored : undefined;
+};
+
 const timeNow = () =>
   new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
@@ -39,9 +47,7 @@ export default function BusinessMentorChat({ onClose, isMobileOverlay = false }:
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const chatIdRef = useRef<string | undefined>(
-    typeof window !== 'undefined' ? sessionStorage.getItem(CHAT_ID_KEY) || undefined : undefined
-  );
+  const chatIdRef = useRef<string | undefined>(readStoredChatId());
   const bottomRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -63,7 +69,7 @@ export default function BusinessMentorChat({ onClose, isMobileOverlay = false }:
     try {
       const { reply, chatId } = await sendMentorMessage(messageText, chatIdRef.current);
       chatIdRef.current = chatId;
-      if (typeof window !== 'undefined') sessionStorage.setItem(CHAT_ID_KEY, chatId);
+      if (typeof window !== 'undefined' && chatId) sessionStorage.setItem(CHAT_ID_KEY, chatId);
 
       setMessages((prev) => [
         ...prev,

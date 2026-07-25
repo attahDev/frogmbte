@@ -16,6 +16,12 @@ const chips = ["Start a business", "Find a job", "Recommend a course", "Improve 
 
 const CHAT_ID_KEY = "gmbte_mentor_chat_id";
 
+const readStoredChatId = (): string | null => {
+  if (typeof window === "undefined") return null;
+  const stored = sessionStorage.getItem(CHAT_ID_KEY);
+  return stored && stored !== "undefined" ? stored : null;
+};
+
 type ApiResponse = {
   reply: string;
   chatId: string;
@@ -29,9 +35,7 @@ type ChatMessage = {
 export default function MentorAIAssistant() {
   const [hasStarted, setHasStarted] = useState(false);
   const [input, setInput] = useState("Help me choose a toolkit");
-  const [chatId, setChatId] = useState<string | null>(
-    typeof window !== "undefined" ? sessionStorage.getItem(CHAT_ID_KEY) : null
-  );
+  const [chatId, setChatId] = useState<string | null>(readStoredChatId());
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
