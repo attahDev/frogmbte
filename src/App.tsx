@@ -31,6 +31,7 @@ import AcademyAllCourses from './component/StudentDashboard/ServicesSection/Tool
 import ServicesIndexPage from './component/servicesPages/servicesIndex';
 import { Toaster } from "react-hot-toast";
 import ComingSoon from './component/Authentication/Soon';
+import MentorIndexAI from './component/StudentDashboard/MentorSections/MentorIndexAI';
 import ProfilePage from './component/StudentDashboard/ProfileSection/ProfilePage';
 import SettingsPage from './component/StudentDashboard/ProfileSection/SettingsPage';
 import HallOfFameEmbed from './component/StudentDashboard/HOFAI/HallOfFameEmbed';
@@ -200,7 +201,7 @@ function AppLayout() {
             <Route path="community" element={<CommunityPage />} />
             <Route path="events" element={<EventSectionIndex />} />
             <Route path="mentors" element={<MentorsRouteSwitch />} />
-            <Route path="mentors-ai" element={<ComingSoon />} /> {/* <MentorIndexAI /> */}
+            <Route path="mentors-ai" element={<MentorIndexAI />} />
             <Route path="profile" element={<ProfilePage />} />
             <Route path="settings" element={<SettingsPage />} />
             <Route path="brand-identity" element={<BrandIdentityBuilder />} />

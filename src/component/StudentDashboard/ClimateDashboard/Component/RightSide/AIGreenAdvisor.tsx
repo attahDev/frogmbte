@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { fetchGreenAdvice, type AdvisorCard } from "../../../../../lib/greenAdvisorApi";
+import { useEffect, useRef, useState } from "react";
+import { Loader2, Send } from "lucide-react";
+import { askGreenAdvisor, fetchGreenAdvice, type AdvisorCard } from "../../../../../lib/greenAdvisorApi";
 
 function AdvisorCardView({ title, description, variant, badge }: AdvisorCard) {
     const styles = {
@@ -38,10 +39,17 @@ function AdvisorCardSkeleton() {
     return <div className="h-[110px] animate-pulse rounded-[12px] bg-slate-100" />;
 }
 
+type QaTurn = { question: string; answer?: string; error?: string };
+
 export default function AIGreenAdvisor() {
     const [cards, setCards] = useState<AdvisorCard[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
+
+    const [question, setQuestion] = useState("");
+    const [asking, setAsking] = useState(false);
+    const [turns, setTurns] = useState<QaTurn[]>([]);
+    const bottomRef = useRef<HTMLDivElement | null>(null);
 
     useEffect(() => {
         let cancelled = false;
@@ -61,6 +69,34 @@ export default function AIGreenAdvisor() {
             cancelled = true;
         };
     }, []);
+
+    useEffect(() => {
+        bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    }, [turns, asking]);
+
+    const handleAsk = async () => {
+        const q = question.trim();
+        if (!q || asking) return;
+
+        setQuestion("");
+        setAsking(true);
+        setTurns((prev) => [...prev, { question: q }]);
+
+        try {
+            const answer = await askGreenAdvisor(q);
+            setTurns((prev) =>
+                prev.map((t, i) => (i === prev.length - 1 ? { ...t, answer } : t))
+            );
+        } catch (err: any) {
+            const message =
+                err?.response?.data?.message || "Couldn't get an answer right now — try again.";
+            setTurns((prev) =>
+                prev.map((t, i) => (i === prev.length - 1 ? { ...t, error: message } : t))
+            );
+        } finally {
+            setAsking(false);
+        }
+    };
 
     return (
         <section className="rounded-[14px] border-2 border-[#FFF085] bg-gradient-to-r from-[#FEFCE8] to-[#FFFBEB] p-4 shadow-[0px_1px_2px_-1px_rgba(0,0,0,0.10),0px_1px_3px_0px_rgba(0,0,0,0.10)] sm:p-5 lg:p-[26px]">
@@ -98,6 +134,62 @@ export default function AIGreenAdvisor() {
                 ) : (
                     cards.map((card, i) => <AdvisorCardView key={i} {...card} />)
                 )}
+            </div>
+
+            {/* Ask the advisor */}
+            <div className="mt-6 border-t border-[#F0DE9A] pt-4">
+                <p className="mb-2 text-[13px] font-semibold text-[#0B2B50]">
+                    Ask your advisor
+                </p>
+
+                {turns.length > 0 && (
+                    <div className="mb-3 max-h-[280px] space-y-3 overflow-y-auto pr-1">
+                        {turns.map((t, i) => (
+                            <div key={i} className="space-y-1.5">
+                                <p className="rounded-[10px] bg-[#001F3F] px-3 py-2 text-[13px] font-medium text-white">
+                                    {t.question}
+                                </p>
+                                {t.answer && (
+                                    <p className="rounded-[10px] bg-white px-3 py-2 text-[13px] leading-[1.6] text-[#374151]">
+                                        {t.answer}
+                                    </p>
+                                )}
+                                {t.error && (
+                                    <p className="rounded-[10px] bg-white px-3 py-2 text-[13px] text-red-500">
+                                        {t.error}
+                                    </p>
+                                )}
+                            </div>
+                        ))}
+                        {asking && (
+                            <div className="flex items-center gap-2 rounded-[10px] bg-white px-3 py-2 text-[13px] text-[#6B7280]">
+                                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                Thinking...
+                            </div>
+                        )}
+                        <div ref={bottomRef} />
+                    </div>
+                )}
+
+                <div className="flex items-center gap-2">
+                    <input
+                        value={question}
+                        onChange={(e) => setQuestion(e.target.value)}
+                        onKeyDown={(e) => e.key === "Enter" && handleAsk()}
+                        disabled={asking}
+                        placeholder="e.g. How much CO2 have I offset this month?"
+                        className="h-10 min-w-0 flex-1 rounded-full border border-[#E5D580] bg-white px-3 text-[13px] outline-none placeholder:text-slate-400 focus:border-[#001F3F] disabled:bg-gray-100"
+                    />
+                    <button
+                        type="button"
+                        onClick={handleAsk}
+                        disabled={asking || !question.trim()}
+                        aria-label="Ask"
+                        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#001F3F] text-white transition disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                        {asking ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                    </button>
+                </div>
             </div>
         </section>
     );

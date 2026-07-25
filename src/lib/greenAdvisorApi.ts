@@ -14,3 +14,12 @@ export async function fetchGreenAdvice(): Promise<AdvisorCard[]> {
   );
   return "data" in data ? data.data.cards : data.cards;
 }
+
+/** POST /green-ai/chat — ask the Green Advisor a free-form question, grounded in the same real data. */
+export async function askGreenAdvisor(message: string): Promise<string> {
+  const { data } = await api.post<{ data: { reply: string } } | { reply: string }>(
+    "/green-ai/chat",
+    { message }
+  );
+  return "data" in data ? data.data.reply : data.reply;
+}
