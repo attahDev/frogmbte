@@ -31,6 +31,7 @@ import AcademyAllCourses from './component/StudentDashboard/ServicesSection/Tool
 import ServicesIndexPage from './component/servicesPages/servicesIndex';
 import { Toaster } from "react-hot-toast";
 import ComingSoon from './component/Authentication/Soon';
+import SearchResultsPage from './component/Search/SearchResultsPage';
 import ProfilePage from './component/StudentDashboard/ProfileSection/ProfilePage';
 import SettingsPage from './component/StudentDashboard/ProfileSection/SettingsPage';
 import HallOfFameEmbed from './component/StudentDashboard/HOFAI/HallOfFameEmbed';
@@ -132,6 +133,7 @@ function AppLayout() {
           <Route path="/verify-otp" element={<OtpPage />} />
           <Route path="/dashboard" element={<DashboardIndex />}>
             <Route index element={<DashboardSection />} />
+            <Route path="search" element={<SearchResultsPage />} />
 
             <Route path="admin" element={<AdminLayout />}>
               <Route index element={<AdminOverview />} />

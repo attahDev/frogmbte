@@ -26,7 +26,7 @@ const NavBar = () => {
         e.preventDefault();
         const q = searchQuery.trim();
         if (!q) return;
-        navigate(`/dashboard/opportunities?search=${encodeURIComponent(q)}`);
+        navigate(`/dashboard/search?q=${encodeURIComponent(q)}`);
         setIsMenuOpen(false);
     };
 
