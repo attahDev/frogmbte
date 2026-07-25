@@ -1,10 +1,18 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Bot, X, ChevronRight, ArrowLeft, Send, Loader2 } from "lucide-react";
-import { api } from "./lib/api"; // adjust path if your api file is elsewhere
+import {
+  Bot,
+  X,
+  ChevronRight,
+  ArrowLeft,
+  Send,
+  Loader2,
+} from "lucide-react";
+import { api } from "./lib/api";
 
 type UserType = "Student" | "Mentor" | "Partner" | null;
+
 type Message = {
   from: "bot" | "user";
   text: string;
@@ -21,29 +29,49 @@ const visitorTypeMap = {
 export const BotComp = () => {
   const [open, setOpen] = useState(false);
   const [userType, setUserType] = useState<UserType>(null);
+
   const [messages, setMessages] = useState<Message[]>([
     {
       from: "bot",
       text: "Hey, I'm Nora 👋 — think of me as your friendly guide around GMBTE. Whether you're here to learn, mentor, or partner with us, I've got you. What brings you by today?",
     },
   ]);
+
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
 
   const bottomRef = useRef<HTMLDivElement | null>(null);
 
   const quickReplies = {
-    Student: ["Find opportunities", "Get a mentor", "Explore toolkits"],
-    Mentor: ["How to become a mentor", "Mentor dashboard", "Support students"],
-    Partner: ["Partner with GMBTE", "Sponsor a program", "Contact team"],
+    Student: [
+      "Find opportunities",
+      "Get a mentor",
+      "Explore toolkits",
+    ],
+    Mentor: [
+      "How to become a mentor",
+      "Mentor dashboard",
+      "Support students",
+    ],
+    Partner: [
+      "Partner with GMBTE",
+      "Sponsor a program",
+      "Contact team",
+    ],
   };
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    bottomRef.current?.scrollIntoView({
+      behavior: "smooth",
+    });
   }, [messages, loading]);
 
-  const handleSelectType = (type: UserType) => {
+  // FIXED: type can no longer be null
+  const handleSelectType = (
+    type: Exclude<UserType, null>
+  ) => {
     setUserType(type);
+
     setMessages([
       {
         from: "bot",
@@ -53,93 +81,130 @@ export const BotComp = () => {
   };
 
   const handleSend = async (text?: string) => {
-  const messageText = text || input;
-  if (!messageText.trim() || loading) return;
+    const messageText = text || input;
 
-  setInput("");
-  setLoading(true);
+    if (!messageText.trim() || loading) return;
 
-  setMessages((prev) => [...prev, { from: "user", text: messageText }]);
+    setInput("");
+    setLoading(true);
 
-  const sendToBackend = async (sessionId?: string | null) => {
-    return api.post("/chatbot/message", {
-      sessionId: sessionId || undefined,
-      visitorType: userType ? visitorTypeMap[userType] : "UNKNOWN",
-      message: messageText,
-    });
-  };
+    setMessages((prev) => [
+      ...prev,
+      {
+        from: "user",
+        text: messageText,
+      },
+    ]);
 
-  try {
-    const savedSessionId = localStorage.getItem(CHAT_SESSION_KEY);
-
-    let response;
+    const sendToBackend = async (sessionId?: string | null) => {
+      return api.post("/chatbot/message", {
+        sessionId: sessionId || undefined,
+        visitorType: userType
+          ? visitorTypeMap[userType]
+          : "UNKNOWN",
+        message: messageText,
+      });
+    };
 
     try {
-      response = await sendToBackend(savedSessionId);
-    } catch (err: any) {
-      const backendMessage = err?.response?.data?.message;
+      const savedSessionId = localStorage.getItem(
+        CHAT_SESSION_KEY
+      );
 
-      if (backendMessage === "Chat session not found") {
-        localStorage.removeItem(CHAT_SESSION_KEY);
-        response = await sendToBackend(undefined);
-      } else {
-        throw err;
+      let response;
+
+      try {
+        response = await sendToBackend(savedSessionId);
+      } catch (err: any) {
+        const backendMessage =
+          err?.response?.data?.message;
+
+        if (backendMessage === "Chat session not found") {
+          localStorage.removeItem(CHAT_SESSION_KEY);
+          response = await sendToBackend(undefined);
+        } else {
+          throw err;
+        }
       }
+
+      const data = response.data;
+
+      if (!data?.success) {
+        throw new Error(
+          data?.message || "Failed to get response."
+        );
+      }
+
+      const newSessionId = data?.data?.sessionId;
+      const answer = data?.data?.answer;
+
+      if (newSessionId) {
+        localStorage.setItem(
+          CHAT_SESSION_KEY,
+          newSessionId
+        );
+      }
+
+      setMessages((prev) => [
+        ...prev,
+        {
+          from: "bot",
+          text:
+            answer ||
+            "Sorry, I could not generate a response.",
+        },
+      ]);
+    } catch (error: any) {
+      console.log("CHATBOT ERROR:", error);
+
+      setMessages((prev) => [
+        ...prev,
+        {
+          from: "bot",
+          text:
+            error?.response?.data?.message ||
+            error?.message ||
+            "Sorry, something went wrong. Please try again.",
+        },
+      ]);
+    } finally {
+      setLoading(false);
     }
-
-    const data = response.data;
-
-    if (!data?.success) {
-      throw new Error(data?.message || "Failed to get response.");
-    }
-
-    const newSessionId = data?.data?.sessionId;
-    const answer = data?.data?.answer;
-
-    if (newSessionId) {
-      localStorage.setItem(CHAT_SESSION_KEY, newSessionId);
-    }
-
-    setMessages((prev) => [
-      ...prev,
-      {
-        from: "bot",
-        text: answer || "Sorry, I could not generate a response.",
-      },
-    ]);
-  } catch (error: any) {
-    console.log("CHATBOT ERROR:", error);
-
-    setMessages((prev) => [
-      ...prev,
-      {
-        from: "bot",
-        text:
-          error?.response?.data?.message ||
-          error?.message ||
-          "Sorry, something went wrong. Please try again.",
-      },
-    ]);
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
   return (
     <>
       <AnimatePresence>
         {open && (
           <motion.div
-            initial={{ opacity: 0, y: 40, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 40, scale: 0.95 }}
-            transition={{ duration: 0.25 }}
+            initial={{
+              opacity: 0,
+              y: 40,
+              scale: 0.95,
+            }}
+            animate={{
+              opacity: 1,
+              y: 0,
+              scale: 1,
+            }}
+            exit={{
+              opacity: 0,
+              y: 40,
+              scale: 0.95,
+            }}
+            transition={{
+              duration: 0.25,
+            }}
             className="fixed bottom-24 right-6 z-[9999] flex h-[520px] w-[360px] max-w-[calc(100vw-32px)] flex-col overflow-hidden rounded-[28px] bg-white shadow-2xl"
           >
             <div className="flex items-center justify-between bg-[#FFD700] px-5 py-4">
               <div className="flex items-center gap-3">
                 {userType && (
-                  <button onClick={() => setUserType(null)}>
+                  <button
+                    onClick={() =>
+                      setUserType(null)
+                    }
+                  >
                     <ArrowLeft className="h-5 w-5 text-[#00264D]" />
                   </button>
                 )}
@@ -152,11 +217,16 @@ export const BotComp = () => {
                   <h2 className="text-[16px] font-bold text-[#001F3F]">
                     Nora · GMBTE Guide
                   </h2>
-                  <p className="text-sm text-[#5C5C00]">Ask me anything, I don't bite 🙂</p>
+
+                  <p className="text-sm text-[#5C5C00]">
+                    Ask me anything, I don't bite 🙂
+                  </p>
                 </div>
               </div>
 
-              <button onClick={() => setOpen(false)}>
+              <button
+                onClick={() => setOpen(false)}
+              >
                 <X className="h-6 w-6 text-[#00264D]" />
               </button>
             </div>
@@ -168,13 +238,22 @@ export const BotComp = () => {
                 </h3>
 
                 <div className="space-y-4">
-                  {["Student", "Mentor", "Partner"].map((item) => (
+                  {(
+                    [
+                      "Student",
+                      "Mentor",
+                      "Partner",
+                    ] as const
+                  ).map((item) => (
                     <button
                       key={item}
-                      onClick={() => handleSelectType(item as UserType)}
+                      onClick={() =>
+                        handleSelectType(item)
+                      }
                       className="flex w-full items-center justify-between rounded-[22px] bg-[#00264D] px-6 py-5 text-left text-[16px] text-white transition hover:scale-[1.02]"
                     >
                       <span>I'm a {item}</span>
+
                       <ChevronRight className="h-7 w-7" />
                     </button>
                   ))}
@@ -206,16 +285,20 @@ export const BotComp = () => {
                   )}
 
                   <div className="flex flex-wrap gap-2 pt-2">
-                    {quickReplies[userType]?.map((reply) => (
-                      <button
-                        key={reply}
-                        onClick={() => handleSend(reply)}
-                        disabled={loading}
-                        className="rounded-full border border-[#00264D] px-3 py-2 text-xs text-[#00264D] disabled:cursor-not-allowed disabled:opacity-50"
-                      >
-                        {reply}
-                      </button>
-                    ))}
+                    {quickReplies[userType]?.map(
+                      (reply) => (
+                        <button
+                          key={reply}
+                          onClick={() =>
+                            handleSend(reply)
+                          }
+                          disabled={loading}
+                          className="rounded-full border border-[#00264D] px-3 py-2 text-xs text-[#00264D] disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          {reply}
+                        </button>
+                      )
+                    )}
                   </div>
 
                   <div ref={bottomRef} />
@@ -224,8 +307,13 @@ export const BotComp = () => {
                 <div className="flex items-center gap-2 border-t p-3">
                   <input
                     value={input}
-                    onChange={(e) => setInput(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && handleSend()}
+                    onChange={(e) =>
+                      setInput(e.target.value)
+                    }
+                    onKeyDown={(e) =>
+                      e.key === "Enter" &&
+                      handleSend()
+                    }
                     placeholder="Type your message..."
                     disabled={loading}
                     className="flex-1 rounded-full border px-4 py-2 text-sm outline-none disabled:cursor-not-allowed disabled:bg-gray-100"
@@ -233,7 +321,9 @@ export const BotComp = () => {
 
                   <button
                     onClick={() => handleSend()}
-                    disabled={loading || !input.trim()}
+                    disabled={
+                      loading || !input.trim()
+                    }
                     className="rounded-full bg-[#00264D] p-3 text-white disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     {loading ? (
