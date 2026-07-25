@@ -1,5 +1,6 @@
 import { SlidersHorizontal } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import JobCard from "./component/JobCard";
 import JobsFilterSidebar from "./component/JobsFilterSidebar";
 import { dummyJobs } from "./component/lib/dummyJobs";
@@ -7,8 +8,10 @@ import { fetchOpportunities, fetchOpportunityCategories } from "./component/lib/
 import type { JobCardData } from "./component/types/jobs";
 
 export default function JobOpportunitiesPage() {
-  const [search, setSearch] = useState("");
-  const [searchInput, setSearchInput] = useState("");
+  const [searchParams] = useSearchParams();
+  const initialSearch = searchParams.get("search")?.trim() ?? "";
+  const [search, setSearch] = useState(initialSearch);
+  const [searchInput, setSearchInput] = useState(initialSearch);
   const [jobs, setJobs] = useState<JobCardData[]>(dummyJobs);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);

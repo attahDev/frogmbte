@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Bell } from "lucide-react";
 import { useAuth } from "../contexts/mainuseAuth"; // Updated import path
@@ -20,6 +20,15 @@ const NavBar = () => {
     const navigate = useNavigate();
     const { user, isAuthenticated, logout } = useAuth(); // Get auth state from new context
     const [unreadNotifications, setUnreadNotifications] = useState(0);
+    const [searchQuery, setSearchQuery] = useState("");
+
+    const handleSearchSubmit = (e: FormEvent | KeyboardEvent) => {
+        e.preventDefault();
+        const q = searchQuery.trim();
+        if (!q) return;
+        navigate(`/dashboard/opportunities?search=${encodeURIComponent(q)}`);
+        setIsMenuOpen(false);
+    };
 
     useEffect(() => {
         if (!isAuthenticated) return;
@@ -230,7 +239,14 @@ const NavBar = () => {
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4 text-gray-500 mr-2 flex-shrink-0">
                             <path strokeLinecap="round" strokeLinejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
                         </svg>
-                        <input type="text" placeholder="Search opportunities, events..." className="bg-transparent text-sm xl:text-base text-gray-700 placeholder-gray-500 focus:outline-none w-full" />
+                        <input
+                            type="text"
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            onKeyDown={(e) => e.key === "Enter" && handleSearchSubmit(e)}
+                            placeholder="Search opportunities, events..."
+                            className="bg-transparent text-sm xl:text-base text-gray-700 placeholder-gray-500 focus:outline-none w-full"
+                        />
                     </div>
                 </div>
 
@@ -429,7 +445,14 @@ const NavBar = () => {
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 text-gray-500 mr-2 flex-shrink-0">
                             <path strokeLinecap="round" strokeLinejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
                         </svg>
-                        <input type="text" placeholder="Search opportunities, events..." className="bg-transparent text-base text-gray-700 placeholder-gray-500 focus:outline-none w-full" />
+                        <input
+                            type="text"
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            onKeyDown={(e) => e.key === "Enter" && handleSearchSubmit(e)}
+                            placeholder="Search opportunities, events..."
+                            className="bg-transparent text-base text-gray-700 placeholder-gray-500 focus:outline-none w-full"
+                        />
                     </div>
 
                     <nav className="flex flex-col space-y-4 text-lg font-medium text-black font-bold">
