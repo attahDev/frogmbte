@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { api } from "../../../lib/api";
 import { useApiGet } from "../hooks/useApiGet";
 import CardSkeleton from "../shared/CardSkeleton";
@@ -15,7 +16,14 @@ interface Mentor {
   category: string;
 }
 
-export default function FindMentor() {
+interface FindMentorProps {
+  /** When set, only the first N (post-filter) mentors render and a
+   *  "View all mentors" button links out to the full /mentors/find page.
+   *  Omitted entirely on that full page itself. */
+  limit?: number;
+}
+
+export default function FindMentor({ limit }: FindMentorProps = {}) {
   // Backend already sorts by category, so this comes back grouped —
   // /mentors admin panel is what assigns each mentor's category.
   const { data: mentors, loading, error } = useApiGet<Mentor[]>("/mentors", []);
@@ -42,6 +50,11 @@ export default function FindMentor() {
       return matchesFilter && matchesSearch;
     });
   }, [mentors, activeFilter, search]);
+
+  // The preview embed (limit set) clips the list but still reports the
+  // true match count, so "View all" only shows when there's actually more.
+  const visibleMentors = limit ? filteredMentors.slice(0, limit) : filteredMentors;
+  const hasMore = limit != null && filteredMentors.length > limit;
 
   const handleConnect = async (mentorId: string) => {
     setConnectError(null);
@@ -134,8 +147,9 @@ export default function FindMentor() {
           }
         />
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
-          {filteredMentors.map((m) => {
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
+            {visibleMentors.map((m) => {
             const isConnected = connectedIds.has(m.id);
             const isConnecting = connectingId === m.id;
             return (
@@ -186,7 +200,19 @@ export default function FindMentor() {
               </div>
             );
           })}
-        </div>
+          </div>
+
+          {hasMore && (
+            <div className="mt-6 sm:mt-8 flex justify-center">
+              <Link
+                to="/dashboard/mentors/find"
+                className="rounded-xl border-2 border-[#0B2545] px-6 py-2.5 text-sm sm:text-base font-semibold text-[#0B2545] hover:bg-[#0B2545] hover:text-white transition"
+              >
+                View all mentors
+              </Link>
+            </div>
+          )}
+        </>
       )}
     </section>
   );
