@@ -96,6 +96,13 @@ export default function JobDetailsPage() {
         <p className="mt-3 whitespace-pre-line text-sm leading-7 text-[#4A5565] sm:mt-4 sm:text-[15px]">
           {job.description}
         </p>
+
+        {job.source === "API" && (
+          <p className="mt-4 text-xs text-[#6A7282] sm:text-sm">
+            This is a summary from the original listing. Full details, requirements, and
+            benefits are on the employer's posting — click "Apply Now" below to view it.
+          </p>
+        )}
       </div>
 
       <a
