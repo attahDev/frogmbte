@@ -1,13 +1,16 @@
 import { useEffect, useState } from "react";
-import { Target, Sparkles, Check, Circle } from "lucide-react";
+import { Target, Sparkles, Check, Circle, UserPlus } from "lucide-react";
 import { Card, CardContent } from "./mentorsDashboard";
 import CardSkeleton from "../shared/CardSkeleton";
 import {
   fetchActiveCareerPaths,
   fetchMyReadiness,
+  fetchRecommendedMentors,
+  connectToMentor,
   setMyCareerGoal,
   type CareerPath,
   type CareerReadiness,
+  type RecommendedMentor,
 } from "../../../lib/mentorsApi";
 
 export default function CareerReadinessCard() {
@@ -18,12 +21,37 @@ export default function CareerReadinessCard() {
   const [selectedPathId, setSelectedPathId] = useState<string>("");
   const [saving, setSaving] = useState(false);
 
+  const [recommended, setRecommended] = useState<RecommendedMentor[]>([]);
+  const [connectingId, setConnectingId] = useState<string | null>(null);
+  const [connectedIds, setConnectedIds] = useState<Set<string>>(new Set());
+
   const load = () => {
     setLoading(true);
     fetchMyReadiness()
-      .then(setReadiness)
+      .then((r) => {
+        setReadiness(r);
+        if (r.hasGoal) {
+          fetchRecommendedMentors()
+            .then(setRecommended)
+            .catch(() => setRecommended([]));
+        }
+      })
       .catch(() => setReadiness({ hasGoal: false }))
       .finally(() => setLoading(false));
+  };
+
+  const handleConnect = async (mentorId: string) => {
+    setConnectingId(mentorId);
+    try {
+      await connectToMentor(mentorId);
+      setConnectedIds((prev) => new Set(prev).add(mentorId));
+    } catch (err: any) {
+      if (err?.response?.status === 409) {
+        setConnectedIds((prev) => new Set(prev).add(mentorId));
+      }
+    } finally {
+      setConnectingId(null);
+    }
   };
 
   useEffect(load, []);
@@ -206,6 +234,42 @@ export default function CareerReadinessCard() {
             </div>
           ))}
         </div>
+
+        {recommended.length > 0 && (
+          <div className="mt-5 border-t border-gray-100 pt-4">
+            <p className="mb-3 text-xs font-semibold text-[#001F3F]">Mentors who match this path</p>
+            <div className="space-y-2">
+              {recommended.map((m) => {
+                const isConnected = connectedIds.has(m.id);
+                const isConnecting = connectingId === m.id;
+                return (
+                  <div key={m.id} className="flex items-center gap-3 rounded-xl border border-gray-100 p-2.5">
+                    <img
+                      src={m.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(m.name)}`}
+                      alt={m.name}
+                      className="h-9 w-9 shrink-0 rounded-full object-cover"
+                    />
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-xs font-semibold text-[#001F3F]">{m.name}</p>
+                      <p className="truncate text-[11px] text-gray-500">
+                        {m.role}{m.company ? `, ${m.company}` : ""}
+                      </p>
+                      <p className="truncate text-[10px] text-gray-400">Matches: {m.matchedSkills.join(", ")}</p>
+                    </div>
+                    <button
+                      onClick={() => handleConnect(m.id)}
+                      disabled={isConnecting || isConnected}
+                      className="flex shrink-0 items-center gap-1 rounded-lg bg-blue-600 px-2.5 py-1.5 text-[11px] font-medium text-white hover:bg-blue-700 disabled:opacity-60"
+                    >
+                      <UserPlus className="h-3 w-3" />
+                      {isConnected ? "Sent" : isConnecting ? "Sending…" : "Connect"}
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
       </CardContent>
     </Card>
   );

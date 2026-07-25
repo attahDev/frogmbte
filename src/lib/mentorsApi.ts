@@ -175,6 +175,27 @@ export async function setMyCareerGoal(careerPathId: string): Promise<void> {
   await api.post("/career-paths/my-goal", { careerPathId });
 }
 
+export type RecommendedMentor = {
+  id: string;
+  name: string;
+  role: string;
+  company: string | null;
+  avatarUrl: string | null;
+  category: string;
+  matchedSkills: string[];
+};
+
+export async function fetchRecommendedMentors(): Promise<RecommendedMentor[]> {
+  const { data } = await api.get("/career-paths/my-goal/recommended-mentors");
+  return data?.data ?? data;
+}
+
+/** Send a mentorship request. Throws with response.status === 409 if a
+ *  connection already exists — callers treat that the same as success. */
+export async function connectToMentor(mentorId: string): Promise<void> {
+  await api.post(`/mentors/${mentorId}/connect`);
+}
+
 /** Admin: promote an existing user to mentor (keeps their own login). */
 export async function promoteToMentor(payload: {
   userId: string;
