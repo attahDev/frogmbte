@@ -142,7 +142,7 @@ function AppLayout() {
               <Route path="opportunities" element={<AdminOpportunities />} />
               <Route path="community" element={<AdminCommunity />} />
               <Route path="hall-of-fame" element={<AdminHOF />} />
-              <Route path="opportunities" element={<AdminOpportunities />} />
+              <Route path="green-projects" element={<AdminGreenProjects />} />
             </Route>
 
             {/* ── LIVE at launch: Dashboard, Academy, Green Impact, Hall of Fame ── */}
