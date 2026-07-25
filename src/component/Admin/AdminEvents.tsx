@@ -22,6 +22,9 @@ type EventRow = {
   isActive: boolean;
   isFeatured: boolean;
   isCompleted: boolean;
+  // Which public Events page this shows on: gmbtefro (GENERAL) or the Hall
+  // of Fame site (HALL_OF_FAME) — see Event.audience in the backend schema.
+  audience: "GENERAL" | "HALL_OF_FAME";
   recap: EventRecap | null;
 };
 
@@ -40,6 +43,7 @@ const EMPTY = {
   startsAt: "",
   endsAt: "",
   isFeatured: false,
+  audience: "GENERAL" as "GENERAL" | "HALL_OF_FAME",
 };
 
 // datetime-local inputs need "YYYY-MM-DDTHH:mm" with no timezone suffix.
@@ -125,6 +129,7 @@ export default function AdminEvents() {
         startsAt: new Date(form.startsAt).toISOString(),
         endsAt: form.endsAt ? new Date(form.endsAt).toISOString() : undefined,
         isFeatured: form.isFeatured,
+        audience: form.audience,
       });
       setForm(EMPTY);
       load();
@@ -146,6 +151,7 @@ export default function AdminEvents() {
       startsAt: toLocalInput(ev.startsAt),
       endsAt: toLocalInput(ev.endsAt),
       isFeatured: ev.isFeatured,
+      audience: ev.audience ?? "GENERAL",
     });
   };
 
@@ -166,6 +172,7 @@ export default function AdminEvents() {
         startsAt: new Date(editForm.startsAt).toISOString(),
         endsAt: editForm.endsAt ? new Date(editForm.endsAt).toISOString() : null,
         isFeatured: editForm.isFeatured,
+        audience: editForm.audience,
       });
       setEditingId(null);
       load();
@@ -258,6 +265,15 @@ export default function AdminEvents() {
             <option value="Virtual">Virtual</option>
             <option value="In-Person">In-Person</option>
             <option value="Hybrid">Hybrid</option>
+          </select>
+          <select
+            value={form.audience}
+            onChange={(e) => setForm({ ...form, audience: e.target.value as "GENERAL" | "HALL_OF_FAME" })}
+            className="rounded border border-gray-300 px-2 py-1 text-sm"
+            title="Which public Events page this shows on"
+          >
+            <option value="GENERAL">GMBTE Events</option>
+            <option value="HALL_OF_FAME">Hall of Fame Events</option>
           </select>
           <label className="text-xs text-gray-500">
             Starts
@@ -402,6 +418,17 @@ export default function AdminEvents() {
                       <option value="In-Person">In-Person</option>
                       <option value="Hybrid">Hybrid</option>
                     </select>
+                    <select
+                      value={editForm.audience}
+                      onChange={(e) =>
+                        setEditForm({ ...editForm, audience: e.target.value as "GENERAL" | "HALL_OF_FAME" })
+                      }
+                      className="rounded border border-gray-300 px-2 py-1 text-sm"
+                      title="Which public Events page this shows on"
+                    >
+                      <option value="GENERAL">GMBTE Events</option>
+                      <option value="HALL_OF_FAME">Hall of Fame Events</option>
+                    </select>
                     <label className="text-xs text-gray-500">
                       Starts
                       <input
@@ -544,6 +571,9 @@ export default function AdminEvents() {
                   <div>
                     <p className="font-medium text-[#001F3F]">
                       {ev.title} {ev.isFeatured && <span className="text-xs text-[#D7263D]">★ Featured</span>}{" "}
+                      {ev.audience === "HALL_OF_FAME" && (
+                        <span className="text-xs text-gray-500">(Hall of Fame)</span>
+                      )}{" "}
                       {ev.isCompleted && <span className="text-xs text-green-700">✓ Completed</span>}
                     </p>
                     <p className="text-xs text-gray-500">
