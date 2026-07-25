@@ -224,9 +224,7 @@ export default function AdminEvents() {
       fd.append("keepGallery", JSON.stringify(recapKeepGallery));
       recapNewFiles.forEach((f) => fd.append("gallery", f));
 
-      await api.patch(`/events/admin/${id}/recap`, fd, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
+      await api.patch(`/events/admin/${id}/recap`, fd);
       setRecapEditingId(null);
       load();
     } finally {

@@ -59,9 +59,7 @@ export async function createCommunityPost(input: {
   form.append("description", input.description);
   if (input.image) form.append("image", input.image);
 
-  const { data } = await api.post("/community/posts", form, {
-    headers: { "Content-Type": "multipart/form-data" },
-  });
+  const { data } = await api.post("/community/posts", form);
   return (data?.data ?? data) as CommunityPost;
 }
 

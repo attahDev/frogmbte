@@ -269,9 +269,7 @@ export default function AdminCourses() {
     try {
       const body = new FormData();
       body.append("file", file);
-      const { data } = await api.post("/uploads/course-media", body, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
+      const { data } = await api.post("/uploads/course-media", body);
       const result = data?.data ?? data;
       updateSectionDraft(sectionId, {
         mediaUrl: result.url,
@@ -294,9 +292,7 @@ export default function AdminCourses() {
     try {
       const body = new FormData();
       body.append("file", file);
-      const { data } = await api.post("/courses/extract-pdf", body, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
+      const { data } = await api.post("/courses/extract-pdf", body);
       const result = data?.data ?? data;
       setModuleTitle(result.suggestedTitle ?? "");
       setModuleDescription(result.description ?? "");

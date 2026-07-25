@@ -197,9 +197,7 @@ export async function submitCommunityEvent(input: CommunityEventInput) {
   if (input.endsAt) form.append("endsAt", input.endsAt);
   if (input.image) form.append("image", input.image);
 
-  const { data } = await api.post("/events/community", form, {
-    headers: { "Content-Type": "multipart/form-data" },
-  });
+  const { data } = await api.post("/events/community", form);
   return data;
 }
 
