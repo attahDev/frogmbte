@@ -85,9 +85,12 @@ export default function MentorAIAssistant() {
           content: data.reply,
         },
       ]);
-    } catch (err) {
+    } catch (err: any) {
       console.error("MENTOR AI ERROR:", err);
-      setError("Unable to get MentorAI response. Please try again.");
+      setError(
+        err?.response?.data?.message ||
+          "Unable to get MentorAI response. Please try again."
+      );
     } finally {
       setLoading(false);
     }
