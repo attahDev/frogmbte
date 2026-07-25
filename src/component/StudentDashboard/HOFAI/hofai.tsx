@@ -16,8 +16,11 @@ import {
   useState,
 } from "react";
 
-const API_URL =
-  "https://olayimika01-hall-of-fame.hf.space/api/v1/chat";
+import { api } from "../../../lib/api";
+
+// Routed through the backend (POST /hof-ai/chat) instead of calling the
+// Hugging Face Space directly — keeps the Space URL server-side and gates
+// the endpoint behind login, same as every other AI agent on the platform.
 
 const suggestions = [
   "Show me inductees in Technology",
@@ -34,6 +37,7 @@ const chips = [
 ];
 
 type ApiResponse = {
+  reply?: string;
   answer?: string;
   response?: string;
   message?: string;
@@ -56,6 +60,7 @@ function getResponseText(data: ApiResponse | string): string {
   }
 
   return (
+    data.reply ||
     data.answer ||
     data.response ||
     data.message ||
@@ -117,53 +122,12 @@ export default function MentorAiSection() {
     ]);
 
     try {
-      const response = await fetch(API_URL, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
-        body: JSON.stringify({
-          query: cleanText,
-        }),
-      });
+      const response = await api.post<{ reply?: string } | ApiResponse>(
+        "/hof-ai/chat",
+        { message: cleanText },
+      );
 
-      const contentType = response.headers.get("content-type");
-
-      if (!response.ok) {
-        let errorMessage = `Request failed with status ${response.status}`;
-
-        try {
-          if (contentType?.includes("application/json")) {
-            const errorData = await response.json();
-
-            errorMessage =
-              errorData?.detail ||
-              errorData?.message ||
-              errorData?.error ||
-              errorMessage;
-          } else {
-            const errorText = await response.text();
-
-            if (errorText) {
-              errorMessage = errorText;
-            }
-          }
-        } catch {
-          // Keep default error message
-        }
-
-        throw new Error(errorMessage);
-      }
-
-      let replyText = "";
-
-      if (contentType?.includes("application/json")) {
-        const data: ApiResponse = await response.json();
-        replyText = getResponseText(data);
-      } else {
-        replyText = await response.text();
-      }
+      const replyText = getResponseText(response.data);
 
       setMessages((prev) => [
         ...prev,
@@ -172,13 +136,12 @@ export default function MentorAiSection() {
           content: replyText,
         },
       ]);
-    } catch (err) {
+    } catch (err: any) {
       console.error("Hall of Fame AI error:", err);
 
       setError(
-        err instanceof Error
-          ? err.message
-          : "Hall of Fame AI is currently unavailable. Please try again.",
+        err?.response?.data?.message ||
+          "Hall of Fame AI is currently unavailable. Please try again.",
       );
     } finally {
       setLoading(false);
