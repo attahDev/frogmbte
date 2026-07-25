@@ -57,10 +57,12 @@ function toLocalInput(iso: string | null): string {
 export default function AdminEvents() {
   const [events, setEvents] = useState<EventRow[] | null>(null);
   const [form, setForm] = useState(EMPTY);
+  const [formImage, setFormImage] = useState<File | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState(EMPTY);
+  const [editImage, setEditImage] = useState<File | null>(null);
 
   const [pending, setPending] = useState<PendingSubmission[] | null>(null);
   const [moderatingId, setModeratingId] = useState<string | null>(null);
@@ -115,23 +117,41 @@ export default function AdminEvents() {
     if (!form.title || !form.startsAt) return;
     setSubmitting(true);
     try {
-      await api.post("/events", {
-        title: form.title,
-        description: form.description || undefined,
-        location: form.location || undefined,
-        imageUrl: form.imageUrl || undefined,
-        mode: form.mode || undefined,
-        link: form.link || undefined,
-        tags: form.tagsText
-          .split(",")
-          .map((t) => t.trim())
-          .filter(Boolean),
-        startsAt: new Date(form.startsAt).toISOString(),
-        endsAt: form.endsAt ? new Date(form.endsAt).toISOString() : undefined,
-        isFeatured: form.isFeatured,
-        audience: form.audience,
-      });
+      const startsAtIso = new Date(form.startsAt).toISOString();
+      const endsAtIso = form.endsAt ? new Date(form.endsAt).toISOString() : undefined;
+      const tags = form.tagsText.split(",").map((t) => t.trim()).filter(Boolean);
+
+      if (formImage) {
+        const fd = new FormData();
+        fd.append("title", form.title);
+        if (form.description) fd.append("description", form.description);
+        if (form.location) fd.append("location", form.location);
+        if (form.mode) fd.append("mode", form.mode);
+        if (form.link) fd.append("link", form.link);
+        fd.append("tags", tags.join(","));
+        fd.append("startsAt", startsAtIso);
+        if (endsAtIso) fd.append("endsAt", endsAtIso);
+        fd.append("isFeatured", String(form.isFeatured));
+        fd.append("audience", form.audience);
+        fd.append("image", formImage);
+        await api.post("/events", fd);
+      } else {
+        await api.post("/events", {
+          title: form.title,
+          description: form.description || undefined,
+          location: form.location || undefined,
+          imageUrl: form.imageUrl || undefined,
+          mode: form.mode || undefined,
+          link: form.link || undefined,
+          tags,
+          startsAt: startsAtIso,
+          endsAt: endsAtIso,
+          isFeatured: form.isFeatured,
+          audience: form.audience,
+        });
+      }
       setForm(EMPTY);
+      setFormImage(null);
       load();
     } finally {
       setSubmitting(false);
@@ -140,6 +160,7 @@ export default function AdminEvents() {
 
   const startEdit = (ev: EventRow) => {
     setEditingId(ev.id);
+    setEditImage(null);
     setEditForm({
       title: ev.title,
       description: ev.description ?? "",
@@ -158,23 +179,41 @@ export default function AdminEvents() {
   const saveEdit = async (id: string) => {
     setSubmitting(true);
     try {
-      await api.patch(`/events/${id}`, {
-        title: editForm.title,
-        description: editForm.description,
-        location: editForm.location,
-        imageUrl: editForm.imageUrl,
-        mode: editForm.mode,
-        link: editForm.link,
-        tags: editForm.tagsText
-          .split(",")
-          .map((t) => t.trim())
-          .filter(Boolean),
-        startsAt: new Date(editForm.startsAt).toISOString(),
-        endsAt: editForm.endsAt ? new Date(editForm.endsAt).toISOString() : null,
-        isFeatured: editForm.isFeatured,
-        audience: editForm.audience,
-      });
+      const startsAtIso = new Date(editForm.startsAt).toISOString();
+      const endsAtIso = editForm.endsAt ? new Date(editForm.endsAt).toISOString() : null;
+      const tags = editForm.tagsText.split(",").map((t) => t.trim()).filter(Boolean);
+
+      if (editImage) {
+        const fd = new FormData();
+        fd.append("title", editForm.title);
+        fd.append("description", editForm.description);
+        fd.append("location", editForm.location);
+        fd.append("mode", editForm.mode);
+        fd.append("link", editForm.link);
+        fd.append("tags", tags.join(","));
+        fd.append("startsAt", startsAtIso);
+        if (endsAtIso) fd.append("endsAt", endsAtIso);
+        fd.append("isFeatured", String(editForm.isFeatured));
+        fd.append("audience", editForm.audience);
+        fd.append("image", editImage);
+        await api.patch(`/events/${id}`, fd);
+      } else {
+        await api.patch(`/events/${id}`, {
+          title: editForm.title,
+          description: editForm.description,
+          location: editForm.location,
+          imageUrl: editForm.imageUrl,
+          mode: editForm.mode,
+          link: editForm.link,
+          tags,
+          startsAt: startsAtIso,
+          endsAt: endsAtIso,
+          isFeatured: editForm.isFeatured,
+          audience: editForm.audience,
+        });
+      }
       setEditingId(null);
+      setEditImage(null);
       load();
     } finally {
       setSubmitting(false);
@@ -293,12 +332,27 @@ export default function AdminEvents() {
               className="mt-1 block w-full rounded border border-gray-300 px-2 py-1 text-sm"
             />
           </label>
-          <input
-            placeholder="Image URL (optional)"
-            value={form.imageUrl}
-            onChange={(e) => setForm({ ...form, imageUrl: e.target.value })}
-            className="rounded border border-gray-300 px-2 py-1 text-sm"
-          />
+          <div className="sm:col-span-2 flex flex-wrap items-center gap-2">
+            <input
+              placeholder="Image URL (used if no file is chosen below)"
+              value={form.imageUrl}
+              onChange={(e) => setForm({ ...form, imageUrl: e.target.value })}
+              className="flex-1 min-w-[200px] rounded border border-gray-300 px-2 py-1 text-sm"
+            />
+            <input
+              type="file"
+              accept="image/png,image/jpeg,image/webp,image/gif"
+              onChange={(e) => setFormImage(e.target.files?.[0] ?? null)}
+              className="flex-1 min-w-[200px] text-xs text-gray-600 file:mr-3 file:rounded file:border-0 file:bg-gray-100 file:px-2 file:py-1 file:text-xs file:font-semibold file:text-gray-700 hover:file:bg-gray-200"
+            />
+            {formImage && (
+              <img
+                src={URL.createObjectURL(formImage)}
+                alt=""
+                className="h-10 w-10 rounded border border-gray-200 object-cover"
+              />
+            )}
+          </div>
           <input
             placeholder="Link — registration page, Zoom/Meet, Eventbrite (optional)"
             value={form.link}
@@ -447,12 +501,27 @@ export default function AdminEvents() {
                         className="mt-1 block w-full rounded border border-gray-300 px-2 py-1 text-sm"
                       />
                     </label>
-                    <input
-                      value={editForm.imageUrl}
-                      onChange={(e) => setEditForm({ ...editForm, imageUrl: e.target.value })}
-                      placeholder="Image URL"
-                      className="rounded border border-gray-300 px-2 py-1 text-sm"
-                    />
+                    <div className="sm:col-span-2 flex flex-wrap items-center gap-2">
+                      <input
+                        value={editForm.imageUrl}
+                        onChange={(e) => setEditForm({ ...editForm, imageUrl: e.target.value })}
+                        placeholder="Image URL (used if no file is chosen below)"
+                        className="flex-1 min-w-[200px] rounded border border-gray-300 px-2 py-1 text-sm"
+                      />
+                      <input
+                        type="file"
+                        accept="image/png,image/jpeg,image/webp,image/gif"
+                        onChange={(e) => setEditImage(e.target.files?.[0] ?? null)}
+                        className="flex-1 min-w-[200px] text-xs text-gray-600 file:mr-3 file:rounded file:border-0 file:bg-gray-100 file:px-2 file:py-1 file:text-xs file:font-semibold file:text-gray-700 hover:file:bg-gray-200"
+                      />
+                      <img
+                        src={editImage ? URL.createObjectURL(editImage) : editForm.imageUrl || undefined}
+                        alt=""
+                        className={`h-10 w-10 rounded border border-gray-200 object-cover ${
+                          editImage || editForm.imageUrl ? "" : "hidden"
+                        }`}
+                      />
+                    </div>
                     <input
                       value={editForm.link}
                       onChange={(e) => setEditForm({ ...editForm, link: e.target.value })}

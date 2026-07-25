@@ -51,7 +51,6 @@ import BPTabs from './component/MarketResearchDashboard/BusinessPlanSection/BPTa
 import { IGDashboardSection } from './component/MarketResearchDashboard/IdeaGenerator/IGDashboardSection';
 import { MRDashboardSection } from './component/MarketResearchDashboard/MarketResearchSection/MRDashboardSection';
 import AIBusinessStudioSection from './component/MarketResearchDashboard/DashboardSection/AIDashboardSection';
-import { MentorIndexAI } from './component/StudentDashboard/MentorDashboard/MentorIndex';
 import MentorsRouteSwitch from './component/StudentDashboard/MentorSections/MentorsRouteSwitch';
 import FindMentor from './component/StudentDashboard/MentorSections/FindMentor';
 import NotificationsPage from './component/StudentDashboard/NotificationsSection/NotificationsPage';

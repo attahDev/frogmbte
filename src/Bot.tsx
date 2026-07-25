@@ -43,6 +43,7 @@ export const BotComp = () => {
   }, [messages, loading]);
 
   const handleSelectType = (type: UserType) => {
+    if (!type) return;
     setUserType(type);
     setMessages([
       {
