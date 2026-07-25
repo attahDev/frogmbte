@@ -150,7 +150,7 @@ export default function AIGreenAdvisor() {
                                     {t.question}
                                 </p>
                                 {t.answer && (
-                                    <p className="rounded-[10px] bg-white px-3 py-2 text-[13px] leading-[1.6] text-[#374151]">
+                                    <p className="rounded-[10px] bg-white px-3 py-2 text-[13px] leading-[1.6] text-[#374151] whitespace-pre-line">
                                         {t.answer}
                                     </p>
                                 )}

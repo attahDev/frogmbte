@@ -188,7 +188,7 @@ export const BotComp = () => {
                   {messages.map((msg, index) => (
                     <div
                       key={index}
-                      className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm ${
+                      className={`max-w-[80%] whitespace-pre-line rounded-2xl px-4 py-3 text-sm ${
                         msg.from === "bot"
                           ? "bg-[#F3F4F6] text-[#001F3F]"
                           : "ml-auto bg-[#00264D] text-white"
