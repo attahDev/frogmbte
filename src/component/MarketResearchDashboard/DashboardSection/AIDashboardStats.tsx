@@ -8,6 +8,7 @@ import { getRecentSearches } from '../../MarketResearchTool/api';
 
 export default function DashboardStats() {
   const navigate = useNavigate();
+
   const [ideasCount, setIdeasCount] = useState<number | null>(null);
   const [plansCount, setPlansCount] = useState<number | null>(null);
   const [analysesCount, setAnalysesCount] = useState<number | null>(null);
@@ -21,14 +22,14 @@ export default function DashboardStats() {
       });
 
     getBusinessPlanHistory()
-      .then((plans) => setPlansCount((plans || []).length))
+      .then((response) => {
+        setPlansCount(response?.data?.length ?? 0);
+      })
       .catch((err) => {
         console.error('Failed to load plans count:', err);
         setPlansCount(0);
       });
 
-    // Market Research has no server-side history endpoint yet, so this is
-    // only recent searches stored locally in this browser, not a true count.
     try {
       setAnalysesCount(getRecentSearches().length);
     } catch {
@@ -45,6 +46,7 @@ export default function DashboardStats() {
         onClick={() => navigate('/dashboard/idea-generator')}
         onViewAll={() => navigate('/dashboard/idea-generator')}
       />
+
       <StatsCard
         title="Plans Created"
         value={plansCount ?? '—'}
@@ -52,6 +54,7 @@ export default function DashboardStats() {
         onClick={() => navigate('/dashboard/business-plan')}
         onViewAll={() => navigate('/dashboard/business-plan')}
       />
+
       <StatsCard
         title="Market Analyses"
         value={analysesCount ?? '—'}
