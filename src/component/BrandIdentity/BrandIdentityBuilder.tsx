@@ -589,12 +589,18 @@ export default function BrandIdentityBuilder() {
     }
   };
 
-  const handleDownload = async (url: string) => {
+  const handleDownload = async (url: string, assetName?: string) => {
     try {
       const response = await fetch(url);
       const blob = await response.blob();
       const blobUrl = window.URL.createObjectURL(blob);
-      const filename = url.split("/").pop() || "download";
+
+      // Preserve the real extension from the asset URL (png/pdf/etc.),
+      // but name the file after the company + asset type instead of the
+      // storage host's opaque UUID path.
+      const urlPath = url.split("?")[0];
+      const ext = urlPath.includes(".") ? urlPath.split(".").pop() : "png";
+      const filename = assetName ? `${assetName}.${ext}` : urlPath.split("/").pop() || "download";
 
       const link = document.createElement("a");
       link.href = blobUrl;
@@ -1001,10 +1007,15 @@ function ResultPanel({
   exportsData: any;
   onEdit: () => void;
   onRegenerate: () => void;
-  onDownload: (url: string) => void;
+  onDownload: (url: string, assetName?: string) => void;
 }) {
   const isFailed = assetStatus?.status?.toLowerCase() === "failed";
   const exports = exportsData?.exports || {};
+  const companySlug = (values.company || "brand")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "") || "brand";
 
   return (
     <div className="mx-auto max-w-6xl">
@@ -1026,7 +1037,7 @@ function ResultPanel({
           {Object.entries(exports).map(([key, url]) => (
             <button
               key={key}
-              onClick={() => onDownload(String(url))}
+              onClick={() => onDownload(String(url), `${companySlug}-${key}`)}
               className="rounded-xl bg-[#001F3F] px-4 py-2 text-xs font-semibold text-white"
             >
               <Download className="mr-1 inline h-4 w-4" />

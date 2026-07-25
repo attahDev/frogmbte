@@ -123,9 +123,19 @@ export async function listProposals(
   return res.json();
 }
 
+function slugifyFilename(title: string, fallback: string): string {
+  const slug = (title || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[^\w\s-]/g, "")
+    .replace(/\s+/g, "-");
+  return slug || fallback;
+}
+
 export async function downloadProposal(
   id: string,
-  format: "pdf" | "docx"
+  format: "pdf" | "docx",
+  title?: string
 ): Promise<void> {
   const res = await fetch(`${BASE}/api/proposals/${id}/download/${format}`, {
     headers: headers(false),
@@ -135,7 +145,8 @@ export async function downloadProposal(
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = `proposal-${id.slice(0, 8)}.${format === "pdf" ? "pdf" : "docx"}`;
+  const name = slugifyFilename(title, `proposal-${id.slice(0, 8)}`);
+  a.download = `${name}.${format === "pdf" ? "pdf" : "docx"}`;
   a.click();
   URL.revokeObjectURL(url);
 }

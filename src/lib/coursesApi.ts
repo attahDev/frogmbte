@@ -67,21 +67,21 @@ export async function fetchCourses(category: "climate" | "education"): Promise<S
   const { data } = await api.get(`/courses`, { params: { category } });
   const courses: BackendCourse[] = data?.data ?? data;
 
-  // Modules aren't included in the list endpoint — fetch each course's
-  // modules in parallel so cards can show real lesson counts if needed.
-  const withModules = await Promise.all(
-    courses.map(async (course) => {
-      try {
-        const modsRes = await api.get(`/courses/${course.id}/modules`);
-        const modules: BackendModule[] = modsRes.data?.data ?? modsRes.data;
-        return toCourse(course, modules);
-      } catch {
-        return toCourse(course, []);
-      }
-    }),
-  );
+  if (courses.length === 0) return [];
 
-  return withModules;
+  // One batched request instead of one GET .../modules per course — the
+  // old Promise.all fan-out was firing N simultaneous requests on every
+  // dashboard load, which was enough to trip the API's rate limit.
+  let modulesByCourse: Record<string, BackendModule[]> = {};
+  try {
+    const ids = courses.map((c) => c.id).join(",");
+    const modsRes = await api.get(`/courses/modules`, { params: { ids } });
+    modulesByCourse = modsRes.data?.data ?? modsRes.data ?? {};
+  } catch {
+    // fall through — courses still render, just without lesson counts
+  }
+
+  return courses.map((course) => toCourse(course, modulesByCourse[course.id] ?? []));
 }
 
 export async function fetchCourseBySlug(courseSlug: string): Promise<SustainabilityCourse | null> {

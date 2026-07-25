@@ -44,7 +44,7 @@ export const MentorIndex = () => {
         <>
           <MentorsDashboard />
           <MentorshipProgress />
-          <FindMentor />
+          <FindMentor limit={15} />
           <MentorSpotlight />
         </>
       ) : (
