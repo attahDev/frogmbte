@@ -238,6 +238,7 @@ function PostCard({ post }: { post: CommunityPost }) {
   const [hasLiked, setHasLiked] = useState(post.hasLiked);
   const [pending, setPending] = useState(false);
   const [showComments, setShowComments] = useState(false);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
 
   const toggleLike = async () => {
     if (pending) return;
@@ -258,68 +259,110 @@ function PostCard({ post }: { post: CommunityPost }) {
   };
 
   return (
-    <div className="border border-gray-200 rounded-xl sm:rounded-2xl p-4 sm:p-6 bg-white hover:shadow-md transition-shadow">
-      <div className="flex flex-col sm:flex-row gap-4 sm:gap-6">
-        {post.imageUrl && (
-          <div className="flex-shrink-0">
-            <img
-              src={post.imageUrl}
-              alt={post.title}
-              className="w-full sm:w-28 md:w-32 h-48 sm:h-28 md:h-32 rounded-xl object-cover"
-            />
-          </div>
-        )}
-
-        <div className="flex-1 min-w-0">
-          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between mb-2 gap-1 sm:gap-0">
-            <h3 className="text-xl sm:text-2xl font-bold text-gray-900">{post.title}</h3>
-            <span className="text-xs sm:text-sm text-gray-500 whitespace-nowrap sm:ml-4">
-              {timeAgo(post.createdAt)}
-            </span>
-          </div>
-
-          <p className="text-gray-600 text-xs sm:text-sm mb-3 sm:mb-4 leading-relaxed">{post.description}</p>
-
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0">
-            <div className="flex items-center gap-3">
-              <div
-                className={`w-8 h-8 sm:w-10 sm:h-10 ${post.avatarColor ?? "bg-red-600"} rounded-full flex items-center justify-center text-white font-semibold text-xs sm:text-sm`}
-              >
-                {initials(post.authorName)}
-              </div>
-              <div>
-                <p className="font-semibold text-gray-900 text-xs sm:text-sm">{post.authorName}</p>
-                <p className="text-gray-600 text-[10px] sm:text-xs">{post.authorRole}</p>
-              </div>
+    <div className="rounded-xl sm:rounded-2xl bg-white border border-gray-200 shadow-sm hover:shadow-md transition-shadow overflow-hidden">
+      <div className="p-4 sm:p-6 pb-0">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3 min-w-0">
+            <div
+              className={`w-9 h-9 sm:w-10 sm:h-10 shrink-0 ${post.avatarColor ?? "bg-red-600"} rounded-full flex items-center justify-center text-white font-semibold text-xs sm:text-sm`}
+            >
+              {initials(post.authorName)}
             </div>
-
-            <div className="flex items-center gap-4 sm:gap-6">
-              <button
-                type="button"
-                onClick={toggleLike}
-                disabled={pending}
-                className={`flex items-center gap-1.5 sm:gap-2 transition disabled:opacity-60 ${
-                  hasLiked ? "text-red-600" : "text-gray-600 hover:text-red-600"
-                }`}
-                aria-label={hasLiked ? "Unlike" : "Like"}
-              >
-                <Heart className="w-4 h-4 sm:w-5 sm:h-5" fill={hasLiked ? "currentColor" : "none"} />
-                <span className="text-xs sm:text-sm font-medium">{likes}</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setShowComments((v) => !v)}
-                className="flex items-center gap-1.5 sm:gap-2 text-gray-600 hover:text-[#001F3F] transition"
-              >
-                <MessageCircle className="w-4 h-4 sm:w-5 sm:h-5" />
-                <span className="text-xs sm:text-sm font-medium">{post.comments}</span>
-              </button>
+            <div className="min-w-0">
+              <p className="font-semibold text-gray-900 text-xs sm:text-sm truncate">{post.authorName}</p>
+              <p className="text-gray-500 text-[10px] sm:text-xs truncate">{post.authorRole}</p>
             </div>
           </div>
-
-          {showComments && <CommentThread postId={post.id} />}
+          <span className="text-xs sm:text-sm text-gray-400 whitespace-nowrap shrink-0">{timeAgo(post.createdAt)}</span>
         </div>
+
+        <h3 className="text-lg sm:text-xl font-bold text-gray-900 mt-3">{post.title}</h3>
+        <p className="text-gray-600 text-xs sm:text-sm mt-1 leading-relaxed">{post.description}</p>
       </div>
+
+      {post.imageUrl && (
+        <button
+          type="button"
+          onClick={() => setLightboxOpen(true)}
+          className="mt-4 block w-full group"
+          aria-label="View full-size photo"
+        >
+          <img
+            src={post.imageUrl}
+            alt={post.title}
+            loading="lazy"
+            className="w-full h-64 sm:h-80 object-cover group-hover:brightness-95 transition"
+          />
+        </button>
+      )}
+
+      <div className="flex items-center gap-4 sm:gap-6 px-4 sm:px-6 py-3 sm:py-4">
+        <button
+          type="button"
+          onClick={toggleLike}
+          disabled={pending}
+          className={`flex items-center gap-1.5 sm:gap-2 transition disabled:opacity-60 ${
+            hasLiked ? "text-red-600" : "text-gray-600 hover:text-red-600"
+          }`}
+          aria-label={hasLiked ? "Unlike" : "Like"}
+        >
+          <Heart className="w-4 h-4 sm:w-5 sm:h-5" fill={hasLiked ? "currentColor" : "none"} />
+          <span className="text-xs sm:text-sm font-medium">{likes}</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => setShowComments((v) => !v)}
+          className="flex items-center gap-1.5 sm:gap-2 text-gray-600 hover:text-[#001F3F] transition"
+        >
+          <MessageCircle className="w-4 h-4 sm:w-5 sm:h-5" />
+          <span className="text-xs sm:text-sm font-medium">{post.comments}</span>
+        </button>
+      </div>
+
+      {showComments && (
+        <div className="px-4 sm:px-6 pb-4 sm:pb-6">
+          <CommentThread postId={post.id} />
+        </div>
+      )}
+
+      {lightboxOpen && post.imageUrl && (
+        <Lightbox src={post.imageUrl} alt={post.title} onClose={() => setLightboxOpen(false)} />
+      )}
+    </div>
+  );
+}
+
+/** Full-screen click-to-view for a feed photo — uncropped (object-contain),
+ *  since the feed thumbnail above is deliberately cropped to a fixed height
+ *  for a consistent grid. Closes on backdrop click or Escape. */
+function Lightbox({ src, alt, onClose }: { src: string; alt: string; onClose: () => void }) {
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-4 sm:p-8"
+      onClick={onClose}
+    >
+      <button
+        type="button"
+        onClick={onClose}
+        className="absolute top-4 right-4 rounded-full bg-white/10 p-2 text-white hover:bg-white/20 transition"
+        aria-label="Close"
+      >
+        <X className="h-6 w-6" />
+      </button>
+      <img
+        src={src}
+        alt={alt}
+        onClick={(e) => e.stopPropagation()}
+        className="max-h-full max-w-full rounded-lg object-contain"
+      />
     </div>
   );
 }
