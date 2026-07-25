@@ -47,7 +47,9 @@ export const BotComp = () => {
     setMessages([
       {
         from: "bot",
-        text: `Got it, a ${type.toLowerCase()} — good to have you here! What would you like to do?`,
+        text: type
+          ? `Got it, a ${type.toLowerCase()} — good to have you here! What would you like to do?`
+          : "What would you like to do?",
       },
     ]);
   };

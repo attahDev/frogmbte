@@ -31,7 +31,6 @@ import AcademyAllCourses from './component/StudentDashboard/ServicesSection/Tool
 import ServicesIndexPage from './component/servicesPages/servicesIndex';
 import { Toaster } from "react-hot-toast";
 import ComingSoon from './component/Authentication/Soon';
-import MentorIndexAI from './component/StudentDashboard/MentorSections/MentorIndexAI';
 import ProfilePage from './component/StudentDashboard/ProfileSection/ProfilePage';
 import SettingsPage from './component/StudentDashboard/ProfileSection/SettingsPage';
 import HallOfFameEmbed from './component/StudentDashboard/HOFAI/HallOfFameEmbed';
