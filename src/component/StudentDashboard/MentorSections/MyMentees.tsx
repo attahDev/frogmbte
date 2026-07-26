@@ -113,7 +113,9 @@ function MenteeRow({
 // Main "My Mentees" page
 // ------------------------------------------------------------
 export default function MyMentees() {
-  const { data, loading, error, refetch } = useApiGet<MenteeConnection[]>("/mentors/my-mentees", []);
+  const { data, loading, error, refetch } = useApiGet<MenteeConnection[]>("/mentors/my-mentees", [], [
+    "mentors:updated",
+  ]);
   const [localConnections, setLocalConnections] = useState<MenteeConnection[] | null>(null);
   const [activeChatId, setActiveChatId] = useState<string | null>(null);
   const [initialTab, setInitialTab] = useState<"chat" | "sessions">("chat");

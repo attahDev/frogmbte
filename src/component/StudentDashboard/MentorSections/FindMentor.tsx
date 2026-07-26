@@ -26,7 +26,7 @@ interface FindMentorProps {
 export default function FindMentor({ limit }: FindMentorProps = {}) {
   // Backend already sorts by category, so this comes back grouped —
   // /mentors admin panel is what assigns each mentor's category.
-  const { data: mentors, loading, error } = useApiGet<Mentor[]>("/mentors", []);
+  const { data: mentors, loading, error } = useApiGet<Mentor[]>("/mentors", [], ["mentors:updated"]);
   const [activeFilter, setActiveFilter] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [connectingId, setConnectingId] = useState<string | null>(null);

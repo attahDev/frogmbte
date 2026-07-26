@@ -3,6 +3,7 @@ import { Send, ChevronLeft, Award, Check, Plus } from "lucide-react";
 import CardSkeleton from "../shared/CardSkeleton";
 import { Card } from "./mentorsDashboard";
 import { useAuth } from "../../../contexts/mainuseAuth";
+import { socket } from "../../../lib/socket";
 import {
   fetchMenteeMessages,
   sendMenteeMessage,
@@ -82,6 +83,26 @@ export default function ChatPanel({
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
+
+  // Instant messages: join this connection's private room (the backend
+  // verifies you're actually mentor or mentee on it before letting you in)
+  // and append anything pushed while the panel's open. Our own sent
+  // messages are already appended optimistically in handleSend, so dedupe
+  // by id to avoid a double bubble when the echo comes back.
+  useEffect(() => {
+    socket.emit("chat:join", { connectionId });
+
+    function handleIncoming(message: MenteeMessage) {
+      setMessages((prev) => (prev.some((m) => m.id === message.id) ? prev : [...prev, message]));
+    }
+
+    socket.on("chat:message", handleIncoming);
+
+    return () => {
+      socket.emit("chat:leave", { connectionId });
+      socket.off("chat:message", handleIncoming);
+    };
+  }, [connectionId]);
 
   const handleSend = async () => {
     const content = draft.trim();

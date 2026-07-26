@@ -52,11 +52,13 @@ export default function ProfilePage() {
   const { user, refreshUser } = useAuth();
   const { data: summary, loading: summaryLoading } = useApiGet<DashboardSummary>(
     "/dashboard/summary",
-    EMPTY_SUMMARY
+    EMPTY_SUMMARY,
+    ["badges:updated"]
   );
   const { data: badges, loading: badgesLoading, refetch: refetchBadges } = useApiGet<Badge[]>(
     "/badges/me",
-    []
+    [],
+    ["badges:updated"]
   );
 
   const [editing, setEditing] = useState(false);

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { api } from "../../lib/api";
+import { useLiveSignal } from "../../lib/useLiveSignal";
 
 type OpportunityRow = {
   id: string;
@@ -56,6 +57,14 @@ export default function AdminOpportunities() {
   };
 
   useEffect(load, []);
+
+  // Another admin's edit, or the scheduled Adzuna sync, updates this table
+  // without needing a manual refresh — instant via socket push, 60s poll
+  // as a fallback if the socket's down.
+  const liveTick = useLiveSignal(["opportunities:updated"]);
+  useEffect(() => {
+    if (liveTick > 0) load();
+  }, [liveTick]);
 
   const create = async () => {
     if (!form.title || !form.company || !form.applyUrl) return;

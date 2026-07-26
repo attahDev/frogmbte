@@ -6,6 +6,7 @@ import JobsFilterSidebar from "./component/JobsFilterSidebar";
 import { dummyJobs } from "./component/lib/dummyJobs";
 import { fetchOpportunities, fetchOpportunityCategories } from "./component/lib/jobs";
 import type { JobCardData } from "./component/types/jobs";
+import { useLiveSignal } from "../../../lib/useLiveSignal";
 
 export default function JobOpportunitiesPage() {
   const [searchParams] = useSearchParams();
@@ -24,6 +25,7 @@ export default function JobOpportunitiesPage() {
   const [selectedCategory, setSelectedCategory] = useState("");
   const [selectedJobTypes, setSelectedJobTypes] = useState<string[]>([]);
   const [showFilters, setShowFilters] = useState(false);
+  const liveTick = useLiveSignal(["opportunities:updated"]);
 
   // Category list is independent of the current search/filter — always the
   // full set of categories that exist, not just the ones in the current
@@ -36,7 +38,10 @@ export default function JobOpportunitiesPage() {
 
   useEffect(() => {
     let cancelled = false;
-    setLoading(true);
+    // Only show the loading state for the very first fetch — a live push
+    // or the poll fallback refreshing in the background shouldn't flash
+    // the whole page back to a loading spinner every 60s.
+    if (!hasLoadedOnce) setLoading(true);
     setLoadError(false);
 
     fetchOpportunities({ search, category: selectedCategory })
@@ -64,7 +69,13 @@ export default function JobOpportunitiesPage() {
     return () => {
       cancelled = true;
     };
-  }, [search, selectedCategory]);
+    // liveTick bumps on an "opportunities:updated" push or the 60s poll
+    // fallback — re-running this effect just re-triggers the fetch above.
+    // hasLoadedOnce is intentionally excluded: it's only read to decide
+    // whether to show the loading spinner, not something that should
+    // itself retrigger a fetch.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search, selectedCategory, liveTick]);
 
   function handleSearch(e: React.FormEvent) {
     e.preventDefault();

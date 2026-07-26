@@ -19,7 +19,9 @@ interface Spotlight {
  *  mentor). Pulls whatever's currently active; renders nothing if the admin
  *  hasn't set one up yet, rather than showing stale placeholder content. */
 export default function MentorSpotlight() {
-  const { data: spotlights, loading } = useApiGet<Spotlight[]>("/mentors/spotlight/active", []);
+  const { data: spotlights, loading } = useApiGet<Spotlight[]>("/mentors/spotlight/active", [], [
+    "mentors:updated",
+  ]);
   const spotlight = spotlights?.[0];
 
   if (!loading && !spotlight) return null;

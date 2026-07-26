@@ -91,8 +91,12 @@ const statIconMeta = [
 // ------------------------------------------------------------
 
 export default function MentorsDashboard(): JSX.Element {
-  const { data: stats, loading: statsLoading } = useApiGet<MentorStats>("/mentors/stats", EMPTY_STATS);
-  const { data: mentors, loading: mentorsLoading } = useApiGet<MyMentorEntry[]>("/mentors/my-mentors", []);
+  const { data: stats, loading: statsLoading } = useApiGet<MentorStats>("/mentors/stats", EMPTY_STATS, [
+    "mentors:updated",
+  ]);
+  const { data: mentors, loading: mentorsLoading } = useApiGet<MyMentorEntry[]>("/mentors/my-mentors", [], [
+    "mentors:updated",
+  ]);
   const s = stats ?? EMPTY_STATS;
   const myMentors = mentors ?? [];
   const [activeChat, setActiveChat] = useState<MyMentorEntry | null>(null);
