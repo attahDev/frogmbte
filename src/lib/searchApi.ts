@@ -1,6 +1,6 @@
 import { api } from "./api";
 
-export type SearchResultType = "opportunity" | "event" | "course";
+export type SearchResultType = "opportunity" | "event" | "course" | "mentor" | "hofNominee";
 
 export type SearchResult = {
   type: SearchResultType;

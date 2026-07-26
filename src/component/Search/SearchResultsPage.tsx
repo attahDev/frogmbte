@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useSearchParams, Link } from "react-router-dom";
-import { Briefcase, Calendar, GraduationCap, Loader2, SearchX } from "lucide-react";
+import { Award, Briefcase, Calendar, GraduationCap, Loader2, SearchX, Users } from "lucide-react";
 import { searchPlatform, type SearchResult } from "../../lib/searchApi";
 
 const typeMeta: Record<
@@ -10,6 +10,8 @@ const typeMeta: Record<
   opportunity: { label: "Opportunity", icon: Briefcase, badgeClass: "bg-blue-50 text-blue-700" },
   event: { label: "Event", icon: Calendar, badgeClass: "bg-purple-50 text-purple-700" },
   course: { label: "Course", icon: GraduationCap, badgeClass: "bg-emerald-50 text-emerald-700" },
+  mentor: { label: "Mentor", icon: Users, badgeClass: "bg-amber-50 text-amber-700" },
+  hofNominee: { label: "Hall of Fame", icon: Award, badgeClass: "bg-rose-50 text-rose-700" },
 };
 
 function resultHref(result: SearchResult): string {
@@ -18,6 +20,10 @@ function resultHref(result: SearchResult): string {
       return `/dashboard/opportunities/${result.id}`;
     case "event":
       return `/dashboard/events`;
+    case "mentor":
+      return `/dashboard/mentors`;
+    case "hofNominee":
+      return `/dashboard/hall-of-fame`;
     case "course":
       return result.subtitle === "climate"
         ? `/dashboard/green-impact/${result.slug}`
@@ -106,7 +112,7 @@ export default function SearchResultsPage() {
         {loading ? (
           <div className="flex items-center gap-2 py-12 text-slate-500">
             <Loader2 className="h-5 w-5 animate-spin" />
-            Searching opportunities, events, and courses...
+            Searching opportunities, events, courses, mentors, and Hall of Fame...
           </div>
         ) : error ? (
           <p className="py-12 text-center text-sm text-red-500">{error}</p>
@@ -118,7 +124,7 @@ export default function SearchResultsPage() {
           <div className="flex flex-col items-center gap-3 py-16 text-center">
             <SearchX className="h-8 w-8 text-slate-300" />
             <p className="text-sm text-slate-500">
-              No matches for &ldquo;{query}&rdquo; across opportunities, events, or courses.
+              No matches for &ldquo;{query}&rdquo; across opportunities, events, courses, mentors, or Hall of Fame.
             </p>
           </div>
         ) : (
