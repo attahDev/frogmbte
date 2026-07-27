@@ -71,8 +71,6 @@ const ServiceHeroSection: React.FC = () => {
                     {/* RIGHT IMAGE */}
                     <div className="relative flex justify-center lg:justify-end">
                         <div className="relative w-full max-w-[420px] sm:max-w-[500px] lg:max-w-[548px]">
-                            {/* Back Layer */}
-                            <div className="absolute inset-0 sm:-left-3 lg:-left-4 sm:top-0 w-full h-full bg-[#D8CDB3] rounded-[24px] sm:rounded-[28px]" />
 
                             {/* Front Card */}
                             <div className="relative rounded-[24px] sm:rounded-[28px] overflow-hidden top-2 sm:top-[8.73px] left-2 sm:left-5">
