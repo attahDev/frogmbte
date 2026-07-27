@@ -34,14 +34,24 @@ type ToolKey =
   | "capability"
   | "brand-guidelines";
 
+type RepeaterSubField = {
+  id: string;
+  label: string;
+  placeholder?: string;
+};
+
 type FieldConfig = {
   id: string;
   label: string;
   placeholder?: string;
-  type?: "text" | "textarea" | "select";
+  type?: "text" | "textarea" | "select" | "checkbox" | "tags" | "repeater";
   options?: string[];
   optional?: boolean;
   full?: boolean;
+  /** For type "tags": comma-separated text turned into a string[] on submit */
+  tagsHint?: string;
+  /** For type "repeater": each row is an object with these sub-fields */
+  repeaterFields?: RepeaterSubField[];
 };
 
 type ToolConfig = {
@@ -83,6 +93,7 @@ const tools: ToolConfig[] = [
       { id: "email", label: "Email Address", placeholder: "e.g. kate@company.com" },
       { id: "phone", label: "Phone", placeholder: "e.g. +234 800 000 0000" },
       { id: "website", label: "Website", placeholder: "e.g. www.company.com", optional: true },
+      { id: "industry", label: "Industry", placeholder: "e.g. Technology", optional: true },
       { id: "registrationNumber", label: "Company Registration Number", placeholder: "e.g. RC-123456", optional: true },
     ],
   },
@@ -129,14 +140,6 @@ const tools: ToolConfig[] = [
       { id: "tagline", label: "Tagline", optional: true },
       { id: "registrationNumber", label: "Company Registration Number", placeholder: "e.g. RC-123456", optional: true },
       { id: "social", label: "Social / Website Handle", placeholder: "e.g. linkedin.com/company/acme", optional: true },
-      {
-        id: "body",
-        label: "Letter Body",
-        placeholder: "Dear [Recipient],\n\n...",
-        type: "textarea",
-        optional: true,
-        full: true,
-      },
     ],
   },
   {
@@ -178,7 +181,12 @@ const tools: ToolConfig[] = [
       },
       { id: "website", label: "Website", optional: true },
       { id: "registrationNumber", label: "Company Registration Number", placeholder: "e.g. RC-123456", optional: true },
+      { id: "invoicePrefix", label: "Invoice Number Prefix", placeholder: "e.g. INV-", optional: true },
+      { id: "taxRate", label: "Tax Rate (%)", placeholder: "e.g. 7.5", optional: true },
+      { id: "discount", label: "Discount Amount", placeholder: "e.g. 50", optional: true },
+      { id: "paymentTerms", label: "Payment Terms", placeholder: "e.g. Net 30", optional: true },
       { id: "note", label: "Default Footer Note", type: "textarea", full: true, optional: true },
+      { id: "termsAndConditions", label: "Terms & Conditions", type: "textarea", full: true, optional: true },
     ],
   },
   {
@@ -195,9 +203,21 @@ const tools: ToolConfig[] = [
       { id: "email", label: "Email" },
       { id: "phone", label: "Phone", optional: true },
       { id: "website", label: "Website", optional: true },
+      {
+        id: "currency",
+        label: "Currency",
+        type: "select",
+        options: ["NGN ₦", "USD $", "GBP £", "EUR €", "ZAR R"],
+      },
       { id: "validity", label: "Quote Valid For", placeholder: "e.g. 30 days" },
+      { id: "expirationDate", label: "Expiration Date", placeholder: "e.g. 2026-08-30", optional: true },
+      { id: "preparedBy", label: "Prepared By", placeholder: "e.g. Kate Johnson", optional: true },
       { id: "registrationNumber", label: "Company Registration Number", placeholder: "e.g. RC-123456", optional: true },
+      { id: "deliveryRequired", label: "Delivery Required", type: "checkbox", optional: true },
+      { id: "packagingRequired", label: "Packaging Required", type: "checkbox", optional: true },
+      { id: "signatureSection", label: "Include Signature Section", type: "checkbox", optional: true },
       { id: "terms", label: "Payment Terms", type: "textarea", full: true, optional: true },
+      { id: "termsAndConditions", label: "Terms & Conditions", type: "textarea", full: true, optional: true },
     ],
   },
   {
@@ -207,6 +227,7 @@ const tools: ToolConfig[] = [
     subtitle: "Who you are, what you do, why it matters",
     icon: Building,
     colors: true,
+    logoUpload: true,
     fields: [
       { id: "company", label: "Company Name" },
       { id: "industry", label: "Industry", placeholder: "Technology, Healthcare" },
@@ -217,6 +238,17 @@ const tools: ToolConfig[] = [
       { id: "tagline", label: "Tagline", optional: true },
       { id: "yearFounded", label: "Year Founded", placeholder: "e.g. 2018", optional: true },
       { id: "registrationNumber", label: "Company Registration Number", placeholder: "e.g. RC-123456", optional: true },
+      {
+        id: "teamMembers",
+        label: "Team Members",
+        type: "repeater",
+        full: true,
+        optional: true,
+        repeaterFields: [
+          { id: "name", label: "Name", placeholder: "e.g. Kate Johnson" },
+          { id: "title", label: "Title", placeholder: "e.g. Co-Founder" },
+        ],
+      },
     ],
   },
   {
@@ -226,6 +258,7 @@ const tools: ToolConfig[] = [
     subtitle: "Your core competencies and differentiators",
     icon: Trophy,
     colors: true,
+    logoUpload: true,
     fields: [
       { id: "company", label: "Company Name" },
       { id: "core", label: "Core Competencies", type: "textarea", full: true },
@@ -233,6 +266,39 @@ const tools: ToolConfig[] = [
       { id: "contact", label: "Contact Info" },
       { id: "clients", label: "Past Clients / Experience", type: "textarea", full: true, optional: true },
       { id: "registrationNumber", label: "Company Registration Number", placeholder: "e.g. RC-123456", optional: true },
+      { id: "dunsNumber", label: "DUNS Number", placeholder: "e.g. 123456789", optional: true },
+      { id: "cageCode", label: "CAGE Code", placeholder: "e.g. 1A2B3", optional: true },
+      {
+        id: "certifications",
+        label: "Certifications",
+        type: "tags",
+        tagsHint: "Comma-separated, e.g. WBENC, ISO 9001, 8(a)",
+        full: true,
+        optional: true,
+      },
+      {
+        id: "naicsCodes",
+        label: "NAICS Codes",
+        type: "repeater",
+        full: true,
+        optional: true,
+        repeaterFields: [
+          { id: "code", label: "Code", placeholder: "e.g. 541511" },
+          { id: "description", label: "Description", placeholder: "e.g. Custom Computer Programming" },
+        ],
+      },
+      {
+        id: "pastPerformance",
+        label: "Past Performance",
+        type: "repeater",
+        full: true,
+        optional: true,
+        repeaterFields: [
+          { id: "client", label: "Client", placeholder: "e.g. City of Manchester" },
+          { id: "description", label: "Description", placeholder: "e.g. Delivered a 6-month platform build" },
+          { id: "year", label: "Year", placeholder: "e.g. 2025" },
+        ],
+      },
     ],
   },
   {
@@ -242,6 +308,7 @@ const tools: ToolConfig[] = [
     subtitle: "Typography, color, and logo usage rules",
     icon: Palette,
     colors: true,
+    logoUpload: true,
     fields: [
       { id: "company", label: "Brand Name" },
       { id: "industry", label: "Industry" },
@@ -265,6 +332,42 @@ const assetTypeMap: Record<ToolKey, string> = {
   capability: "capability_statement",
   "brand-guidelines": "brand_guidelines",
 };
+
+/** "WBENC, ISO 9001" -> ["WBENC", "ISO 9001"] */
+function parseTags(value?: string): string[] | undefined {
+  if (!value) return undefined;
+  const items = value
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean);
+  return items.length ? items : undefined;
+}
+
+/** JSON-stringified array of rows (see RepeaterField) -> array of objects, dropping empty rows */
+function parseRepeater(value?: string): Record<string, string>[] | undefined {
+  if (!value) return undefined;
+  try {
+    const rows = JSON.parse(value) as Record<string, string>[];
+    const cleaned = rows
+      .map((row) => cleanObject(row))
+      .filter((row) => Object.keys(row).length > 0);
+    return cleaned.length ? cleaned : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+function parseNumber(value?: string): number | undefined {
+  if (!value || !value.trim()) return undefined;
+  const num = Number(value);
+  return Number.isFinite(num) ? num : undefined;
+}
+
+function parseBool(value?: string): boolean | undefined {
+  if (value === "true") return true;
+  if (value === "false") return false;
+  return undefined;
+}
 
 function cleanObject(obj: Record<string, any>) {
   return Object.fromEntries(
@@ -304,6 +407,7 @@ function buildPayload(
         full_name: values.name,
         job_title: values.role,
         company_name: values.company,
+        industry: values.industry,
         email: values.email,
         phone: values.phone,
         website: values.website,
@@ -322,8 +426,7 @@ function buildPayload(
         website: values.website,
         tagline: values.tagline,
         registration_number: values.registrationNumber,
-        social_links: values.social ? [{ url: values.social }] : undefined,
-        content_body: values.body,
+        social_handle: values.social,
         logo_url,
         primary_color,
         secondary_color,
@@ -352,7 +455,12 @@ function buildPayload(
         currency: values.currency || "NGN ₦",
         website: values.website,
         registration_number: values.registrationNumber,
+        invoice_number_prefix: values.invoicePrefix || undefined,
+        tax_rate: parseNumber(values.taxRate),
+        discount: parseNumber(values.discount),
+        payment_terms: values.paymentTerms,
         footer_note: values.note,
+        terms_and_conditions: values.termsAndConditions,
         logo_url,
         primary_color,
         secondary_color,
@@ -366,9 +474,15 @@ function buildPayload(
         phone: values.phone,
         website: values.website,
         quote_valid_for: values.validity,
+        expiration_date: values.expirationDate,
+        prepared_by: values.preparedBy,
         payment_terms: values.terms,
+        terms_and_conditions: values.termsAndConditions,
+        delivery_required: parseBool(values.deliveryRequired),
+        packaging_required: parseBool(values.packagingRequired),
+        signature_section: parseBool(values.signatureSection) ?? true,
         registration_number: values.registrationNumber,
-        currency: "NGN ₦",
+        currency: values.currency || "NGN ₦",
         logo_url,
         primary_color,
         secondary_color,
@@ -385,6 +499,8 @@ function buildPayload(
         tagline: values.tagline,
         year_founded: values.yearFounded,
         registration_number: values.registrationNumber,
+        team_members: parseRepeater(values.teamMembers),
+        logo_url,
         primary_color,
         secondary_color,
       });
@@ -397,6 +513,12 @@ function buildPayload(
         contact_info: values.contact,
         past_clients: values.clients,
         registration_number: values.registrationNumber,
+        duns_number: values.dunsNumber,
+        cage_code: values.cageCode,
+        certifications: parseTags(values.certifications),
+        naics_codes: parseRepeater(values.naicsCodes),
+        past_performance: parseRepeater(values.pastPerformance),
+        logo_url,
         primary_color,
         secondary_color,
       });
@@ -410,6 +532,7 @@ function buildPayload(
         brand_personality: values.personality,
         preferred_fonts: values.fonts,
         registration_number: values.registrationNumber,
+        logo_url,
         primary_color,
         secondary_color,
       });
@@ -737,6 +860,75 @@ export default function BrandIdentityBuilder() {
   );
 }
 
+function RepeaterField({
+  value,
+  subFields,
+  onChange,
+}: {
+  value: string;
+  subFields: RepeaterSubField[];
+  onChange: (next: string) => void;
+}) {
+  const rows: Record<string, string>[] = useMemo(() => {
+    try {
+      const parsed = JSON.parse(value || "[]");
+      return Array.isArray(parsed) && parsed.length ? parsed : [{}];
+    } catch {
+      return [{}];
+    }
+  }, [value]);
+
+  const updateRow = (index: number, subId: string, subValue: string) => {
+    const next = rows.map((row, i) =>
+      i === index ? { ...row, [subId]: subValue } : row
+    );
+    onChange(JSON.stringify(next));
+  };
+
+  const addRow = () => onChange(JSON.stringify([...rows, {}]));
+
+  const removeRow = (index: number) => {
+    const next = rows.filter((_, i) => i !== index);
+    onChange(JSON.stringify(next.length ? next : [{}]));
+  };
+
+  return (
+    <div className="space-y-2">
+      {rows.map((row, index) => (
+        <div
+          key={index}
+          className="flex flex-wrap items-center gap-2 rounded-xl border border-[#E0E5EC] bg-[#F9FAFC] p-2"
+        >
+          {subFields.map((sub) => (
+            <input
+              key={sub.id}
+              value={row[sub.id] || ""}
+              onChange={(e) => updateRow(index, sub.id, e.target.value)}
+              placeholder={sub.placeholder || sub.label}
+              className="min-w-[120px] flex-1 rounded-lg border border-[#E0E5EC] bg-white px-2.5 py-2 text-sm outline-none focus:border-[#001F3F]"
+            />
+          ))}
+          <button
+            type="button"
+            onClick={() => removeRow(index)}
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-[#E0E5EC] bg-white text-[#8A94A6] hover:bg-[#F4F6F9]"
+            aria-label="Remove row"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+      ))}
+      <button
+        type="button"
+        onClick={addRow}
+        className="rounded-lg border border-dashed border-[#D7DEE8] px-3 py-1.5 text-xs font-semibold text-[#4A5568] hover:border-[#001F3F]/40"
+      >
+        + Add row
+      </button>
+    </div>
+  );
+}
+
 function ColorPickerField({
   label,
   value,
@@ -867,6 +1059,36 @@ function FormPanel({
                     <option key={option}>{option}</option>
                   ))}
                 </select>
+              ) : field.type === "checkbox" ? (
+                <label className="flex w-fit cursor-pointer items-center gap-2 rounded-xl border border-[#E0E5EC] bg-[#F9FAFC] px-3 py-2.5 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={values[field.id] === "true"}
+                    onChange={(e) =>
+                      onValueChange(field.id, e.target.checked ? "true" : "false")
+                    }
+                    className="h-4 w-4 accent-[#001F3F]"
+                  />
+                  <span className="text-[#4A5568]">Yes</span>
+                </label>
+              ) : field.type === "tags" ? (
+                <>
+                  <input
+                    value={values[field.id] || ""}
+                    onChange={(e) => onValueChange(field.id, e.target.value)}
+                    placeholder={field.placeholder}
+                    className="w-full rounded-xl border border-[#E0E5EC] px-3 py-2.5 text-sm outline-none focus:border-[#001F3F] focus:ring-4 focus:ring-[#001F3F]/10"
+                  />
+                  {field.tagsHint && (
+                    <p className="mt-1 text-[11px] text-[#8A94A6]">{field.tagsHint}</p>
+                  )}
+                </>
+              ) : field.type === "repeater" && field.repeaterFields ? (
+                <RepeaterField
+                  value={values[field.id] || ""}
+                  subFields={field.repeaterFields}
+                  onChange={(next) => onValueChange(field.id, next)}
+                />
               ) : (
                 <input
                   value={values[field.id] || ""}
@@ -1069,6 +1291,14 @@ function ResultPanel({
                   className="max-w-full rounded-2xl border border-[#E0E5EC] shadow-xl sm:max-w-[340px]"
                 />
               )}
+            </div>
+          ) : assetStatus?.svg_light_url ? (
+            <div className="flex flex-wrap gap-6">
+              <img
+                src={assetStatus.svg_light_url}
+                alt={`${tool.title} — generated`}
+                className="max-w-full rounded-2xl border border-[#E0E5EC] bg-white p-6 shadow-xl sm:max-w-[340px]"
+              />
             </div>
           ) : assetStatus?.pdf_url ? (
             <a
