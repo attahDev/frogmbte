@@ -1310,14 +1310,24 @@ function ResultPanel({
               />
             </div>
           ) : assetStatus?.pdf_url ? (
-            <a
-              href={assetStatus.pdf_url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 rounded-xl border border-[#E0E5EC] bg-white px-4 py-3 text-sm font-semibold text-[#001F3F] hover:bg-[#F4F6F9]"
-            >
-              View generated PDF
-            </a>
+            <div className="overflow-hidden rounded-2xl border border-[#E0E5EC] shadow-xl">
+              <iframe
+                src={`${assetStatus.pdf_url}#toolbar=0&navpanes=0`}
+                title={`${tool.title} preview`}
+                className="h-[520px] w-full bg-white"
+              />
+              <div className="flex items-center justify-between border-t border-[#E0E5EC] bg-[#F9FAFC] px-4 py-2.5">
+                <span className="text-xs text-[#8A94A6]">PDF preview</span>
+                <a
+                  href={assetStatus.pdf_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs font-semibold text-[#001F3F] hover:underline"
+                >
+                  Open in new tab ↗
+                </a>
+              </div>
+            </div>
           ) : (
             <Preview tool={tool.key} values={values} colors={colors} />
           )}
