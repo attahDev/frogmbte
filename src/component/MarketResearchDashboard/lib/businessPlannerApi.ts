@@ -10,6 +10,7 @@ export type GeneratePlanPayload = {
   location: string;
   experience_level: string;
   goal: string;
+  source_idea_id?: string;
 };
 
 export type BusinessPlanHistoryItem = {

@@ -15,6 +15,7 @@ export default function IGEmpty() {
           />
         }
         buttonText='Go to dashboard'
+        buttonHref='/dashboard/ai-studio'
       />
     </div>
   );

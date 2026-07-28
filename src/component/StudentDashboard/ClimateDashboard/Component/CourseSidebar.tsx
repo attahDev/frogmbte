@@ -17,11 +17,13 @@ import {
 type CourseSidebarProps = {
   course: SustainabilityCourse;
   activeLessonSlug?: string;
+  basePath?: string;
 };
 
 export function CourseSidebar({
   course,
   activeLessonSlug,
+  basePath = "/dashboard/green-impact",
 }: CourseSidebarProps) {
   const [progress, setProgress] = useState(0);
   const [completedLessons, setCompletedLessons] = useState<string[]>([]);
@@ -65,8 +67,7 @@ export function CourseSidebar({
     };
   }, [course.slug, course.lessons.length]);
 
-  const courseBasePath =
-    `/dashboard/green-impact/${course.slug}`;
+  const courseBasePath = `${basePath}/${course.slug}`;
 
   return (
     <aside className="w-full rounded-[18px] border border-[#E2E5E9] bg-[#FFFDF7] p-4 lg:sticky lg:top-6 lg:w-[310px] lg:shrink-0 lg:self-start">

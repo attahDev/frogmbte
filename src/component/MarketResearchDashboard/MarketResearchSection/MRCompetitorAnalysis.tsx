@@ -1,30 +1,13 @@
 import AIDashboardCard from '../ui/AIDashboardCard'
+import type { IdeaContent } from '../lib/ideaEngineApi'
 
-type Competitor = {
-  name: string
-  description: string
-  score: number
-}
-
-const competitors: Competitor[] = [
-  {
-    name: 'Whoop / Fitbit',
-    description: 'Hardware-focused, limited AI coaching layer',
-    score: 85,
-  },
-  {
-    name: 'MyFitnessPal',
-    description: 'Nutrition tracking, weak coaching',
-    score: 70,
-  },
-  {
-    name: 'Future App',
-    description: 'Human coaching, expensive at $149/mo',
-    score: 55,
-  },
+const defaultCompetitors = [
+  { name: 'Whoop / Fitbit', description: 'Hardware-focused, limited AI coaching layer', score: 85 },
+  { name: 'MyFitnessPal', description: 'Nutrition tracking, weak coaching', score: 70 },
+  { name: 'Future App', description: 'Human coaching, expensive at $149/mo', score: 55 },
 ]
 
-function CompetitorRow({ competitor }: { competitor: Competitor }) {
+function CompetitorRow({ competitor }: { competitor: { name: string; description: string; score: number } }) {
   return (
     <div className="rounded-xl border border-[#F0F0EC] bg-[#FAFAF8] p-3">
       <div className="flex items-start justify-between gap-2">
@@ -45,10 +28,12 @@ function CompetitorRow({ competitor }: { competitor: Competitor }) {
 }
 
 type Props = {
-  competitors?: Competitor[]
+  content?: IdeaContent
 }
 
-export default function MRCompetitorAnalysis({ competitors: data = competitors }: Props) {
+export default function MRCompetitorAnalysis({ content }: Props) {
+  const data = content?.competitors?.length ? content.competitors : defaultCompetitors
+
   return (
     <AIDashboardCard variant="default" padding="md">
       <h3 className="mb-4 text-base font-semibold text-[#001F3F]">Competitor Analysis</h3>

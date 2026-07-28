@@ -737,11 +737,11 @@ export default function ProposalBuilder() {
     }
   };
 
-  const handleDownload = async (id, format) => {
+  const handleDownload = async (id, format, title) => {
     setDownloadFmt(format);
     try {
       setError("");
-      await downloadProposal(id, format);
+      await downloadProposal(id, format, title);
     } catch (e) {
       setError(e.message || "Download failed");
     } finally {
@@ -1028,7 +1028,7 @@ export default function ProposalBuilder() {
                   type="button"
                   className="flex items-center gap-1 rounded-lg border border-gray-200 bg-white px-3.5 py-1.5 text-xs font-medium text-gray-900 transition hover:bg-[#F4F6F9] disabled:cursor-not-allowed disabled:opacity-50"
                   disabled={editing || !!downloadFmt}
-                  onClick={() => handleDownload(proposal.id, "docx")}
+                  onClick={() => handleDownload(proposal.id, "docx", proposal.title)}
                 >
                   {downloadFmt === "docx" ? (
                     <span className="h-2.5 w-2.5 animate-spin rounded-full border-[1.5px] border-gray-300 border-t-gray-900" />
@@ -1041,7 +1041,7 @@ export default function ProposalBuilder() {
                   type="button"
                   className="flex items-center gap-1 rounded-lg border border-[#001F3F] bg-[#001F3F] px-3.5 py-1.5 text-xs font-medium text-white transition hover:bg-[#0C1829] disabled:cursor-not-allowed disabled:opacity-50"
                   disabled={editing || !!downloadFmt}
-                  onClick={() => handleDownload(proposal.id, "pdf")}
+                  onClick={() => handleDownload(proposal.id, "pdf", proposal.title)}
                 >
                   {downloadFmt === "pdf" ? (
                     <span className="h-2.5 w-2.5 animate-spin rounded-full border-[1.5px] border-white/30 border-t-white" />
@@ -1272,14 +1272,14 @@ export default function ProposalBuilder() {
                           <button
                             type="button"
                             className="rounded-md border border-gray-200 bg-white px-3 py-1 text-[11.5px] font-medium text-gray-900 transition hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700"
-                            onClick={() => handleDownload(p.id, "docx")}
+                            onClick={() => handleDownload(p.id, "docx", p.title)}
                           >
                             Word
                           </button>
                           <button
                             type="button"
                             className="rounded-md border border-red-200 bg-red-50 px-3 py-1 text-[11.5px] font-medium text-[#D7263D] transition hover:bg-red-100"
-                            onClick={() => handleDownload(p.id, "pdf")}
+                            onClick={() => handleDownload(p.id, "pdf", p.title)}
                           >
                             PDF
                           </button>

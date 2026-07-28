@@ -1,20 +1,15 @@
 import AIDashboardCard from '../ui/AIDashboardCard'
+import type { IdeaContent } from '../lib/ideaEngineApi'
 
 type Bar = { month: string; value: number; active?: boolean }
 
-const bars: Bar[] = [
+const defaultBars: Bar[] = [
   { month: 'M1', value: 1200 },
   { month: 'M2', value: 2400 },
   { month: 'M3', value: 4200 },
   { month: 'M4', value: 5000 },
   { month: 'M5', value: 9600 },
   { month: 'M6', value: 10100, active: true },
-  { month: 'M7', value: 12000 },
-  { month: 'M8', value: 13500 },
-  { month: 'M9', value: 18000 },
-  { month: 'M10', value: 18500 },
-  { month: 'M11', value: 26000 },
-  { month: 'M12', value: 38000 },
 ]
 
 function fmt(v: number): string {
@@ -22,14 +17,26 @@ function fmt(v: number): string {
   return `£${v}`
 }
 
-const maxVal = Math.max(...bars.map((b) => b.value))
-const CHART_HEIGHT = 120
+type Props = {
+  content?: IdeaContent
+}
 
-export default function IGRevenueChart() {
+export default function IGRevenueChart({ content }: Props) {
+  const bars: Bar[] = content?.revenue_chart.projection.length
+    ? content.revenue_chart.projection.map((p, i, arr) => ({
+        month: p.month.replace('Month ', 'M'),
+        value: p.revenue,
+        active: i === arr.length - 1,
+      }))
+    : defaultBars
+
+  const maxVal = Math.max(...bars.map((b) => b.value))
+  const CHART_HEIGHT = 120
+
   return (
     <AIDashboardCard variant="default" padding="md">
       <h3 className="mb-4 text-sm font-bold text-[#001F3F] sm:mb-5 sm:text-base">
-        Revenue Projection — First 12 Months
+        Revenue Projection — First {bars.length} Months
       </h3>
 
       <div className="scrollbar-hide -mx-1 overflow-x-auto px-1 sm:mx-0 sm:px-0">

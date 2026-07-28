@@ -1,25 +1,35 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Navigate, useParams } from "react-router-dom";
 
 import { CourseSidebar } from "../Component/CourseSidebar";
 import { LessonContent } from "../Component/LessonContent";
 import { LessonNavigation } from "../Component/LessonNavigation";
-import { fetchCourseBySlug } from "../../../../lib/coursesApi";
+import { fetchLessonBySlug, toggleSectionComplete } from "../../../../lib/coursesApi";
 
-export default function CourseLessonPage() {
+type CourseLessonPageProps = {
+  basePath?: string;
+};
+
+export default function CourseLessonPage({ basePath = "/dashboard/green-impact" }: CourseLessonPageProps) {
   const { courseSlug, lessonSlug } = useParams<{
     courseSlug: string;
     lessonSlug: string;
   }>();
 
-  const { data: course, isLoading } = useQuery({
-    queryKey: ["course", courseSlug],
-    queryFn: () => fetchCourseBySlug(courseSlug as string),
-    enabled: !!courseSlug,
+  const queryClient = useQueryClient();
+
+  const queryKey = ["lesson", courseSlug, lessonSlug];
+
+  const { data, isLoading } = useQuery({
+    queryKey,
+    // Per-user progress (checked sections) only exists on this endpoint —
+    // the whole-course fetch used before this doesn't include it.
+    queryFn: () => fetchLessonBySlug(courseSlug as string, lessonSlug as string),
+    enabled: !!courseSlug && !!lessonSlug,
   });
 
   if (!courseSlug || !lessonSlug) {
-    return <Navigate to="/sustainability" replace />;
+    return <Navigate to={basePath} replace />;
   }
 
   if (isLoading) {
@@ -30,11 +40,34 @@ export default function CourseLessonPage() {
     );
   }
 
-  const lesson = course?.lessons.find((l) => l.slug === lessonSlug);
-
-  if (!course || !lesson) {
-    return <Navigate to="/sustainability" replace />;
+  if (!data) {
+    return <Navigate to={basePath} replace />;
   }
+
+  const { course, lesson } = data;
+
+  const handleToggleSection = async (sectionId: string) => {
+    // Optimistic flip so the checkbox feels instant, then reconcile with
+    // whatever the server actually computed (source of truth).
+    queryClient.setQueryData(queryKey, (prev: typeof data | undefined) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        lesson: {
+          ...prev.lesson,
+          sections: prev.lesson.sections.map((s) =>
+            s.id === sectionId ? { ...s, completed: !s.completed } : s,
+          ),
+        },
+      };
+    });
+
+    try {
+      await toggleSectionComplete(courseSlug, lessonSlug, sectionId);
+    } finally {
+      queryClient.invalidateQueries({ queryKey });
+    }
+  };
 
   return (
     <main className="min-h-screen bg-[#F6F4EE] px-4 py-6 sm:px-6 lg:px-8">
@@ -42,14 +75,20 @@ export default function CourseLessonPage() {
         <CourseSidebar
           course={course}
           activeLessonSlug={lesson.slug}
+          basePath={basePath}
         />
 
         <div className="min-w-0 flex-1">
-          <LessonContent course={course} lesson={lesson} />
+          <LessonContent
+            course={course}
+            lesson={lesson}
+            onToggleSection={handleToggleSection}
+          />
 
           <LessonNavigation
             course={course}
             lessonSlug={lesson.slug}
+            basePath={basePath}
           />
         </div>
       </div>

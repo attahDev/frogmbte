@@ -1,102 +1,12 @@
 "use client";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { ArrowRight, Calendar, Clock, MapPin, Monitor, Users } from "lucide-react";
-import { useMemo, useState, type ReactNode } from "react";
+import { fetchUpcomingEvents, fetchAllEvents, type UiEvent, type EventFormat } from "../../lib/eventsApi";
 
 type EventType = "in-person" | "virtual" | "hybrid";
 
-interface EventItem {
-  id: string;
-  title: string;
-  description: string;
-  date: string;
-  time: string;
-  location: string;
-  tags: string[];
-  image: string;
-  alt: string;
-  type: EventType;
-}
-
-const EVENTS: EventItem[] = [
-  {
-    id: "1",
-    title: "Tech Networking Mixer",
-    description:
-      "Connect with fellow tech professionals, entrepreneurs and innovators in Greater Manchester's vibrant tech scene.",
-    date: "Nov 15, 2025",
-    time: "6:00 PM - 9:00 PM",
-    location: "Manchester Tech Hub",
-    tags: ["Leadership", "Networking", "+1"],
-    image: "/events/e1.jpg",
-    alt: "Three people engage in lively conversation at a tech expo. One man laughs in a white shirt, while two women gesture animatedly.",
-    type: "in-person",
-  },
-  {
-    id: "2",
-    title: "AI & Machine Learning Workshop",
-    description:
-      "Exploring the latest developments in AI and machine learning. Perfect for beginners and experienced developers.",
-    date: "Nov 22, 2025",
-    time: "2:00 PM - 5:00 PM",
-    location: "Innovation Centre",
-    tags: ["AI/ML", "Coding", "+1"],
-    image: "/events/e2.jpg",
-    alt: "A person in a beige sweater uses a virtual reality headset in a modern setting, conveying a sense of focus and innovation at a tech summit.",
-    type: "hybrid",
-  },
-  {
-    id: "3",
-    title: "Virtual Career Panel: Breaking Into Tech",
-    description:
-      "Exploring the latest developments in AI and machine learning. Perfect for beginners and experienced developers.",
-    date: "Nov 28, 2025",
-    time: "7:00 PM - 8:30 PM",
-    location: "Virtual Event",
-    tags: ["AI/ML", "Career", "+1"],
-    image: "/events/e3.jpg",
-    alt: "Two men seated, conversing in front of a presentation screen. One holds a microphone, gesturing. Background shows colorful data visuals, fostering an engaging atmosphere.",
-    type: "virtual",
-  },
-  {
-    id: "4",
-    title: "Startup Pitch Night",
-    description:
-      "Watch Black-led startups pitch their ideas to investors and community members. Networking reception to follow.",
-    date: "Dec 5, 2025",
-    time: "4:00 PM - 8:30 PM",
-    location: "Manchester Business School",
-    tags: ["Startups", "Funding", "+1"],
-    image: "/events/e6.jpg",
-    alt: "A man in a gray hoodie presents to three seated men in a room with white walls and modern lighting. The seated men appear attentive and engaged.",
-    type: "in-person",
-  },
-  {
-    id: "5",
-    title: "Web Development Bootcamp",
-    description:
-      "Intensive bootcamp covering modern web development technologies including React, Node.js and cloud deployment.",
-    date: "Dec 12, 2025",
-    time: "10:00 AM - 4:30 PM",
-    location: "Digital Skills Academy",
-    tags: ["Mentorship", "Career", "+1"],
-    image: "/events/e5.jpg",
-    alt: "A group of people are gathered in a brightly lit room with a projector screen in the background. Three men stand near a podium; one is speaking, while others are seated and listening attentively.",
-    type: "hybrid",
-  },
-  {
-    id: "6",
-    title: "Women in Tech Leadership Summit",
-    description:
-      "Empowering Black women in tech through leadership workshops, panel discussions and networking opportunities.",
-    date: "Dec 18, 2025",
-    time: "9:00 AM - 3:30 PM",
-    location: "Conference Centre Manchester",
-    tags: ["Women in Tech", "Career", "+1"],
-    image: "/events/e4.jpg",
-    alt: "Four women sit on chairs in a panel discussion. One woman in red speaks into a microphone. Others listen attentively with neutral expressions. A screen in the background reads “Power of Expression.",
-    type: "in-person",
-  },
-];
+const formatToType = (format: EventFormat): EventType =>
+  format === "Virtual" ? "virtual" : format === "Hybrid" ? "hybrid" : "in-person";
 
 const FILTERS: { id: string; label: string; type?: EventType | "all" }[] = [
   { id: "all", label: "All Events", type: "all" },
@@ -141,41 +51,66 @@ function TypePill({ type }: { type: EventType }) {
   );
 }
 
-function getBorderColor(type: EventType): string {
-  const borders: Record<EventType, string> = {
-    "in-person": "border-[#FAD941]",
-    virtual: "border-[#FAD941]",
-    hybrid: "border-[#FAD941]",
-  };
-  return borders[type];
+function getBorderColor(_type: EventType): string {
+  // All three used the same border color in the original design — kept as
+  // a function in case that changes per-type later.
+  return "border-[#FAD941]";
 }
 
 export default function EventsSection() {
   const [activeFilter, setActiveFilter] = useState<"all" | EventType | string>("all");
+  const [events, setEvents] = useState<UiEvent[] | null>(null);
+  const [showingAll, setShowingAll] = useState(false);
+  const [loadingAll, setLoadingAll] = useState(false);
+  const [selectedEvent, setSelectedEvent] = useState<UiEvent | null>(null);
+  const PAGE_SIZE = 9;
 
-  const counts = useMemo(() => {
-    const all = EVENTS.length;
-    const inPerson = EVENTS.filter((e) => e.type === "in-person").length;
-    const virtual = EVENTS.filter((e) => e.type === "virtual").length;
-    const hybrid = EVENTS.filter((e) => e.type === "hybrid").length;
-    return { all, inPerson, virtual, hybrid };
+  useEffect(() => {
+    fetchUpcomingEvents()
+      .then(setEvents)
+      .catch(() => setEvents([]));
   }, []);
 
+  const viewAllEvents = () => {
+    setLoadingAll(true);
+    fetchAllEvents()
+      .then((all) => {
+        setEvents(all);
+        setShowingAll(true);
+      })
+      .catch(() => {})
+      .finally(() => setLoadingAll(false));
+  };
+
+  const counts = useMemo(() => {
+    const list = events ?? [];
+    const all = list.length;
+    const inPerson = list.filter((e) => formatToType(e.format) === "in-person").length;
+    const virtual = list.filter((e) => formatToType(e.format) === "virtual").length;
+    const hybrid = list.filter((e) => formatToType(e.format) === "hybrid").length;
+    return { all, inPerson, virtual, hybrid };
+  }, [events]);
+
   const filtered = useMemo(() => {
-    if (activeFilter === "all") return EVENTS;
-    return EVENTS.filter((e) => e.type === activeFilter);
-  }, [activeFilter]);
+    const list = events ?? [];
+    if (activeFilter === "all") return list;
+    return list.filter((e) => formatToType(e.format) === activeFilter);
+  }, [events, activeFilter]);
+
+  // Clip to the first 9 until "View All Events" is clicked — that button
+  // both fetches the fuller archive AND lifts the clip in one action.
+  const visible = showingAll ? filtered : filtered.slice(0, PAGE_SIZE);
 
   return (
     <section className="w-full bg-[#FFFDF7] py-12 sm:py-16 mt-12 sm:mt-16 md:mt-20">
-      <div className="mx-auto max-w-[1400px] px-4 sm:px-6">
+      <div className="max-w-[1600px] mx-auto px-4 sm:px-6">
         {/* Header */}
         <div className="text-center">
           <span className="inline-block bg-[#F5F5F5] text-[#001F3F] px-3 py-1 rounded-full text-base sm:text-base mb-4">
-            Upcoming Events
+            {showingAll ? "All Events" : "Upcoming Events"}
           </span>
 
-          <h2 className="text-[24px] sm:text-[26px] md:text-[30px] lg:text-[38px] font-bold text-[#001F3F] leading-tight">
+          <h2 className="font-open-sans text-[26px] sm:text-[32px] md:text-[40px] lg:text-[48px] font-bold text-[#001F3F] leading-tight">
             Don’t Miss Out on These Events
           </h2>
 
@@ -206,7 +141,7 @@ export default function EventsSection() {
                 key={f.id}
                 onClick={() => setActiveFilter(f.type ?? "all")}
                 className={`inline-flex items-center gap-3 px-5 sm:px-8 py-2 sm:py-3 rounded-full font-medium text-sm sm:text-base transition-all duration-200 ${isActive
-                    ? "bg-[#FAD941] text-[#001F3F] shadow-[0_4px_0_#D7263D]"
+                    ? "bg-[#FAD941] text-[#001F3F] shadow-[0_4px_0_rgba(193,40,60,0.25)]"
                     : "bg-white text-[#001F3F] border border-slate-100 hover:shadow-sm"
                   }`}
               >
@@ -225,92 +160,203 @@ export default function EventsSection() {
         </div>
 
         {/* Cards Grid */}
-        <div className="mt-14 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-10">
-          {filtered.map((ev) => (
+        {events === null ? (
+          <p className="mt-14 text-center text-[#6B7280]">Loading events…</p>
+        ) : filtered.length === 0 ? (
+          <p className="mt-14 text-center text-[#6B7280]">
+            No events match this filter right now — check back soon.
+          </p>
+        ) : (
+        <div className="mt-14 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-10">
+          {visible.map((ev) => {
+            const type = formatToType(ev.format);
+            return (
             <article
               key={ev.id}
-              className={`overflow-hidden rounded-2xl border-[3px] bg-[#FFFDF7] ${getBorderColor(
-                ev.type
-              )} flex flex-col shadow-[0_5px_12px_rgba(0,31,63,0.14)] transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-[0_10px_20px_rgba(0,31,63,0.18)]`}
+              className={`bg-white rounded-[14px] border-l-[4px] ${getBorderColor(
+                type
+              )} shadow-md overflow-hidden flex flex-col transition-all duration-300 ease-out hover:shadow-xl hover:-translate-y-2`}
             >
               {/* Image (only this scales on hover) */}
-              <div className="group relative h-[190px] overflow-hidden sm:h-[210px]">
+              <div className="relative h-[200px] sm:h-[220px] overflow-hidden group">
                 <img
                   src={ev.image}
-                  alt={ev.alt}
-                  className="h-full w-full object-cover transition-transform duration-500 ease-out group-hover:scale-105"
+                  alt={ev.title}
+                  className="w-full h-full object-cover rounded-t-[14px] transition-transform duration-500 ease-out group-hover:scale-110"
                 />
-                <div className="absolute right-4 top-4">
-                  <TypePill type={ev.type} />
+                <div className="absolute top-3 right-3">
+                  <TypePill type={type} />
                 </div>
+                {ev.isCompleted && (
+                  <div className="absolute top-3 left-3 bg-slate-900/80 text-white text-xs font-medium px-3 py-1 rounded-full">
+                    Completed
+                  </div>
+                )}
               </div>
 
               {/* Body */}
-              <div className="flex flex-1 flex-col justify-between p-5">
+              <div className="p-5 sm:p-6 flex-1 flex flex-col justify-between">
                 <div>
-                  <h3 className="text-md font-semibold text-[#001F3F] sm:text-lg">
+                  <h3 className="text-[16px] sm:text-[18px] font-semibold text-[#001F3F]">
                     {ev.title}
                   </h3>
-                  <p className="mt-2 text-sm leading-5 text-[#526075] sm:text-[13px]">
+                  <p className="text-[14px] sm:text-[15px] text-[#6B7280] mt-2 leading-[22px] line-clamp-3">
                     {ev.description}
                   </p>
 
-                  <ul className="mt-4 space-y-2 text-sm text-[#526075] sm:text-[13px]">
-                    <li className="flex items-center gap-3">
-                      <Calendar className="h-4 w-4 shrink-0 text-[#D7263D]" />
+                  <ul className="mt-4 space-y-2 text-[13px] sm:text-[14px] text-[#4B5563]">
+                    <li className="flex items-center gap-2 sm:gap-3">
+                      <Calendar className="w-4 h-4 text-[#C1283C]" />
                       <span>{ev.date}</span>
                     </li>
-                    <li className="flex items-center gap-3">
-                      <Clock className="h-4 w-4 shrink-0 text-[#D7263D]" />
+                    <li className="flex items-center gap-2 sm:gap-3">
+                      <Clock className="w-4 h-4 text-[#C1283C]" />
                       <span>{ev.time}</span>
                     </li>
-                    <li className="flex items-center gap-3">
-                      <MapPin className="h-4 w-4 shrink-0 text-[#D7263D]" />
-                      <span>{ev.location}</span>
+                    <li className="flex items-center gap-2 sm:gap-3">
+                      <MapPin className="w-4 h-4 text-[#C1283C]" />
+                      <span>{ev.location || "Virtual"}</span>
                     </li>
                   </ul>
                 </div>
 
                 <div className="mt-5">
-                  <div className="mb-4 flex flex-wrap gap-2">
-                    {ev.tags.map((t) => (
-                      <span
-                        key={t}
-                        className="rounded-full bg-slate-100 px-2 py-1 text-xs text-[#001F3F]"
-                      >
-                        {t}
-                      </span>
-                    ))}
-                  </div>
+                  {ev.tags.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mb-4">
+                      {ev.tags.map((t) => (
+                        <span
+                          key={t}
+                          className="text-xs bg-slate-100 text-slate-700 px-2 py-1 rounded-full"
+                        >
+                          {t}
+                        </span>
+                      ))}
+                    </div>
+                  )}
 
-                  <button className="inline-flex min-h-[46px] w-full items-center justify-center gap-3 rounded-xl bg-[#D7263D] px-4 py-2.5 text-base font-medium text-white transition-colors duration-300 hover:bg-[#B41F33]">
+                  <button
+                    onClick={() => setSelectedEvent(ev)}
+                    className="w-full inline-flex items-center justify-center gap-2 sm:gap-3 bg-[#D7263D] text-white px-4 py-2 sm:py-3 rounded-lg shadow-md hover:bg-[#A31F32] transition-all duration-300"
+                  >
                     View Details
-                    <ArrowRight className="h-4 w-4" />
+                    <ArrowRight className="w-4 h-4" />
                   </button>
                 </div>
               </div>
             </article>
-          ))}
+            );
+          })}
         </div>
+        )}
 
         {/* View All Button */}
+        {!showingAll && (
         <div className="mt-12 flex  justify-center">
-          <a
-            href="/events"
-            className="inline-flex items-center gap-2 rounded-xl bg-[#D7263D] px-5 py-2 text-white shadow transition hover:bg-[#A31F32] sm:gap-3 sm:px-6 sm:py-3"
+          <button
+            onClick={viewAllEvents}
+            disabled={loadingAll}
+            className="inline-flex items-center gap-2 sm:gap-3 bg-[#D7263D] text-white px-5 sm:px-6 py-2 sm:py-3 rounded-xl shadow hover:bg-[#A31F32] transition disabled:opacity-60"
           >
-            View All Events
+            {loadingAll ? "Loading…" : "View All Events"}
 
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M5.3335 1.33337V4.00004" stroke="white" stroke-width="1.33333" stroke-linecap="round" stroke-linejoin="round" />
-              <path d="M10.6665 1.33337V4.00004" stroke="white" stroke-width="1.33333" stroke-linecap="round" stroke-linejoin="round" />
-              <path d="M12.6667 2.66663H3.33333C2.59695 2.66663 2 3.26358 2 3.99996V13.3333C2 14.0697 2.59695 14.6666 3.33333 14.6666H12.6667C13.403 14.6666 14 14.0697 14 13.3333V3.99996C14 3.26358 13.403 2.66663 12.6667 2.66663Z" stroke="white" stroke-width="1.33333" stroke-linecap="round" stroke-linejoin="round" />
-              <path d="M2 6.66663H14" stroke="white" stroke-width="1.33333" stroke-linecap="round" stroke-linejoin="round" />
+              <path d="M5.3335 1.33337V4.00004" stroke="white" strokeWidth="1.33333" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M10.6665 1.33337V4.00004" stroke="white" strokeWidth="1.33333" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M12.6667 2.66663H3.33333C2.59695 2.66663 2 3.26358 2 3.99996V13.3333C2 14.0697 2.59695 14.6666 3.33333 14.6666H12.6667C13.403 14.6666 14 14.0697 14 13.3333V3.99996C14 3.26358 13.403 2.66663 12.6667 2.66663Z" stroke="white" strokeWidth="1.33333" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M2 6.66663H14" stroke="white" strokeWidth="1.33333" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
-
-          </a>
+          </button>
         </div>
+        )}
       </div>
+
+      {selectedEvent && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4"
+          onClick={() => setSelectedEvent(null)}
+        >
+          <div
+            className="w-full max-w-xl rounded-2xl bg-white overflow-hidden max-h-[90vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="relative h-[220px] sm:h-[260px]">
+              <img
+                src={selectedEvent.image}
+                alt={selectedEvent.title}
+                className="w-full h-full object-cover"
+              />
+              <button
+                onClick={() => setSelectedEvent(null)}
+                aria-label="Close"
+                className="absolute top-3 right-3 w-8 h-8 rounded-full bg-black/50 text-white flex items-center justify-center hover:bg-black/70"
+              >
+                ✕
+              </button>
+              <div className="absolute top-3 left-3">
+                <TypePill type={formatToType(selectedEvent.format)} />
+              </div>
+              {selectedEvent.isCompleted && (
+                <div className="absolute bottom-3 left-3 bg-slate-900/80 text-white text-xs font-medium px-3 py-1 rounded-full">
+                  Completed
+                </div>
+              )}
+            </div>
+
+            <div className="p-5 sm:p-6">
+              <h3 className="text-xl sm:text-2xl font-bold text-[#001F3F]">{selectedEvent.title}</h3>
+
+              <ul className="mt-4 space-y-2 text-sm text-[#4B5563]">
+                <li className="flex items-center gap-3">
+                  <Calendar className="w-4 h-4 text-[#C1283C]" />
+                  <span>{selectedEvent.date}</span>
+                </li>
+                <li className="flex items-center gap-3">
+                  <Clock className="w-4 h-4 text-[#C1283C]" />
+                  <span>{selectedEvent.time}</span>
+                </li>
+                <li className="flex items-center gap-3">
+                  <MapPin className="w-4 h-4 text-[#C1283C]" />
+                  <span>{selectedEvent.location || "Virtual"}</span>
+                </li>
+              </ul>
+
+              {selectedEvent.description && (
+                <p className="mt-4 text-sm sm:text-[15px] text-[#6B7280] leading-relaxed whitespace-pre-line">
+                  {selectedEvent.description}
+                </p>
+              )}
+
+              {selectedEvent.tags.length > 0 && (
+                <div className="flex flex-wrap gap-2 mt-4">
+                  {selectedEvent.tags.map((t) => (
+                    <span key={t} className="text-xs bg-slate-100 text-slate-700 px-2 py-1 rounded-full">
+                      {t}
+                    </span>
+                  ))}
+                </div>
+              )}
+
+              <div className="mt-6">
+                {selectedEvent.link ? (
+                  <a
+                    href={selectedEvent.link}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="w-full inline-flex items-center justify-center gap-2 bg-[#D7263D] text-white px-4 py-3 rounded-lg shadow-md hover:bg-[#A31F32] transition-all duration-300"
+                  >
+                    Register / Learn More
+                    <ArrowRight className="w-4 h-4" />
+                  </a>
+                ) : (
+                  <p className="text-sm text-gray-500 text-center">
+                    No registration link yet — check back closer to the date.
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   );
 }

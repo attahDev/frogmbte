@@ -14,6 +14,14 @@ const quickPrompts = [
 
 const chips = ["Start a business", "Find a job", "Recommend a course", "Improve my CV"];
 
+const CHAT_ID_KEY = "gmbte_mentor_chat_id";
+
+const readStoredChatId = (): string | null => {
+  if (typeof window === "undefined") return null;
+  const stored = sessionStorage.getItem(CHAT_ID_KEY);
+  return stored && stored !== "undefined" ? stored : null;
+};
+
 type ApiResponse = {
   reply: string;
   chatId: string;
@@ -27,7 +35,7 @@ type ChatMessage = {
 export default function MentorAIAssistant() {
   const [hasStarted, setHasStarted] = useState(false);
   const [input, setInput] = useState("Help me choose a toolkit");
-  const [chatId, setChatId] = useState<string | null>(null);
+  const [chatId, setChatId] = useState<string | null>(readStoredChatId());
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -53,10 +61,17 @@ export default function MentorAIAssistant() {
     setMessages((prev) => [...prev, { role: "user", content: cleanText }]);
 
     try {
-      const res = await api.post("/mentor-ai/chat", {
-        message: cleanText,
-        chatId,
-      });
+      let res;
+      try {
+        res = await api.post("/mentor-ai/chat", { message: cleanText, chatId });
+      } catch (err: any) {
+        const isStaleChat =
+          err?.response?.status === 400 &&
+          chatId &&
+          /chat not found/i.test(err?.response?.data?.message ?? "");
+        if (!isStaleChat) throw err;
+        res = await api.post("/mentor-ai/chat", { message: cleanText });
+      }
 
       const data: ApiResponse = res.data?.data ?? res.data;
 
@@ -65,6 +80,7 @@ export default function MentorAIAssistant() {
       }
 
       setChatId(data.chatId);
+      if (typeof window !== "undefined") sessionStorage.setItem(CHAT_ID_KEY, data.chatId);
 
       setMessages((prev) => [
         ...prev,
@@ -73,9 +89,12 @@ export default function MentorAIAssistant() {
           content: data.reply,
         },
       ]);
-    } catch (err) {
+    } catch (err: any) {
       console.error("MENTOR AI ERROR:", err);
-      setError("Unable to get MentorAI response. Please try again.");
+      setError(
+        err?.response?.data?.message ||
+          "Unable to get MentorAI response. Please try again."
+      );
     } finally {
       setLoading(false);
     }

@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { api } from "../../../lib/api";
+import { useLiveSignal } from "../../../lib/useLiveSignal";
 
 interface UseApiGetResult<T> {
   data: T | null;
@@ -18,12 +19,18 @@ interface UseApiGetResult<T> {
  * The backend wraps responses as { success, data, message, timestamp }
  * (see ResponseInterceptor) — this unwraps that the same way
  * mainuserContext.tsx already does for the user profile call.
+ *
+ * `liveEvents` is optional: pass the socket event name(s) this data should
+ * refetch on (e.g. ["mentors:updated"]) to get instant updates instead of
+ * making users manually refresh — falls back to a 60s poll automatically
+ * if the socket ever drops. Omit it and this behaves exactly as before.
  */
-export function useApiGet<T>(url: string | null, fallback: T): UseApiGetResult<T> {
+export function useApiGet<T>(url: string | null, fallback: T, liveEvents: string[] = []): UseApiGetResult<T> {
   const [data, setData] = useState<T | null>(null);
   const [loading, setLoading] = useState<boolean>(!!url);
   const [error, setError] = useState<string | null>(null);
   const [refetchIndex, setRefetchIndex] = useState(0);
+  const liveTick = useLiveSignal(liveEvents);
 
   const refetch = useCallback(() => setRefetchIndex((n) => n + 1), []);
 
@@ -56,7 +63,7 @@ export function useApiGet<T>(url: string | null, fallback: T): UseApiGetResult<T
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [url, refetchIndex]);
+  }, [url, refetchIndex, liveTick]);
 
   return { data, loading, error, refetch };
 }

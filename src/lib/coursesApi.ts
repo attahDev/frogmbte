@@ -11,6 +11,8 @@ type BackendCourse = {
   title: string;
   description: string | null;
   category: string | null;
+  tags: string[];
+  isFeatured: boolean;
   metadata: Record<string, any> | null;
   totalModules: number;
   completedModules?: number;
@@ -55,6 +57,8 @@ function toCourse(course: BackendCourse, modules: BackendModule[] = []): Sustain
     learningOutcomes: m.learningOutcomes ?? [],
     lessons: modules.sort((a, b) => a.order - b.order).map(toLesson),
     finalProject: m.finalProject,
+    tags: course.tags ?? [],
+    isFeatured: course.isFeatured ?? false,
   };
 }
 
@@ -63,21 +67,21 @@ export async function fetchCourses(category: "climate" | "education"): Promise<S
   const { data } = await api.get(`/courses`, { params: { category } });
   const courses: BackendCourse[] = data?.data ?? data;
 
-  // Modules aren't included in the list endpoint — fetch each course's
-  // modules in parallel so cards can show real lesson counts if needed.
-  const withModules = await Promise.all(
-    courses.map(async (course) => {
-      try {
-        const modsRes = await api.get(`/courses/${course.id}/modules`);
-        const modules: BackendModule[] = modsRes.data?.data ?? modsRes.data;
-        return toCourse(course, modules);
-      } catch {
-        return toCourse(course, []);
-      }
-    }),
-  );
+  if (courses.length === 0) return [];
 
-  return withModules;
+  // One batched request instead of one GET .../modules per course — the
+  // old Promise.all fan-out was firing N simultaneous requests on every
+  // dashboard load, which was enough to trip the API's rate limit.
+  let modulesByCourse: Record<string, BackendModule[]> = {};
+  try {
+    const ids = courses.map((c) => c.id).join(",");
+    const modsRes = await api.get(`/courses/modules`, { params: { ids } });
+    modulesByCourse = modsRes.data?.data ?? modsRes.data ?? {};
+  } catch {
+    // fall through — courses still render, just without lesson counts
+  }
+
+  return courses.map((course) => toCourse(course, modulesByCourse[course.id] ?? []));
 }
 
 export async function fetchCourseBySlug(courseSlug: string): Promise<SustainabilityCourse | null> {
@@ -93,4 +97,51 @@ export async function fetchCourseBySlug(courseSlug: string): Promise<Sustainabil
   } catch {
     return null;
   }
+}
+
+type BackendModuleWithProgress = BackendModule & {
+  completedSectionIds: string[];
+  isCompleted: boolean;
+};
+
+/** A single lesson merged with the current user's checkbox progress —
+ *  what CourseLessonPage should actually render instead of pulling the
+ *  lesson out of the whole-course fetch (which has no progress data). */
+export async function fetchLessonBySlug(
+  courseSlug: string,
+  lessonSlug: string,
+): Promise<{ course: SustainabilityCourse; lesson: CourseLesson } | null> {
+  try {
+    const { data } = await api.get(`/courses/by-slug/${courseSlug}/modules/${lessonSlug}`);
+    const payload: { course: BackendCourse; module: BackendModuleWithProgress } = data?.data ?? data;
+
+    const course = toCourse(payload.course, []);
+    const lesson = toLesson(payload.module);
+    const completedIds = new Set(payload.module.completedSectionIds);
+
+    return {
+      course,
+      lesson: {
+        ...lesson,
+        completed: payload.module.isCompleted,
+        sections: lesson.sections.map((s) => ({ ...s, completed: completedIds.has(s.id) })),
+      },
+    };
+  } catch {
+    return null;
+  }
+}
+
+/** The "mark this section done" checkbox. Toggles on the server (which
+ *  recomputes real completion from real data — see courses.service.ts) and
+ *  returns the fresh state. */
+export async function toggleSectionComplete(
+  courseSlug: string,
+  lessonSlug: string,
+  sectionId: string,
+) {
+  const { data } = await api.patch(
+    `/courses/by-slug/${courseSlug}/modules/${lessonSlug}/sections/${sectionId}/toggle`,
+  );
+  return data;
 }

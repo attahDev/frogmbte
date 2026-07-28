@@ -1,6 +1,8 @@
-import { Bot, Circle, Send, X } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { Bot, Circle, Loader2, Send, X } from 'lucide-react';
 import AIDashboardButton from '../ui/AIDashboardButton';
 import AIDashboardCard from '../ui/AIDashboardCard';
+import { sendMentorMessage, BUSINESS_MENTOR_CHAT_ID_KEY, readStoredBusinessMentorChatId } from '../lib/mentorAiApi';
 
 const prompts = [
   'I want to start a business...',
@@ -8,32 +10,74 @@ const prompts = [
   'What business strategy can i adopt?',
 ];
 
+type ChatMessage = {
+  id: string;
+  role: 'user' | 'assistant';
+  text: string;
+  time: string;
+};
+
 type Props = {
   onClose?: () => void;
   isMobileOverlay?: boolean;
 };
 
+const timeNow = () =>
+  new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+const welcomeMessage: ChatMessage = {
+  id: 'welcome',
+  role: 'assistant',
+  text: "Hi! I'm your AI business mentor. How can I help you build your business today?",
+  time: '',
+};
+
 export default function BusinessMentorChat({ onClose, isMobileOverlay = false }: Props) {
-  const messages = [
-    {
-      id: 1,
-      role: 'assistant',
-      text: "Hi! I'm your AI business mentor. How can I help you build your business today?",
-      time: '10:30 AM',
-    },
-    {
-      id: 2,
-      role: 'user',
-      text: 'I want to start an AI fitness coaching app. Is it a good idea?',
-      time: '10:31 AM',
-    },
-    {
-      id: 3,
-      role: 'assistant',
-      text: "Great pick! Heres a quick read 📈 Market Demand: High ⚡ Competition: Medium 💰 Startup Cost: Low-Medium",
-      time: '',
-    },
-  ];
+  const [messages, setMessages] = useState<ChatMessage[]>([welcomeMessage]);
+  const [input, setInput] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const chatIdRef = useRef<string | undefined>(readStoredBusinessMentorChatId());
+  const bottomRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages, loading]);
+
+  const handleSend = async (text?: string) => {
+    const messageText = (text ?? input).trim();
+    if (!messageText || loading) return;
+
+    setInput('');
+    setError('');
+    setMessages((prev) => [
+      ...prev,
+      { id: crypto.randomUUID(), role: 'user', text: messageText, time: timeNow() },
+    ]);
+    setLoading(true);
+
+    try {
+      const { reply, chatId } = await sendMentorMessage(messageText, chatIdRef.current);
+      chatIdRef.current = chatId;
+      if (typeof window !== 'undefined' && chatId) sessionStorage.setItem(BUSINESS_MENTOR_CHAT_ID_KEY, chatId);
+
+      setMessages((prev) => [
+        ...prev,
+        { id: crypto.randomUUID(), role: 'assistant', text: reply, time: timeNow() },
+      ]);
+    } catch (err: any) {
+      const message =
+        err?.response?.data?.message || err?.message || "Sorry, I couldn't reach your mentor right now.";
+      setError(message);
+      setMessages((prev) => [
+        ...prev,
+        { id: crypto.randomUUID(), role: 'assistant', text: message, time: timeNow() },
+      ]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <AIDashboardCard
       variant="mentor"
@@ -90,6 +134,17 @@ export default function BusinessMentorChat({ onClose, isMobileOverlay = false }:
             </div>
           );
         })}
+
+        {loading && (
+          <div className="flex justify-start">
+            <div className="flex items-center gap-2 rounded-3xl rounded-bl-md bg-[#D8D7DF] px-4 py-3 text-sm text-[#001F3F]">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Thinking...
+            </div>
+          </div>
+        )}
+
+        <div ref={bottomRef} />
       </div>
 
       <div className="shrink-0 border-t border-slate-200 px-3 py-3 sm:px-4 sm:py-4">
@@ -98,7 +153,10 @@ export default function BusinessMentorChat({ onClose, isMobileOverlay = false }:
           {prompts.map((prompt) => (
             <button
               key={prompt}
-              className="shrink-0 rounded-full bg-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600 transition hover:bg-slate-300 sm:px-4 sm:py-2 sm:text-sm"
+              type="button"
+              disabled={loading}
+              onClick={() => handleSend(prompt)}
+              className="shrink-0 rounded-full bg-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600 transition hover:bg-slate-300 disabled:cursor-not-allowed disabled:opacity-50 sm:px-4 sm:py-2 sm:text-sm"
             >
               {prompt}
             </button>
@@ -108,13 +166,25 @@ export default function BusinessMentorChat({ onClose, isMobileOverlay = false }:
 
       <div className="flex shrink-0 items-center gap-2 border-t border-slate-200 px-3 py-3 sm:gap-3 sm:px-4 sm:py-4">
         <input
-          className="h-10 min-w-0 flex-1 rounded-full border border-slate-300 bg-white px-3 text-sm outline-none placeholder:text-slate-400 focus:border-[#001F3F] sm:h-12 sm:px-4"
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && handleSend()}
+          disabled={loading}
+          className="h-10 min-w-0 flex-1 rounded-full border border-slate-300 bg-white px-3 text-sm outline-none placeholder:text-slate-400 focus:border-[#001F3F] disabled:cursor-not-allowed disabled:bg-gray-100 sm:h-12 sm:px-4"
           placeholder="Ask anything about your business..."
         />
-        <AIDashboardButton className="h-10 w-10 shrink-0 rounded-full p-0 sm:h-12 sm:w-12" aria-label="Send message">
-          <Send className="h-4 w-4 sm:h-5 sm:w-5" />
+        <AIDashboardButton
+          className="h-10 w-10 shrink-0 rounded-full p-0 sm:h-12 sm:w-12"
+          aria-label="Send message"
+          disabled={loading || !input.trim()}
+          onClick={() => handleSend()}
+        >
+          {loading ? <Loader2 className="h-4 w-4 animate-spin sm:h-5 sm:w-5" /> : <Send className="h-4 w-4 sm:h-5 sm:w-5" />}
         </AIDashboardButton>
       </div>
+      {error && (
+        <p className="px-4 pb-2 text-xs text-red-500 sm:px-4">Connection hiccup — you can keep typing, I'll retry.</p>
+      )}
     </AIDashboardCard>
   );
 }

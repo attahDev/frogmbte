@@ -1,77 +1,50 @@
-import AIDashboardButton from '../ui/AIDashboardButton';
+import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import AIDashboardButton from '../ui/AIDashboardButton'
+import { listIdeas, type IdeaListItem } from '../lib/ideaEngineApi'
+import { setCurrentIdeaId } from '../lib/currentIdea'
 
-type Tag = { label: string; bg: string; text: string }
-
-type IdeaCard = {
-  id: number
-  title: string
-  description: string
-  whyItFits: string
-  tags: Tag[]
+function difficultyTag(confidence: number) {
+  if (confidence >= 70) return { label: 'High Confidence', bg: 'bg-[#F3ECF8]', text: 'text-[#9A63B0]' }
+  if (confidence >= 40) return { label: 'Moderate', bg: 'bg-[#FFF4E5]', text: 'text-[#D48B3B]' }
+  return { label: 'Needs Work', bg: 'bg-[#EDF4FF]', text: 'text-[#3B6FD4]' }
 }
 
-const ideas: IdeaCard[] = [
-  {
-    id: 1,
-    title: 'Online Coaching Marketplace',
-    description:
-      'A platform connecting certified coaches with clients across fitness, business, and life coaching — earning a commission per booking.',
-    whyItFits:
-      'Low startup cost, scalable model, and booming demand for remote coaching globally.',
-    tags: [
-      { label: 'Low Difficulty', bg: 'bg-[#EDF4FF]', text: 'text-[#3B6FD4]' },
-      { label: 'High Revenue', bg: 'bg-[#F3ECF8]', text: 'text-[#9A63B0]' },
-    ],
-  },
-  {
-    id: 2,
-    title: 'Online Coaching Marketplace',
-    description:
-      'Short, skill-based video courses targeting professionals who want to upskill fast with AI-curated learning paths.',
-    whyItFits:
-      'Education + tech is exploding. Your skills map directly to content creation and platform growth.',
-    tags: [
-      { label: 'Moderate', bg: 'bg-[#FFF4E5]', text: 'text-[#D48B3B]' },
-      { label: 'High Revenue', bg: 'bg-[#F3ECF8]', text: 'text-[#9A63B0]' },
-    ],
-  },
-]
+function IdeaCardItem({ idea }: { idea: IdeaListItem }) {
+  const navigate = useNavigate()
+  const tag = difficultyTag(idea.confidence_score)
 
-function IdeaCardItem({ idea }: { idea: IdeaCard }) {
+  const goTo = (path: string) => {
+    setCurrentIdeaId(idea.id)
+    navigate(path)
+  }
+
   return (
     <div className="min-w-0 w-full flex-1 rounded-[18px] border border-[#E8E8E0] bg-white p-4 shadow-[0_2px_10px_rgba(15,23,42,0.06)] sm:rounded-[22px] sm:p-5">
       <h4 className="text-sm font-extrabold leading-snug text-[#001F3F] sm:text-[15px]">
-        {idea.title}
+        {idea.business_idea}
       </h4>
       <p className="mt-2 text-xs leading-relaxed text-[#5B6472]">
-        {idea.description}
+        {idea.industry || 'General'}
       </p>
 
-      <div className="mt-3 rounded-xl bg-[#F0FAF0] px-3 py-2.5">
-        <p className="text-xs leading-relaxed text-[#3D7A34]">
-          <span className="font-semibold">Why it fits you:</span>{' '}
-          {idea.whyItFits}
-        </p>
-      </div>
-
       <div className="mt-3 flex flex-wrap gap-2">
-        {idea.tags.map((t) => (
-          <span
-            key={t.label}
-            className={`rounded-full px-3 py-1 text-[11px] font-semibold ${t.bg} ${t.text}`}
-          >
-            {t.label}
-          </span>
-        ))}
+        <span className={`rounded-full px-3 py-1 text-[11px] font-semibold ${tag.bg} ${tag.text}`}>
+          {tag.label} ({idea.confidence_score}/100)
+        </span>
       </div>
 
       <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:gap-2">
-        <button className="flex-1 rounded-xl border border-[#D7263D] px-3 py-2.5 text-xs font-semibold text-[#D7263D] transition hover:bg-[#D7263D]/5 sm:py-2">
+        <button
+          onClick={() => goTo('/dashboard/opportunity-insights')}
+          className="flex-1 rounded-xl border border-[#D7263D] px-3 py-2.5 text-xs font-semibold text-[#D7263D] transition hover:bg-[#D7263D]/5 sm:py-2"
+        >
           Validate
         </button>
         <AIDashboardButton
           variant="secondary"
           className="flex-1 py-2 text-xs"
+          onClick={() => goTo('/dashboard/business-plan')}
         >
           Build Plan
         </AIDashboardButton>
@@ -81,6 +54,28 @@ function IdeaCardItem({ idea }: { idea: IdeaCard }) {
 }
 
 export default function IGPreviousIdeas() {
+  const [ideas, setIdeas] = useState<IdeaListItem[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    let cancelled = false
+    listIdeas()
+      .then((data) => {
+        if (!cancelled) setIdeas(data.slice(0, 4))
+      })
+      .catch(() => {
+        if (!cancelled) setIdeas([])
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  if (loading || ideas.length === 0) return null
+
   return (
     <div>
       <div className="mb-5 flex items-center gap-3">

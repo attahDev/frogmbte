@@ -15,6 +15,7 @@ click "Validate Idea" to see your full market analysis here.'
           />
         }
         buttonText='Go to dashboard'
+        buttonHref='/dashboard/ai-studio'
       />
     </div>
   );

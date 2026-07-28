@@ -1,5 +1,3 @@
-import CommunitySpotlight from "../DashboardSection/CommunitySpotlight";
-import AICareerTips from "./AICareerTips";
 // import CareerToolsSection from "./CareerToolsSection";
 import JobToolkit from "./component/JobToolkit";
 import JobOpportunitiesPage from "./JobOpportunitiesPage";
@@ -11,8 +9,6 @@ export default function JobIndex() {
       <div className="mx-auto w-full max-w-[1400px] space-y-6 px-4 py-6 sm:space-y-8 sm:px-6 lg:px-8">
         <JobOpportunitiesPage />
         {/* <CareerToolsSection /> */}
-        <AICareerTips />
-        <CommunitySpotlight />
       </div>
     </div>
   );

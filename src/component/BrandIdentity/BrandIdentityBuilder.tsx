@@ -16,10 +16,12 @@ import {
   RefreshCw,
   Sparkles,
   Trophy,
+  UploadCloud,
   Wand2,
+  X,
 } from "lucide-react";
 import AIDashboardCard from "../MarketResearchDashboard/ui/AIDashboardCard";
-import { api } from "../../lib/api"; 
+import { brandIdentityApi as api } from "./api/brandIdentityApi";
 
 type ToolKey =
   | "business-card"
@@ -32,14 +34,24 @@ type ToolKey =
   | "capability"
   | "brand-guidelines";
 
+type RepeaterSubField = {
+  id: string;
+  label: string;
+  placeholder?: string;
+};
+
 type FieldConfig = {
   id: string;
   label: string;
   placeholder?: string;
-  type?: "text" | "textarea" | "select";
+  type?: "text" | "textarea" | "select" | "checkbox" | "tags" | "repeater";
   options?: string[];
   optional?: boolean;
   full?: boolean;
+  /** For type "tags": comma-separated text turned into a string[] on submit */
+  tagsHint?: string;
+  /** For type "repeater": each row is an object with these sub-fields */
+  repeaterFields?: RepeaterSubField[];
 };
 
 type ToolConfig = {
@@ -50,6 +62,8 @@ type ToolConfig = {
   icon: React.ElementType;
   fields: FieldConfig[];
   colors: boolean;
+  /** Whether this asset accepts a user-uploaded logo (maps to `logo_url` on the backend) */
+  logoUpload?: boolean;
 };
 
 const presetColors = [
@@ -71,6 +85,7 @@ const tools: ToolConfig[] = [
     subtitle: "Front & back card design with your brand",
     icon: IdCard,
     colors: true,
+    logoUpload: true,
     fields: [
       { id: "name", label: "Full Name", placeholder: "e.g. Johnson Kate" },
       { id: "role", label: "Job Title / Role", placeholder: "e.g. CEO" },
@@ -78,6 +93,7 @@ const tools: ToolConfig[] = [
       { id: "email", label: "Email Address", placeholder: "e.g. kate@company.com" },
       { id: "phone", label: "Phone", placeholder: "e.g. +234 800 000 0000" },
       { id: "website", label: "Website", placeholder: "e.g. www.company.com", optional: true },
+      { id: "industry", label: "Industry", placeholder: "e.g. Technology", optional: true },
       { id: "registrationNumber", label: "Company Registration Number", placeholder: "e.g. RC-123456", optional: true },
     ],
   },
@@ -114,6 +130,7 @@ const tools: ToolConfig[] = [
     subtitle: "Official document header for correspondence",
     icon: FileText,
     colors: true,
+    logoUpload: true,
     fields: [
       { id: "company", label: "Company Name" },
       { id: "address", label: "Company Address", placeholder: "12 Tech Street, Lagos" },
@@ -122,6 +139,15 @@ const tools: ToolConfig[] = [
       { id: "website", label: "Website", optional: true },
       { id: "tagline", label: "Tagline", optional: true },
       { id: "registrationNumber", label: "Company Registration Number", placeholder: "e.g. RC-123456", optional: true },
+      { id: "social", label: "Social / Website Link", placeholder: "e.g. linkedin.com/company/acme", optional: true },
+      {
+        id: "body",
+        label: "Letter Body",
+        placeholder: "Dear [Recipient],\n\n...",
+        type: "textarea",
+        optional: true,
+        full: true,
+      },
     ],
   },
   {
@@ -131,6 +157,7 @@ const tools: ToolConfig[] = [
     subtitle: "Branded sign-off block for your emails",
     icon: Mail,
     colors: true,
+    logoUpload: true,
     fields: [
       { id: "name", label: "Full Name" },
       { id: "role", label: "Job Title" },
@@ -148,6 +175,7 @@ const tools: ToolConfig[] = [
     subtitle: "Branded payment request document",
     icon: Receipt,
     colors: true,
+    logoUpload: true,
     fields: [
       { id: "company", label: "Company Name" },
       { id: "address", label: "Company Address" },
@@ -161,7 +189,12 @@ const tools: ToolConfig[] = [
       },
       { id: "website", label: "Website", optional: true },
       { id: "registrationNumber", label: "Company Registration Number", placeholder: "e.g. RC-123456", optional: true },
+      { id: "invoicePrefix", label: "Invoice Number Prefix", placeholder: "e.g. INV-", optional: true },
+      { id: "taxRate", label: "Tax Rate (%)", placeholder: "e.g. 7.5", optional: true },
+      { id: "discount", label: "Discount Amount", placeholder: "e.g. 50", optional: true },
+      { id: "paymentTerms", label: "Payment Terms", placeholder: "e.g. Net 30", optional: true },
       { id: "note", label: "Default Footer Note", type: "textarea", full: true, optional: true },
+      { id: "termsAndConditions", label: "Terms & Conditions", type: "textarea", full: true, optional: true },
     ],
   },
   {
@@ -171,15 +204,28 @@ const tools: ToolConfig[] = [
     subtitle: "Pricing proposal document for clients",
     icon: ClipboardList,
     colors: true,
+    logoUpload: true,
     fields: [
       { id: "company", label: "Company Name" },
       { id: "address", label: "Address" },
       { id: "email", label: "Email" },
       { id: "phone", label: "Phone", optional: true },
       { id: "website", label: "Website", optional: true },
+      {
+        id: "currency",
+        label: "Currency",
+        type: "select",
+        options: ["NGN ₦", "USD $", "GBP £", "EUR €", "ZAR R"],
+      },
       { id: "validity", label: "Quote Valid For", placeholder: "e.g. 30 days" },
+      { id: "expirationDate", label: "Expiration Date", placeholder: "e.g. 2026-08-30", optional: true },
+      { id: "preparedBy", label: "Prepared By", placeholder: "e.g. Kate Johnson", optional: true },
       { id: "registrationNumber", label: "Company Registration Number", placeholder: "e.g. RC-123456", optional: true },
+      { id: "deliveryRequired", label: "Delivery Required", type: "checkbox", optional: true },
+      { id: "packagingRequired", label: "Packaging Required", type: "checkbox", optional: true },
+      { id: "signatureSection", label: "Include Signature Section", type: "checkbox", optional: true },
       { id: "terms", label: "Payment Terms", type: "textarea", full: true, optional: true },
+      { id: "termsAndConditions", label: "Terms & Conditions", type: "textarea", full: true, optional: true },
     ],
   },
   {
@@ -189,6 +235,7 @@ const tools: ToolConfig[] = [
     subtitle: "Who you are, what you do, why it matters",
     icon: Building,
     colors: true,
+    logoUpload: true,
     fields: [
       { id: "company", label: "Company Name" },
       { id: "industry", label: "Industry", placeholder: "Technology, Healthcare" },
@@ -199,6 +246,17 @@ const tools: ToolConfig[] = [
       { id: "tagline", label: "Tagline", optional: true },
       { id: "yearFounded", label: "Year Founded", placeholder: "e.g. 2018", optional: true },
       { id: "registrationNumber", label: "Company Registration Number", placeholder: "e.g. RC-123456", optional: true },
+      {
+        id: "teamMembers",
+        label: "Team Members",
+        type: "repeater",
+        full: true,
+        optional: true,
+        repeaterFields: [
+          { id: "name", label: "Name", placeholder: "e.g. Kate Johnson" },
+          { id: "title", label: "Title", placeholder: "e.g. Co-Founder" },
+        ],
+      },
     ],
   },
   {
@@ -208,6 +266,7 @@ const tools: ToolConfig[] = [
     subtitle: "Your core competencies and differentiators",
     icon: Trophy,
     colors: true,
+    logoUpload: true,
     fields: [
       { id: "company", label: "Company Name" },
       { id: "core", label: "Core Competencies", type: "textarea", full: true },
@@ -215,6 +274,39 @@ const tools: ToolConfig[] = [
       { id: "contact", label: "Contact Info" },
       { id: "clients", label: "Past Clients / Experience", type: "textarea", full: true, optional: true },
       { id: "registrationNumber", label: "Company Registration Number", placeholder: "e.g. RC-123456", optional: true },
+      { id: "dunsNumber", label: "DUNS Number", placeholder: "e.g. 123456789", optional: true },
+      { id: "cageCode", label: "CAGE Code", placeholder: "e.g. 1A2B3", optional: true },
+      {
+        id: "certifications",
+        label: "Certifications",
+        type: "tags",
+        tagsHint: "Comma-separated, e.g. WBENC, ISO 9001, 8(a)",
+        full: true,
+        optional: true,
+      },
+      {
+        id: "naicsCodes",
+        label: "NAICS Codes",
+        type: "repeater",
+        full: true,
+        optional: true,
+        repeaterFields: [
+          { id: "code", label: "Code", placeholder: "e.g. 541511" },
+          { id: "description", label: "Description", placeholder: "e.g. Custom Computer Programming" },
+        ],
+      },
+      {
+        id: "pastPerformance",
+        label: "Past Performance",
+        type: "repeater",
+        full: true,
+        optional: true,
+        repeaterFields: [
+          { id: "client", label: "Client", placeholder: "e.g. City of Manchester" },
+          { id: "description", label: "Description", placeholder: "e.g. Delivered a 6-month platform build" },
+          { id: "year", label: "Year", placeholder: "e.g. 2025" },
+        ],
+      },
     ],
   },
   {
@@ -224,6 +316,7 @@ const tools: ToolConfig[] = [
     subtitle: "Typography, color, and logo usage rules",
     icon: Palette,
     colors: true,
+    logoUpload: true,
     fields: [
       { id: "company", label: "Brand Name" },
       { id: "industry", label: "Industry" },
@@ -248,6 +341,42 @@ const assetTypeMap: Record<ToolKey, string> = {
   "brand-guidelines": "brand_guidelines",
 };
 
+/** "WBENC, ISO 9001" -> ["WBENC", "ISO 9001"] */
+function parseTags(value?: string): string[] | undefined {
+  if (!value) return undefined;
+  const items = value
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean);
+  return items.length ? items : undefined;
+}
+
+/** JSON-stringified array of rows (see RepeaterField) -> array of objects, dropping empty rows */
+function parseRepeater(value?: string): Record<string, string>[] | undefined {
+  if (!value) return undefined;
+  try {
+    const rows = JSON.parse(value) as Record<string, string>[];
+    const cleaned = rows
+      .map((row) => cleanObject(row))
+      .filter((row) => Object.keys(row).length > 0);
+    return cleaned.length ? cleaned : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+function parseNumber(value?: string): number | undefined {
+  if (!value || !value.trim()) return undefined;
+  const num = Number(value);
+  return Number.isFinite(num) ? num : undefined;
+}
+
+function parseBool(value?: string): boolean | undefined {
+  if (value === "true") return true;
+  if (value === "false") return false;
+  return undefined;
+}
+
 function cleanObject(obj: Record<string, any>) {
   return Object.fromEntries(
     Object.entries(obj).filter(([, value]) => {
@@ -258,9 +387,15 @@ function cleanObject(obj: Record<string, any>) {
   );
 }
 
-function buildPayload(toolKey: ToolKey, values: Record<string, string>, colors: string[]) {
+function buildPayload(
+  toolKey: ToolKey,
+  values: Record<string, string>,
+  colors: string[],
+  logoUrl?: string
+) {
   const primary_color = colors[0] || "#001F3F";
   const secondary_color = colors[1] || "#FFD700";
+  const logo_url = logoUrl || undefined;
 
   switch (toolKey) {
     case "logo":
@@ -280,10 +415,12 @@ function buildPayload(toolKey: ToolKey, values: Record<string, string>, colors: 
         full_name: values.name,
         job_title: values.role,
         company_name: values.company,
+        industry: values.industry,
         email: values.email,
         phone: values.phone,
         website: values.website,
         registration_number: values.registrationNumber,
+        logo_url,
         primary_color,
         secondary_color,
       });
@@ -297,6 +434,9 @@ function buildPayload(toolKey: ToolKey, values: Record<string, string>, colors: 
         website: values.website,
         tagline: values.tagline,
         registration_number: values.registrationNumber,
+        social_links: values.social ? [{ url: values.social }] : undefined,
+        content_body: values.body,
+        logo_url,
         primary_color,
         secondary_color,
       });
@@ -308,8 +448,9 @@ function buildPayload(toolKey: ToolKey, values: Record<string, string>, colors: 
         company: values.company,
         email: values.email,
         phone: values.phone,
-        social_link: values.social,
+        social_links: values.social ? [{ url: values.social }] : undefined,
         registration_number: values.registrationNumber,
+        logo_url,
         primary_color,
         secondary_color,
       });
@@ -323,7 +464,13 @@ function buildPayload(toolKey: ToolKey, values: Record<string, string>, colors: 
         currency: values.currency || "NGN ₦",
         website: values.website,
         registration_number: values.registrationNumber,
+        invoice_number_prefix: values.invoicePrefix || undefined,
+        tax_rate: parseNumber(values.taxRate),
+        discount: parseNumber(values.discount),
+        payment_terms: values.paymentTerms,
         footer_note: values.note,
+        terms_and_conditions: values.termsAndConditions,
+        logo_url,
         primary_color,
         secondary_color,
       });
@@ -336,9 +483,16 @@ function buildPayload(toolKey: ToolKey, values: Record<string, string>, colors: 
         phone: values.phone,
         website: values.website,
         quote_valid_for: values.validity,
+        expiration_date: values.expirationDate,
+        prepared_by: values.preparedBy,
         payment_terms: values.terms,
+        terms_and_conditions: values.termsAndConditions,
+        delivery_required: parseBool(values.deliveryRequired),
+        packaging_required: parseBool(values.packagingRequired),
+        signature_section: parseBool(values.signatureSection) ?? true,
         registration_number: values.registrationNumber,
-        currency: "NGN ₦",
+        currency: values.currency || "NGN ₦",
+        logo_url,
         primary_color,
         secondary_color,
       });
@@ -354,6 +508,8 @@ function buildPayload(toolKey: ToolKey, values: Record<string, string>, colors: 
         tagline: values.tagline,
         year_founded: values.yearFounded,
         registration_number: values.registrationNumber,
+        team_members: parseRepeater(values.teamMembers),
+        logo_url,
         primary_color,
         secondary_color,
       });
@@ -366,6 +522,12 @@ function buildPayload(toolKey: ToolKey, values: Record<string, string>, colors: 
         contact_info: values.contact,
         past_clients: values.clients,
         registration_number: values.registrationNumber,
+        duns_number: values.dunsNumber,
+        cage_code: values.cageCode,
+        certifications: parseTags(values.certifications),
+        naics_codes: parseRepeater(values.naicsCodes),
+        past_performance: parseRepeater(values.pastPerformance),
+        logo_url,
         primary_color,
         secondary_color,
       });
@@ -379,6 +541,7 @@ function buildPayload(toolKey: ToolKey, values: Record<string, string>, colors: 
         brand_personality: values.personality,
         preferred_fonts: values.fonts,
         registration_number: values.registrationNumber,
+        logo_url,
         primary_color,
         secondary_color,
       });
@@ -401,11 +564,20 @@ function validateTool(tool: ToolConfig, values: Record<string, string>) {
 export default function BrandIdentityBuilder() {
   const [activeTool, setActiveTool] = useState<ToolKey | null>(null);
   const [values, setValues] = useState<Record<string, string>>({});
-  const [selectedColors, setSelectedColors] = useState<string[]>(["#001F3F", "#FFD700", "#FFB84D"]);
+  const [primaryColor, setPrimaryColor] = useState("#001F3F");
+  const [secondaryColor, setSecondaryColor] = useState("#FFD700");
+  const [logoUrl, setLogoUrl] = useState("");
+  const [logoUploading, setLogoUploading] = useState(false);
+  const [logoError, setLogoError] = useState("");
   const [view, setView] = useState<"empty" | "form" | "loading" | "result">("empty");
   const [error, setError] = useState("");
   const [assetStatus, setAssetStatus] = useState<any>(null);
   const [exportsData, setExportsData] = useState<any>(null);
+
+  const selectedColors = useMemo(
+    () => [primaryColor, secondaryColor],
+    [primaryColor, secondaryColor]
+  );
 
   const pollingRef = useRef<number | null>(null);
 
@@ -429,10 +601,44 @@ export default function BrandIdentityBuilder() {
     setError("");
     setAssetStatus(null);
     setExportsData(null);
+    setLogoUrl("");
+    setLogoError("");
   };
 
   const updateValue = (id: string, value: string) => {
     setValues((prev) => ({ ...prev, [id]: value }));
+  };
+
+  const handleLogoUpload = async (file: File) => {
+    const MAX_MB = 5;
+    if (file.size > MAX_MB * 1024 * 1024) {
+      setLogoError(`File too large (max ${MAX_MB}MB).`);
+      return;
+    }
+    if (!["image/png", "image/jpeg", "image/jpg", "image/svg+xml"].includes(file.type)) {
+      setLogoError("Only PNG, JPG or SVG files are allowed.");
+      return;
+    }
+
+    setLogoError("");
+    setLogoUploading(true);
+
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const result = await api.post("/assets/upload/logo", formData);
+      const url = result.data?.logo_url;
+
+      if (!url) throw new Error("No logo_url returned from upload.");
+      setLogoUrl(url);
+    } catch (err: any) {
+      setLogoError(
+        err?.response?.data?.detail || err?.message || "Logo upload failed."
+      );
+    } finally {
+      setLogoUploading(false);
+    }
   };
 
   const fetchExports = async (assetId: string) => {
@@ -446,17 +652,17 @@ export default function BrandIdentityBuilder() {
     pollingRef.current = window.setInterval(async () => {
       try {
         const result = await api.get(`/assets/${assetId}/status`);
-        const statusData = result.data.data;
+        const statusData = result.data;
 
         setAssetStatus(statusData);
 
-        if (statusData?.status === "done") {
+        if (statusData?.status?.toLowerCase() === "done") {
           clearPolling();
           await fetchExports(assetId);
           setView("result");
         }
 
-        if (statusData?.status === "failed") {
+        if (statusData?.status?.toLowerCase() === "failed") {
           clearPolling();
           setView("result");
           setError(statusData?.error_message || "Asset generation failed.");
@@ -489,7 +695,7 @@ export default function BrandIdentityBuilder() {
       setExportsData(null);
       setView("loading");
 
-      const payload = buildPayload(activeTool, values, selectedColors);
+      const payload = buildPayload(activeTool, values, selectedColors, logoUrl);
       const assetType = assetTypeMap[activeTool];
 
       const result = await api.post(
@@ -515,8 +721,31 @@ export default function BrandIdentityBuilder() {
     }
   };
 
-  const handleDownload = (url: string) => {
-    window.open(url, "_blank", "noopener,noreferrer");
+  const handleDownload = async (url: string, assetName?: string) => {
+    try {
+      const response = await fetch(url);
+      const blob = await response.blob();
+      const blobUrl = window.URL.createObjectURL(blob);
+
+      // Preserve the real extension from the asset URL (png/pdf/etc.),
+      // but name the file after the company + asset type instead of the
+      // storage host's opaque UUID path.
+      const urlPath = url.split("?")[0];
+      const ext = urlPath.includes(".") ? urlPath.split(".").pop() : "png";
+      const filename = assetName ? `${assetName}.${ext}` : urlPath.split("/").pop() || "download";
+
+      const link = document.createElement("a");
+      link.href = blobUrl;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(blobUrl);
+    } catch (err) {
+      // Fall back to opening in a new tab if the fetch/blob approach fails
+      // (e.g. CORS on the storage host) — better than a silent no-op.
+      window.open(url, "_blank", "noopener,noreferrer");
+    }
   };
 
   return (
@@ -603,15 +832,19 @@ export default function BrandIdentityBuilder() {
             <FormPanel
               tool={currentTool}
               values={values}
-              selectedColors={selectedColors}
+              primaryColor={primaryColor}
+              secondaryColor={secondaryColor}
+              onPrimaryColorChange={setPrimaryColor}
+              onSecondaryColorChange={setSecondaryColor}
+              logoUrl={logoUrl}
+              logoUploading={logoUploading}
+              logoError={logoError}
+              onLogoUpload={handleLogoUpload}
+              onLogoClear={() => {
+                setLogoUrl("");
+                setLogoError("");
+              }}
               onValueChange={updateValue}
-              onColorToggle={(color) =>
-                setSelectedColors((prev) =>
-                  prev.includes(color)
-                    ? prev.filter((item) => item !== color)
-                    : [...prev, color]
-                )
-              }
               onGenerate={generate}
             />
           )}
@@ -636,6 +869,113 @@ export default function BrandIdentityBuilder() {
   );
 }
 
+function RepeaterField({
+  value,
+  subFields,
+  onChange,
+}: {
+  value: string;
+  subFields: RepeaterSubField[];
+  onChange: (next: string) => void;
+}) {
+  const rows: Record<string, string>[] = useMemo(() => {
+    try {
+      const parsed = JSON.parse(value || "[]");
+      return Array.isArray(parsed) && parsed.length ? parsed : [{}];
+    } catch {
+      return [{}];
+    }
+  }, [value]);
+
+  const updateRow = (index: number, subId: string, subValue: string) => {
+    const next = rows.map((row, i) =>
+      i === index ? { ...row, [subId]: subValue } : row
+    );
+    onChange(JSON.stringify(next));
+  };
+
+  const addRow = () => onChange(JSON.stringify([...rows, {}]));
+
+  const removeRow = (index: number) => {
+    const next = rows.filter((_, i) => i !== index);
+    onChange(JSON.stringify(next.length ? next : [{}]));
+  };
+
+  return (
+    <div className="space-y-2">
+      {rows.map((row, index) => (
+        <div
+          key={index}
+          className="flex flex-wrap items-center gap-2 rounded-xl border border-[#E0E5EC] bg-[#F9FAFC] p-2"
+        >
+          {subFields.map((sub) => (
+            <input
+              key={sub.id}
+              value={row[sub.id] || ""}
+              onChange={(e) => updateRow(index, sub.id, e.target.value)}
+              placeholder={sub.placeholder || sub.label}
+              className="min-w-[120px] flex-1 rounded-lg border border-[#E0E5EC] bg-white px-2.5 py-2 text-sm outline-none focus:border-[#001F3F]"
+            />
+          ))}
+          <button
+            type="button"
+            onClick={() => removeRow(index)}
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-[#E0E5EC] bg-white text-[#8A94A6] hover:bg-[#F4F6F9]"
+            aria-label="Remove row"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+      ))}
+      <button
+        type="button"
+        onClick={addRow}
+        className="rounded-lg border border-dashed border-[#D7DEE8] px-3 py-1.5 text-xs font-semibold text-[#4A5568] hover:border-[#001F3F]/40"
+      >
+        + Add row
+      </button>
+    </div>
+  );
+}
+
+function ColorPickerField({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  onChange: (color: string) => void;
+}) {
+  const isValidHex = /^#[0-9A-Fa-f]{6}$/.test(value);
+
+  return (
+    <div>
+      <label className="mb-1.5 block text-xs font-semibold text-[#4A5568]">
+        {label}
+      </label>
+      <div className="flex items-center gap-2 rounded-xl border border-[#E0E5EC] bg-[#F9FAFC] px-2 py-1.5 focus-within:border-[#001F3F] focus-within:ring-4 focus-within:ring-[#001F3F]/10">
+        <input
+          type="color"
+          value={isValidHex ? value : "#000000"}
+          onChange={(e) => onChange(e.target.value.toUpperCase())}
+          className="h-8 w-9 shrink-0 cursor-pointer rounded-md border-0 bg-transparent p-0"
+          aria-label={`${label} color wheel`}
+        />
+        <input
+          type="text"
+          value={value}
+          maxLength={7}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder="#001F3F"
+          className="w-full bg-transparent text-sm font-medium uppercase tracking-wide text-[#1A2332] outline-none"
+          aria-label={`${label} hex value`}
+        />
+      </div>
+    </div>
+  );
+}
+
 function EmptyState() {
   return (
     <div className="flex min-h-[430px] flex-col items-center justify-center rounded-3xl border border-dashed border-[#D7DEE8] bg-white text-center">
@@ -653,16 +993,30 @@ function EmptyState() {
 function FormPanel({
   tool,
   values,
-  selectedColors,
+  primaryColor,
+  secondaryColor,
+  onPrimaryColorChange,
+  onSecondaryColorChange,
+  logoUrl,
+  logoUploading,
+  logoError,
+  onLogoUpload,
+  onLogoClear,
   onValueChange,
-  onColorToggle,
   onGenerate,
 }: {
   tool: ToolConfig;
   values: Record<string, string>;
-  selectedColors: string[];
+  primaryColor: string;
+  secondaryColor: string;
+  onPrimaryColorChange: (color: string) => void;
+  onSecondaryColorChange: (color: string) => void;
+  logoUrl: string;
+  logoUploading: boolean;
+  logoError: string;
+  onLogoUpload: (file: File) => void;
+  onLogoClear: () => void;
   onValueChange: (id: string, value: string) => void;
-  onColorToggle: (color: string) => void;
   onGenerate: () => void;
 }) {
   const Icon = tool.icon;
@@ -714,6 +1068,36 @@ function FormPanel({
                     <option key={option}>{option}</option>
                   ))}
                 </select>
+              ) : field.type === "checkbox" ? (
+                <label className="flex w-fit cursor-pointer items-center gap-2 rounded-xl border border-[#E0E5EC] bg-[#F9FAFC] px-3 py-2.5 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={values[field.id] === "true"}
+                    onChange={(e) =>
+                      onValueChange(field.id, e.target.checked ? "true" : "false")
+                    }
+                    className="h-4 w-4 accent-[#001F3F]"
+                  />
+                  <span className="text-[#4A5568]">Yes</span>
+                </label>
+              ) : field.type === "tags" ? (
+                <>
+                  <input
+                    value={values[field.id] || ""}
+                    onChange={(e) => onValueChange(field.id, e.target.value)}
+                    placeholder={field.placeholder}
+                    className="w-full rounded-xl border border-[#E0E5EC] px-3 py-2.5 text-sm outline-none focus:border-[#001F3F] focus:ring-4 focus:ring-[#001F3F]/10"
+                  />
+                  {field.tagsHint && (
+                    <p className="mt-1 text-[11px] text-[#8A94A6]">{field.tagsHint}</p>
+                  )}
+                </>
+              ) : field.type === "repeater" && field.repeaterFields ? (
+                <RepeaterField
+                  value={values[field.id] || ""}
+                  subFields={field.repeaterFields}
+                  onChange={(next) => onValueChange(field.id, next)}
+                />
               ) : (
                 <input
                   value={values[field.id] || ""}
@@ -733,21 +1117,84 @@ function FormPanel({
             Brand Colors <span className="font-normal normal-case">optional</span>
           </p>
 
-          <div className="flex flex-wrap gap-3">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <ColorPickerField
+              label="Primary"
+              value={primaryColor}
+              onChange={onPrimaryColorChange}
+            />
+            <ColorPickerField
+              label="Secondary"
+              value={secondaryColor}
+              onChange={onSecondaryColorChange}
+            />
+          </div>
+
+          <div className="mt-4 flex flex-wrap gap-2">
             {presetColors.map((color) => (
               <button
                 key={color}
-                onClick={() => onColorToggle(color)}
-                className={`h-8 w-8 rounded-full border transition ${
-                  selectedColors.includes(color)
-                    ? "ring-2 ring-[#001F3F] ring-offset-2"
-                    : "ring-0"
-                }`}
+                type="button"
+                onClick={() => onPrimaryColorChange(color)}
+                className="h-7 w-7 rounded-full border border-black/5 transition hover:ring-2 hover:ring-[#001F3F] hover:ring-offset-2"
                 style={{ backgroundColor: color }}
-                aria-label={color}
+                aria-label={`Use ${color} as primary`}
+                title={color}
               />
             ))}
           </div>
+        </AIDashboardCard>
+      )}
+
+      {tool.logoUpload && (
+        <AIDashboardCard variant="panel" padding="lg" className="mt-4 bg-white">
+          <p className="mb-4 text-xs font-bold uppercase tracking-[0.1em] text-[#8A94A6]">
+            Logo <span className="font-normal normal-case">optional</span>
+          </p>
+
+          {logoUrl ? (
+            <div className="flex items-center gap-4 rounded-xl border border-[#E0E5EC] p-3">
+              <img
+                src={logoUrl}
+                alt="Uploaded logo"
+                className="h-14 w-14 rounded-lg border border-[#E0E5EC] object-contain"
+              />
+              <div className="flex-1">
+                <p className="text-sm font-semibold text-[#1A2332]">Logo uploaded</p>
+                <p className="truncate text-xs text-[#8A94A6]">{logoUrl}</p>
+              </div>
+              <button
+                type="button"
+                onClick={onLogoClear}
+                className="flex h-8 w-8 items-center justify-center rounded-lg border border-[#E0E5EC] text-[#8A94A6] hover:bg-[#F4F6F9]"
+                aria-label="Remove logo"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+          ) : (
+            <label className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-[#D7DEE8] bg-[#F9FAFC] px-4 py-6 text-center transition hover:border-[#001F3F]/40">
+              <input
+                type="file"
+                accept="image/png,image/jpeg,image/svg+xml"
+                className="hidden"
+                disabled={logoUploading}
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) onLogoUpload(file);
+                  e.target.value = "";
+                }}
+              />
+              <UploadCloud className="h-6 w-6 text-[#8A94A6]" />
+              <span className="text-sm font-semibold text-[#1A2332]">
+                {logoUploading ? "Uploading…" : "Click to upload PNG, JPG or SVG (max 5MB)"}
+              </span>
+            </label>
+          )}
+
+          {logoError && (
+            <p className="mt-2 text-xs font-medium text-red-600">{logoError}</p>
+          )}
         </AIDashboardCard>
       )}
 
@@ -791,10 +1238,15 @@ function ResultPanel({
   exportsData: any;
   onEdit: () => void;
   onRegenerate: () => void;
-  onDownload: (url: string) => void;
+  onDownload: (url: string, assetName?: string) => void;
 }) {
-  const isFailed = assetStatus?.status === "failed";
+  const isFailed = assetStatus?.status?.toLowerCase() === "failed";
   const exports = exportsData?.exports || {};
+  const companySlug = (values.company || "brand")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "") || "brand";
 
   return (
     <div className="mx-auto max-w-6xl">
@@ -816,7 +1268,7 @@ function ResultPanel({
           {Object.entries(exports).map(([key, url]) => (
             <button
               key={key}
-              onClick={() => onDownload(String(url))}
+              onClick={() => onDownload(String(url), `${companySlug}-${key}`)}
               className="rounded-xl bg-[#001F3F] px-4 py-2 text-xs font-semibold text-white"
             >
               <Download className="mr-1 inline h-4 w-4" />
@@ -834,7 +1286,51 @@ function ResultPanel({
 
       {!isFailed && (
         <>
-          <Preview tool={tool.key} values={values} colors={colors} />
+          {assetStatus?.png_url ? (
+            <div className="flex flex-wrap gap-6">
+              <img
+                src={assetStatus.png_url}
+                alt={`${tool.title} — front`}
+                className="max-w-full rounded-2xl border border-[#E0E5EC] shadow-xl sm:max-w-[340px]"
+              />
+              {assetStatus.png_transparent_url && (
+                <img
+                  src={assetStatus.png_transparent_url}
+                  alt={`${tool.title} — back`}
+                  className="max-w-full rounded-2xl border border-[#E0E5EC] shadow-xl sm:max-w-[340px]"
+                />
+              )}
+            </div>
+          ) : assetStatus?.svg_light_url ? (
+            <div className="flex flex-wrap gap-6">
+              <img
+                src={assetStatus.svg_light_url}
+                alt={`${tool.title} — generated`}
+                className="max-w-full rounded-2xl border border-[#E0E5EC] bg-white p-6 shadow-xl sm:max-w-[340px]"
+              />
+            </div>
+          ) : assetStatus?.pdf_url ? (
+            <div className="overflow-hidden rounded-2xl border border-[#E0E5EC] shadow-xl">
+              <iframe
+                src={`${assetStatus.pdf_url}#toolbar=0&navpanes=0`}
+                title={`${tool.title} preview`}
+                className="h-[520px] w-full bg-white"
+              />
+              <div className="flex items-center justify-between border-t border-[#E0E5EC] bg-[#F9FAFC] px-4 py-2.5">
+                <span className="text-xs text-[#8A94A6]">PDF preview</span>
+                <a
+                  href={assetStatus.pdf_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs font-semibold text-[#001F3F] hover:underline"
+                >
+                  Open in new tab ↗
+                </a>
+              </div>
+            </div>
+          ) : (
+            <Preview tool={tool.key} values={values} colors={colors} />
+          )}
 
           <div className="mt-5 grid grid-cols-1 gap-3 md:grid-cols-3">
             {tool.fields.slice(0, 6).map((field) => (

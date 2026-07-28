@@ -2,6 +2,7 @@
 
 import { ArrowRight, Bot, ChevronDown, ChevronUp } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { api } from "../../../lib/api";
 
 const quickPrompts = [
   "How can Fellowship AI help my growth?",
@@ -13,7 +14,8 @@ const quickPrompts = [
 
 const chips = ["Start a business", "Find a job", "Recommend a course", "Improve my CV"];
 
-const API_URL = "https://olayimika01-fellowship.hf.space/api/v1/chat";
+// Routed through the backend (POST /fellowship-ai/chat) instead of calling
+// the Hugging Face Space directly from the browser.
 
 type ApiResponse = {
   answer?: string;
@@ -84,51 +86,12 @@ export default function FellowshipAIAssistant() {
     setMessages((prev) => [...prev, { role: "user", content: cleanText }]);
 
     try {
-      // 2. Exact direct fetch matching your working project setup
-      const response = await fetch(API_URL, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
-        body: JSON.stringify({
-          query: cleanText,
-          chatId: chatId,
-        }),
+      const response = await api.post<ApiResponse>("/fellowship-ai/chat", {
+        message: cleanText,
       });
 
-      const contentType = response.headers.get("content-type");
+      const replyText = getResponseText(response.data);
 
-      if (!response.ok) {
-        let errorMessage = `Request failed with status ${response.status}`;
-        try {
-          if (contentType?.includes("application/json")) {
-            const errorData = await response.json();
-            errorMessage =
-              errorData?.detail ||
-              errorData?.message ||
-              errorData?.error ||
-              errorMessage;
-          } else {
-            const errorText = await response.text();
-            if (errorText) errorMessage = errorText;
-          }
-        } catch {
-          // Keep default
-        }
-        throw new Error(errorMessage);
-      }
-
-      // 3. Process the output using your working project logic
-      let replyText = "";
-      if (contentType?.includes("application/json")) {
-        const data: ApiResponse = await response.json();
-        replyText = getResponseText(data);
-      } else {
-        replyText = await response.text();
-      }
-
-      // 4. Update messages state with the response
       setMessages((prev) => [
         ...prev,
         {
@@ -136,12 +99,11 @@ export default function FellowshipAIAssistant() {
           content: replyText,
         },
       ]);
-    } catch (err) {
+    } catch (err: any) {
       console.error("FELLOWSHIP AI ERROR:", err);
       setError(
-        err instanceof Error
-          ? err.message
-          : "Unable to get Fellowship AI response. Please try again."
+        err?.response?.data?.message ||
+          "Unable to get Fellowship AI response. Please try again."
       );
     } finally {
       setLoading(false);

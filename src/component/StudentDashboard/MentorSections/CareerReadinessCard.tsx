@@ -1,0 +1,276 @@
+import { useEffect, useState } from "react";
+import { Target, Sparkles, Check, Circle, UserPlus } from "lucide-react";
+import { Card, CardContent } from "./mentorsDashboard";
+import CardSkeleton from "../shared/CardSkeleton";
+import {
+  fetchActiveCareerPaths,
+  fetchMyReadiness,
+  fetchRecommendedMentors,
+  connectToMentor,
+  setMyCareerGoal,
+  type CareerPath,
+  type CareerReadiness,
+  type RecommendedMentor,
+} from "../../../lib/mentorsApi";
+
+export default function CareerReadinessCard() {
+  const [readiness, setReadiness] = useState<CareerReadiness | null>(null);
+  const [paths, setPaths] = useState<CareerPath[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [choosing, setChoosing] = useState(false);
+  const [selectedPathId, setSelectedPathId] = useState<string>("");
+  const [saving, setSaving] = useState(false);
+
+  const [recommended, setRecommended] = useState<RecommendedMentor[]>([]);
+  const [connectingId, setConnectingId] = useState<string | null>(null);
+  const [connectedIds, setConnectedIds] = useState<Set<string>>(new Set());
+
+  const load = () => {
+    setLoading(true);
+    fetchMyReadiness()
+      .then((r) => {
+        setReadiness(r);
+        if (r.hasGoal) {
+          fetchRecommendedMentors()
+            .then(setRecommended)
+            .catch(() => setRecommended([]));
+        }
+      })
+      .catch(() => setReadiness({ hasGoal: false }))
+      .finally(() => setLoading(false));
+  };
+
+  const handleConnect = async (mentorId: string) => {
+    setConnectingId(mentorId);
+    try {
+      await connectToMentor(mentorId);
+      setConnectedIds((prev) => new Set(prev).add(mentorId));
+    } catch (err: any) {
+      if (err?.response?.status === 409) {
+        setConnectedIds((prev) => new Set(prev).add(mentorId));
+      }
+    } finally {
+      setConnectingId(null);
+    }
+  };
+
+  useEffect(load, []);
+
+  const [pathsLoading, setPathsLoading] = useState(false);
+  const [pathsLoadFailed, setPathsLoadFailed] = useState(false);
+
+  const openPicker = () => {
+    setChoosing(true);
+    if (paths.length === 0) {
+      setPathsLoading(true);
+      setPathsLoadFailed(false);
+      fetchActiveCareerPaths()
+        .then((result) => {
+          setPaths(result);
+          // The directory is AI-generated on first request — an empty
+          // result right after opening usually means generation is still
+          // running server-side. One quiet retry covers that case.
+          if (result.length === 0) {
+            setTimeout(() => {
+              fetchActiveCareerPaths()
+                .then(setPaths)
+                .catch(() => setPathsLoadFailed(true));
+            }, 4000);
+          }
+        })
+        .catch(() => setPathsLoadFailed(true))
+        .finally(() => setPathsLoading(false));
+    }
+  };
+
+  const handleSave = async () => {
+    if (!selectedPathId || saving) return;
+    setSaving(true);
+    try {
+      await setMyCareerGoal(selectedPathId);
+      setChoosing(false);
+      load();
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (loading) return <CardSkeleton />;
+
+  // No goal set yet, or actively choosing/changing one
+  if (!readiness?.hasGoal || choosing) {
+    return (
+      <Card className="rounded-xl sm:rounded-2xl border-[#0000001A] shadow-md">
+        <CardContent className="p-4 sm:p-6">
+          <div className="mb-3 flex items-center gap-2">
+            <Target className="h-5 w-5 text-[#001F3F]" />
+            <h3 className="text-base font-bold text-[#001F3F] sm:text-lg">
+              {readiness?.hasGoal ? "Change your career path" : "Set a career path"}
+            </h3>
+          </div>
+          <p className="mb-3 text-sm text-gray-500">
+            Pick where you're headed and we'll track your readiness against the skills that path actually needs.
+          </p>
+
+          {!choosing && paths.length === 0 ? (
+            <button
+              onClick={openPicker}
+              className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+            >
+              Browse career paths
+            </button>
+          ) : choosing && paths.length === 0 ? (
+            pathsLoadFailed ? (
+              <div className="space-y-2">
+                <p className="text-sm text-red-500">Couldn't load career paths. Try again.</p>
+                <button
+                  onClick={openPicker}
+                  className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+                >
+                  Retry
+                </button>
+              </div>
+            ) : (
+              <p className="text-sm text-gray-400">
+                {pathsLoading ? "Loading career paths…" : "Setting up career paths for the first time — one moment…"}
+              </p>
+            )
+          ) : (
+            <div className="space-y-2">
+              <select
+                value={selectedPathId}
+                onChange={(e) => setSelectedPathId(e.target.value)}
+                className="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">Choose a path…</option>
+                {paths.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.title}
+                  </option>
+                ))}
+              </select>
+              {selectedPathId && (
+                <p className="text-xs text-gray-400">
+                  Requires: {paths.find((p) => p.id === selectedPathId)?.requiredSkills.map((s) => s.skillName).join(", ")}
+                </p>
+              )}
+              <div className="flex gap-2">
+                <button
+                  onClick={handleSave}
+                  disabled={!selectedPathId || saving}
+                  className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+                >
+                  {saving ? "Saving…" : "Set this path"}
+                </button>
+                {readiness?.hasGoal && (
+                  <button
+                    onClick={() => setChoosing(false)}
+                    className="rounded-xl border border-gray-300 px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50"
+                  >
+                    Cancel
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // Has a goal — show readiness
+  return (
+    <Card className="rounded-xl sm:rounded-2xl border-[#0000001A] shadow-md">
+      <CardContent className="p-4 sm:p-6">
+        <div className="mb-3 flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <Target className="h-5 w-5 text-[#001F3F]" />
+            <h3 className="text-base font-bold text-[#001F3F] sm:text-lg">{readiness.careerPath.title}</h3>
+          </div>
+          <button onClick={openPicker} className="text-xs font-medium text-blue-600 hover:text-blue-700">
+            Change path
+          </button>
+        </div>
+
+        <div className="mb-4">
+          <div className="mb-1 flex items-center justify-between text-xs text-gray-500">
+            <span>Readiness</span>
+            <span className="font-semibold text-[#001F3F]">{readiness.readinessPercent}%</span>
+          </div>
+          <div className="h-2 w-full overflow-hidden rounded-full bg-gray-100">
+            <div
+              className="h-full rounded-full bg-blue-600 transition-all"
+              style={{ width: `${readiness.readinessPercent}%` }}
+            />
+          </div>
+        </div>
+
+        {readiness.aiSummary && (
+          <div className="mb-4 rounded-xl bg-blue-50 p-3">
+            <p className="mb-1.5 flex items-center gap-1.5 text-xs font-semibold text-blue-700">
+              <Sparkles className="h-3.5 w-3.5" /> Where you stand
+            </p>
+            <p className="text-xs text-gray-700">{readiness.aiSummary.summary}</p>
+            {readiness.aiSummary.priorities.length > 0 && (
+              <p className="mt-1.5 text-xs text-gray-600">
+                <span className="font-medium">Focus next:</span> {readiness.aiSummary.priorities.join(", ")}
+              </p>
+            )}
+          </div>
+        )}
+
+        <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2">
+          {readiness.matched.map((s) => (
+            <div key={s.skillName} className="flex items-center gap-1.5 text-xs text-gray-700">
+              <Check className="h-3.5 w-3.5 shrink-0 text-green-600" />
+              {s.skillName}
+              {!s.confirmed && <span className="text-[10px] text-gray-400">(unconfirmed)</span>}
+            </div>
+          ))}
+          {readiness.missing.map((s) => (
+            <div key={s.skillName} className="flex items-center gap-1.5 text-xs text-gray-400">
+              <Circle className="h-3.5 w-3.5 shrink-0" />
+              {s.skillName}
+            </div>
+          ))}
+        </div>
+
+        {recommended.length > 0 && (
+          <div className="mt-5 border-t border-gray-100 pt-4">
+            <p className="mb-3 text-xs font-semibold text-[#001F3F]">Mentors who match this path</p>
+            <div className="space-y-2">
+              {recommended.map((m) => {
+                const isConnected = connectedIds.has(m.id);
+                const isConnecting = connectingId === m.id;
+                return (
+                  <div key={m.id} className="flex items-center gap-3 rounded-xl border border-gray-100 p-2.5">
+                    <img
+                      src={m.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(m.name)}`}
+                      alt={m.name}
+                      className="h-9 w-9 shrink-0 rounded-full object-cover"
+                    />
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-xs font-semibold text-[#001F3F]">{m.name}</p>
+                      <p className="truncate text-[11px] text-gray-500">
+                        {m.role}{m.company ? `, ${m.company}` : ""}
+                      </p>
+                      <p className="truncate text-[10px] text-gray-400">Matches: {m.matchedSkills.join(", ")}</p>
+                    </div>
+                    <button
+                      onClick={() => handleConnect(m.id)}
+                      disabled={isConnecting || isConnected}
+                      className="flex shrink-0 items-center gap-1 rounded-lg bg-blue-600 px-2.5 py-1.5 text-[11px] font-medium text-white hover:bg-blue-700 disabled:opacity-60"
+                    >
+                      <UserPlus className="h-3 w-3" />
+                      {isConnected ? "Sent" : isConnecting ? "Sending…" : "Connect"}
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}

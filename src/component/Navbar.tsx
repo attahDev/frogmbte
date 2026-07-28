@@ -1,6 +1,8 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Bell } from "lucide-react";
 import { useAuth } from "../contexts/mainuseAuth"; // Updated import path
+import { fetchMyUnreadCount } from "../lib/notificationsApi";
 import LoginModal from "./Authentication/Login";
 import SignupModal from './Authentication/Signup';
 
@@ -17,6 +19,31 @@ const NavBar = () => {
     const location = useLocation();
     const navigate = useNavigate();
     const { user, isAuthenticated, logout } = useAuth(); // Get auth state from new context
+    const [unreadNotifications, setUnreadNotifications] = useState(0);
+    const [searchQuery, setSearchQuery] = useState("");
+
+    const handleSearchSubmit = (e: FormEvent | KeyboardEvent) => {
+        e.preventDefault();
+        const q = searchQuery.trim();
+        if (!q) return;
+        navigate(`/dashboard/search?q=${encodeURIComponent(q)}`);
+        setIsMenuOpen(false);
+    };
+
+    useEffect(() => {
+        if (!isAuthenticated) return;
+        let cancelled = false;
+        const load = () =>
+            fetchMyUnreadCount()
+                .then((count) => !cancelled && setUnreadNotifications(count))
+                .catch(() => {});
+        load();
+        const interval = setInterval(load, 60000);
+        return () => {
+            cancelled = true;
+            clearInterval(interval);
+        };
+    }, [isAuthenticated, location.pathname]);
 
     const handleLinkClick = () => {
         setIsMenuOpen(false);
@@ -189,53 +216,51 @@ const NavBar = () => {
     return (
         <>
             {/* Header */}
-            <header className="sticky top-0 z-50 w-full bg-white border-b border-gray-200">
-                <div className="flex items-center justify-between h-[72px] px-4 sm:px-6 md:px-8 xl:px-[50px] w-full">
+            <header className="h-[65px] flex justify-between items-center px-3 sm:px-6 md:px-8 xl:px-[49.67px] py-3 sticky top-0 z-50 w-full mx-auto bg-[#FFFDF7]/70 backdrop-blur-lg backdrop-saturate-150 supports-backdrop-filter:bg-[#FFFDF7]/70 border-b border-gray-200 transition-all duration-300">
 
                 {/* Left Section */}
-                <div className="flex items-center gap-4 sm:gap-6 lg:gap-8 shrink-0">
+                <div className="flex items-center space-x-2 sm:space-x-4 lg:space-x-6 shrink-0">
                     {/* Logo */}
-                    <div className="flex items-center gap-2">
-                        <div className="bg-[#FFD700] p-2 w-10 h-10 flex items-center justify-center rounded-lg shrink-0">
+                    <div className="flex items-center">
+                        <div className="bg-[#FFD700] p-1.5 sm:p-2 w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center rounded-lg mr-1.5 sm:mr-2 shrink-0">
                             <svg width="20" height="19" viewBox="0 0 17 16" fill="none" xmlns="http://www.w3.org/2000/svg">
                                 <path fillRule="evenodd" clipRule="evenodd" d="M6.37631 12.5932L10.1976 12.5844C10.1471 13.2199 8.80268 14.4119 8.24989 14.6333C8.1261 14.4928 7.87394 14.3313 7.70862 14.2071C7.2359 13.852 6.48818 13.1772 6.37631 12.5932ZM10.6057 11.2529L6.10527 11.2352C5.77801 11.1405 5.902 10.6995 5.94612 10.1752L10.6419 10.1825C10.7001 10.5392 10.6814 10.9489 10.6057 11.2529ZM6.19608 8.82775C6.30795 8.29344 6.76537 7.89583 7.07714 7.65977C8.21134 6.80097 8.56066 6.86356 9.63565 7.70388C9.96371 7.96041 10.3633 8.27198 10.4807 8.82736L6.19608 8.82775ZM10.3319 6.99629C11.3091 6.48045 11.8502 5.95965 13.0989 5.53482C13.6433 5.34943 14.3938 5.24015 14.9373 5.45197C16.5567 6.08305 15.3639 8.28609 13.1161 8.39935C12.582 8.42637 11.5623 8.42795 11.2728 8.12016L10.3321 6.99629H10.3319ZM6.35902 7.0875C5.3506 7.74402 6.00949 8.55652 3.44403 8.39557C1.23225 8.25688 0.0197617 5.95688 1.78803 5.41918C3.34806 4.94488 6.12634 6.69983 6.35902 7.0875ZM9.08007 4.35949C9.7048 5.14596 9.40853 4.67961 9.73083 5.02217C9.31673 6.35866 7.16377 6.17903 6.87049 5.02217L7.32592 4.64443C7.49938 4.06938 7.67881 3.9907 7.40997 3.35346C8.09132 3.0405 8.34169 3.02221 9.07431 3.30219C9.09438 3.73318 8.94634 3.7914 9.08007 4.35949ZM6.62488 2.85291C6.26841 3.08063 5.96837 3.55791 5.86266 4.12541C5.71303 4.92818 5.98406 5.29121 6.21456 5.80685C4.85503 5.0792 2.63829 3.6841 0.885915 4.84831C-0.524487 5.78539 -0.199601 7.61565 1.49634 8.69144C2.41375 9.27344 3.34408 9.32113 4.57207 9.26191C4.36383 9.75887 3.26778 10.5149 2.44952 10.598C2.06105 10.6373 1.70418 10.6054 1.71391 11.0461C1.72981 11.7545 2.97728 11.4469 3.45953 11.2651C4.17447 10.9956 4.44033 10.6266 4.91384 10.318C4.92139 13.2012 6.52653 14.7748 8.2793 15.75C8.96065 15.481 10.1646 14.4233 10.6427 13.7441C11.3461 12.7446 11.6078 11.8608 11.6638 10.3234C11.8526 10.4224 12.0726 10.6505 12.2945 10.8092C13.0802 11.371 14.6792 11.8612 14.8409 11.1709C14.9581 10.6705 14.609 10.6395 14.238 10.6054C13.8593 10.5704 13.6139 10.4979 13.3003 10.3349C12.8094 10.0796 12.2051 9.62237 11.9895 9.24384C14.2364 9.47453 16.6237 8.46849 16.6247 6.34712C16.6253 5.11953 15.2864 4.28021 13.7832 4.43639C12.9002 4.52819 11.945 5.0013 11.1806 5.40606C10.8956 5.55688 10.678 5.73074 10.375 5.82433C10.9813 4.71119 10.8986 3.59051 9.99331 2.86544C10.0907 2.30688 10.8392 1.60664 11.1607 1.34435C11.4752 1.08743 11.6257 1.04729 12.0074 0.868655C12.4356 0.668162 12.4829 0.239557 12.1165 0.0539678C11.5943 -0.210507 10.6333 0.59286 10.3806 0.830311C10.1217 1.07352 9.97086 1.24242 9.73898 1.51544C9.51702 1.77674 9.31316 2.13639 9.14028 2.31303C8.21889 2.14592 8.31109 2.20713 7.41592 2.30529C7.2196 1.79899 5.22164 -0.395105 4.38013 0.0623118C4.23408 0.141793 3.93423 0.562453 4.4912 0.860311C4.84728 1.05047 5.06506 1.10074 5.39153 1.35369C5.77543 1.65115 6.48361 2.32476 6.62469 2.85351L6.62488 2.85291Z" fill="#040404" />
                             </svg>
                         </div>
 
-                        <Link to="/" className="flex flex-col leading-tight text-[15px]">
+                        <Link to="/" className="flex flex-col leading-none font-bold text-[16px] sm:text-[16px]">
                             <span className="text-[#001F3F] font-extrabold">GM BLACK</span>
-                            <span className="text-[#001F3F] font-extrabold">TECH <span className="text-[#D7263D]">EXPO</span></span>
+                            <span className="text-[#001F3F] font-extrabold ">TECH <span className="text-[#D7263D]">EXPO</span></span>
                         </Link>
                     </div>
 
                     {/* Search (desktop only) */}
-                    <div className="hidden lg:flex items-center bg-gray-50 border border-gray-200 rounded-xl px-4 py-2 min-w-[140px] xl:min-w-[180px] 2xl:min-w-[220px]">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4 text-gray-500 mr-2 shrink-0">
+<div className="ml-2 hidden lg:flex items-center bg-gray-50 border border-gray-200 rounded-3xl px-5 py-2.5 min-w-[220px] xl:min-w-[260px] 2xl:min-w-[320px] shadow-inner">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4 text-gray-500 mr-2 flex-shrink-0">
                             <path strokeLinecap="round" strokeLinejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
                         </svg>
-                        <input type="text" placeholder="Search opportunities, events..." className="bg-transparent text-sm text-gray-700 placeholder-gray-500 focus:outline-none w-full" />
+                        <input
+                            type="text"
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            onKeyDown={(e) => e.key === "Enter" && handleSearchSubmit(e)}
+                            placeholder="Search opportunities, events..."
+                            className="bg-transparent text-sm xl:text-base text-gray-700 placeholder-gray-500 focus:outline-none w-full"
+                        />
                     </div>
                 </div>
 
                 {/* Center Nav Links (DESKTOP/LARGE SCREEN) */}
-                <nav className="hidden lg:flex flex-1 items-center justify-center gap-3 xl:gap-6 2xl:gap-8 px-4">
+              <nav className="hidden lg:flex items-center space-x-4 xl:space-x-5 2xl:space-x-8 font-medium">
                     {navLinks.map(({ path, label }) => (
-                        <Link
-                            key={path}
-                            to={path}
-                            className={`text-[14px] leading-none whitespace-nowrap transition duration-150 ${
-                                isActive(path)
-                                    ? "font-semibold text-[#001F3F]"
-                                    : "font-normal text-[#6B7280] hover:text-[#001F3F]"
-                            }`}
-                        >
+                        <Link key={path} to={path} className={`transition duration-150 whitespace-nowrap ${isActive(path) ? "text-black font-[#001F3F] text-base" : "text-[#6B7280] text-sm hover:text-black"}`}>
                             {label}
                         </Link>
                     ))}
                 </nav>
 
                 {/* Right Buttons - Conditionally render based on authentication */}
-                <div className="hidden lg:flex items-center gap-4 shrink-0">
+             <div className="hidden lg:flex items-center space-x-4 2xl:space-x-6 shrink-0">
                     {/* Dark Mode Icon - Always visible */}
                     {/* <button type="button" aria-label="Set dark theme" className="flex items-center text-black p-2 hover:bg-gray-50 rounded-full transition duration-150">
                         <svg width="22" height="22" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -247,15 +272,18 @@ const NavBar = () => {
                         // User is logged in - Show profile icons
                         <div className="flex items-center space-x-4 xl:space-x-6">
                             {/* Notification Icon */}
-                            {/* <button type="button" aria-label="Notifications" className="relative flex items-center text-black p-2 hover:bg-gray-50 rounded-full transition duration-150">
-                                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
-                                    <path d="M13.73 21a2 2 0 0 1-3.46 0" />
-                                </svg>
-                                <span className="absolute -top-1 -right-1 bg-[#D7263D] text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                                    3
-                                </span>
-                            </button> */}
+                            <Link
+                                to="/dashboard/notifications"
+                                aria-label="Notifications"
+                                className="relative flex items-center text-black p-2 hover:bg-gray-50 rounded-full transition duration-150"
+                            >
+                                <Bell size={22} strokeWidth={2} />
+                                {unreadNotifications > 0 && (
+                                    <span className="absolute -top-1 -right-1 bg-[#D7263D] text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                                        {unreadNotifications > 9 ? "9+" : unreadNotifications}
+                                    </span>
+                                )}
+                            </Link>
 
                             {/* Message Icon
                             <button type="button" aria-label="Messages" className="relative flex items-center text-black p-2 hover:bg-gray-50 rounded-full transition duration-150">
@@ -319,11 +347,11 @@ const NavBar = () => {
                         </div>
                     ) : (
                         // User is not logged in - Show login/join buttons
-                        <div className="flex items-center gap-3">
+                        <div className="flex items-center space-x-1.5 xl:space-x-2">
                             {/* Login Button - Navigates to Login Route */}
                             <button 
                                 onClick={handleOpenLogin}
-                                className="flex items-center bg-white text-[#001F3F] px-6 py-2.5 rounded-2xl text-[15px] font-medium border border-[#001F3F1A] hover:bg-gray-50 transition duration-150 whitespace-nowrap"
+                                className="flex items-center bg-white text-black px-3 xl:px-6 py-1.5 xl:py-2.5 rounded-2xl text-xs xl:text-base border border-[#001F3F1A] hover:bg-gray-50 transition duration-150 whitespace-nowrap"
                             >
                                 Login
                             </button>
@@ -331,7 +359,7 @@ const NavBar = () => {
                             {/* Join Now Button - Navigates to Signup Route */}
                             <button 
                                 onClick={handleOpenSignup}
-                                className="bg-[#D7263D] text-white px-6 py-2.5 rounded-2xl text-[15px] font-medium hover:bg-red-700 transition duration-200 whitespace-nowrap"
+                                className="bg-[#D7263D] text-white px-3 xl:px-6 py-1.5 xl:py-2.5 rounded-2xl text-xs xl:text-base border-2 hover:bg-red-700 transition duration-200 whitespace-nowrap"
                             >
                                 Join Now
                             </button>
@@ -341,6 +369,21 @@ const NavBar = () => {
 
                 {/* Mobile Controls */}
                 <div className="flex items-center gap-2 lg:hidden shrink-0">
+                    {isAuthenticated && user && (
+                        <Link
+                            to="/dashboard/notifications"
+                            aria-label="Notifications"
+                            className="relative flex items-center text-black p-2 hover:bg-gray-50 rounded-full transition duration-150"
+                        >
+                            <Bell size={22} strokeWidth={2} />
+                            {unreadNotifications > 0 && (
+                                <span className="absolute -top-1 -right-1 bg-[#D7263D] text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                                    {unreadNotifications > 9 ? "9+" : unreadNotifications}
+                                </span>
+                            )}
+                        </Link>
+                    )}
+
                     {isAuthenticated && user && (
                         <div ref={profileMobileRef} className="relative">
                             <button
@@ -392,18 +435,24 @@ const NavBar = () => {
                         )}
                     </button>
                 </div>
-                </div>
             </header>
 
             {/* Mobile Drawer */}
-           <div className={`fixed inset-0 bg-white z-40 lg:hidden transform transition-transform duration-300 ${isMenuOpen ? "translate-x-0" : "translate-x-full"}`}>
+           <div className={`fixed inset-0 bg-[#FFFDF7] z-40 lg:hidden transform transition-transform duration-300 ${isMenuOpen ? "translate-x-0" : "translate-x-full"}`}>
                 <div className="p-6 pt-24 flex flex-col space-y-6 min-h-screen overflow-y-auto">
                     {/* Search (Mobile only) */}
                     <div className="flex items-center bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 shadow-inner mb-4">
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 text-gray-500 mr-2 flex-shrink-0">
                             <path strokeLinecap="round" strokeLinejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
                         </svg>
-                        <input type="text" placeholder="Search opportunities, events..." className="bg-transparent text-base text-gray-700 placeholder-gray-500 focus:outline-none w-full" />
+                        <input
+                            type="text"
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            onKeyDown={(e) => e.key === "Enter" && handleSearchSubmit(e)}
+                            placeholder="Search opportunities, events..."
+                            className="bg-transparent text-base text-gray-700 placeholder-gray-500 focus:outline-none w-full"
+                        />
                     </div>
 
                     <nav className="flex flex-col space-y-4 text-lg font-medium text-black font-bold">

@@ -8,6 +8,9 @@ type CourseCardProps = {
   progress: number;
   slug: string;
   certificateAvailable?: boolean;
+  /** Where this course's detail page lives — differs between Green Impact
+   *  and Academy even though they share the same card/overview/lesson UI. */
+  basePath?: string;
 };
 
 export function CourseCard({
@@ -17,6 +20,7 @@ export function CourseCard({
   progress,
   slug,
   certificateAvailable = true,
+  basePath = "/dashboard/green-impact",
 }: CourseCardProps) {
   const safeProgress = Math.min(Math.max(progress, 0), 100);
   const hasStarted = safeProgress > 0;
@@ -72,7 +76,7 @@ export function CourseCard({
         </div>
 
         <Link
-          to={`/sustainability/${slug}`}
+          to={`${basePath}/${slug}`}
           className="mt-5 flex h-[46px] w-full items-center justify-center gap-2.5 rounded-[12px] bg-[#D7263D] text-[16px] font-medium text-white transition hover:bg-[#BE1F34] focus:outline-none focus:ring-2 focus:ring-[#D7263D]/30"
         >
           <Play size={17} fill="currentColor" />
