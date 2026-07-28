@@ -1,8 +1,8 @@
+import { ArrowRight, Cookie, FileText, Heart, Lock, Mail, MapPin, Phone, X } from 'lucide-react';
 import React, { useState } from 'react';
-import { Mail, Phone, MapPin, ArrowRight, Heart, X, Cookie, FileText, Lock } from 'lucide-react';
-import { FaFacebookF } from "react-icons/fa6";
 import { AiOutlineX } from "react-icons/ai";
 import { FaTiktok } from "react-icons/fa";
+import { FaFacebookF } from "react-icons/fa6";
 // =====================================================================
 // === 1. POLICY TEXTS & CONFIGURATION (Used by the Modal) =============
 // =====================================================================

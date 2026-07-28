@@ -1,5 +1,8 @@
-import { motion } from "framer-motion";
-import React from "react";
+import { motion, useInView } from "framer-motion";
+import React, { useEffect, useRef, useState } from "react";
+
+const QUOTE_TEXT =
+  "Technology is most powerful when it includes everyone. We’re committed to building a future where no one is left behind in the digital transformation. A future defined by inclusion, opportunity and shared progress.";
 
 const features = [
   {
@@ -52,27 +55,52 @@ const features = [
 ];
 
 const EmpowerSection: React.FC = () => {
+  const quoteRef = useRef<HTMLDivElement>(null);
+  const isInView = useInView(quoteRef, { once: true, amount: 0.4 });
+  const [displayedText, setDisplayedText] = useState("");
+  const [isTypingDone, setIsTypingDone] = useState(false);
+
+  useEffect(() => {
+    if (!isInView) return;
+
+    let index = 0;
+    setDisplayedText("");
+    setIsTypingDone(false);
+
+    const interval = window.setInterval(() => {
+      index += 1;
+      setDisplayedText(QUOTE_TEXT.slice(0, index));
+
+      if (index >= QUOTE_TEXT.length) {
+        window.clearInterval(interval);
+        setIsTypingDone(true);
+      }
+    }, 28);
+
+    return () => window.clearInterval(interval);
+  }, [isInView]);
+
   return (
     <section className="bg-[#FFFDF5] py-12 sm:py-16 md:py-20 px-4 sm:px-6 md:px-16 lg:px-24">
-      <div className="max-w-7xl mx-auto grid md:grid-cols-2 gap-10 sm:gap-14 items-start md:items-center">
+      <div className="mx-auto grid md:grid-cols-2 gap-10 sm:gap-14 items-start md:items-center">
         {/* LEFT SIDE */}
         <div className="min-w-0">
           <motion.h2
             initial={{ opacity: 0, y: -20 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            className="text-2xl sm:text-3xl md:text-[36px] font-extrabold text-[#001F3F] mb-6 text-center md:text-left"
+            className="text-xl sm:text-2xl md:text-[30px] font-extrabold text-[#001F3F] mb-6 text-center md:text-left"
           >
             Empowering Communities <br className="hidden sm:block" /> Through Tech and Opportunity
           </motion.h2>
 
-          <p className="text-[#001F3F] text-base sm:text-lg leading-relaxed mb-6 text-center md:text-left">
+          <p className="text-[#001F3F] text-sm sm:text-lg leading-relaxed mb-6 text-center md:text-left">
             Our mission is to create an inclusive ecosystem where everyone in Greater Manchester can access the
             resources, networks and opportunities they need to thrive in the digital economy. We believe that diversity
             drives innovation & that technology should be a force for positive change in our communities.
           </p>
 
-          <p className="text-[#001F3F] text-base sm:text-lg leading-relaxed mb-8 text-center md:text-left">
+          <p className="text-[#001F3F] text-sm sm:text-lg leading-relaxed mb-8 text-center md:text-left">
             Through targeted programs, mentorship, and strategic partnerships, we're building bridges between
             educational institutions, established businesses and emerging talent to create sustainable pathways to
             success. We’re connecting educational institutions, local businesses & emerging talent to create pathways to
@@ -80,12 +108,16 @@ const EmpowerSection: React.FC = () => {
           </p>
 
           {/* QUOTE BOX */}
-          <div className="bg-[#FFF3C4] p-6 rounded-xl border-l-4 border-red-600 italic text-gray-600 shadow-sm">
-            <p>
-              <span className="text-red-600 text-2xl hover:font-black-800  italic mr-2">“</span>
-              Technology is most powerful when it includes everyone. We’re committed to building a future where no one
-              is left behind in the digital transformation. A future defined by inclusion, opportunity and shared
-              progress.
+          <div
+            ref={quoteRef}
+            className="rounded-xl border-l-4 border-red-600 bg-[#FFF3C4] p-6 italic text-gray-600 shadow-sm"
+          >
+            <p className="min-h-[7.5rem] sm:min-h-[6.5rem]">
+              <span className="mr-2 text-2xl italic text-red-600">“</span>
+              {displayedText}
+              {!isTypingDone && isInView && (
+                <span className="ml-0.5 inline-block h-[1.1em] w-[2px] translate-y-[2px] animate-pulse bg-red-600 align-middle" />
+              )}
             </p>
           </div>
         </div>
@@ -98,7 +130,7 @@ const EmpowerSection: React.FC = () => {
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.1 }}
-              className="bg-[#FFFDF7] border border-gray-100 shadow-sm rounded-2xl p-6 flex flex-col gap-3 hover:shadow-md transition-all duration-300"
+              className="bg-[#FFFDF7] border border-gray-100  rounded-2xl p-6 flex flex-col gap-3 hover:shadow-md transition-all duration-300"
             >
               <div className="flex items-center justify-center w-12 h-12 bg-[#FFD84D] rounded-lg">
                 {item.icon}

@@ -1,14 +1,5 @@
 // @ts-nocheck
-
-// @ts-nocheck
-
-const BASE = "https://gmbtpitch.onrender.com".replace(/\/+$/, "");
-
-if (!BASE) {
- console.error(
-    "VITE_PROPOSAL_API_URL is not set. Proposal Builder will not work until this is fixed in Vercel → Environment Variables."
-  );
-}
+const BASE = "https://gmbtpitch.onrender.com";
 
 const PAGE_SIZE = 5;
 
@@ -123,19 +114,9 @@ export async function listProposals(
   return res.json();
 }
 
-function slugifyFilename(title: string, fallback: string): string {
-  const slug = (title || "")
-    .trim()
-    .toLowerCase()
-    .replace(/[^\w\s-]/g, "")
-    .replace(/\s+/g, "-");
-  return slug || fallback;
-}
-
 export async function downloadProposal(
   id: string,
-  format: "pdf" | "docx",
-  title?: string
+  format: "pdf" | "docx"
 ): Promise<void> {
   const res = await fetch(`${BASE}/api/proposals/${id}/download/${format}`, {
     headers: headers(false),
@@ -145,8 +126,7 @@ export async function downloadProposal(
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  const name = slugifyFilename(title, `proposal-${id.slice(0, 8)}`);
-  a.download = `${name}.${format === "pdf" ? "pdf" : "docx"}`;
+  a.download = `proposal-${id.slice(0, 8)}.${format === "pdf" ? "pdf" : "docx"}`;
   a.click();
   URL.revokeObjectURL(url);
 }

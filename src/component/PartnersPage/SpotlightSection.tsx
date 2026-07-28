@@ -58,9 +58,9 @@ const PartnersSpotlightSection: FC = () => {
         </div>
 
         <div className="flex justify-center md:justify-start">
-          <button className="bg-[#D7263D]  mb-6 sm:mb-8 text-white font-semibold px-6 py-3 rounded-lg hover:bg-[#D7263D] transition-all duration-300 flex items-center gap-2 text-[16px] sm:text-[18px]">
+          {/* <button className="bg-[#D7263D]  mb-6 sm:mb-8 text-white font-semibold px-6 py-3 rounded-lg hover:bg-[#D7263D] transition-all duration-300 flex items-center gap-2 text-[16px] sm:text-[18px]">
             Read More <span>→</span>
-          </button>
+          </button> */}
         </div>
       </motion.div>
     </section>

@@ -1,8 +1,8 @@
 @font-face {
   font-family: "Montserrat";
-  src: url("/fonts/Montserrat/Montserrat-VariableFont_wght.ttf")
-    format("truetype");
-  font-weight: normal; /* Adjust as needed for specific weights */
+  src: url("/fonts/Montserrat/Montserrat-VariableFont_wght.ttf") format("truetype");
+  font-weight: normal;
+  /* Adjust as needed for specific weights */
   font-style: normal;
 }
 
@@ -11,6 +11,7 @@ body {
 
   /* overscroll-behavior: none; Prevent scroll chaining bounce */
 }
+
 .open-sans {
   font-family: 'Open Sans', sans-serif;
 }

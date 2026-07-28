@@ -24,7 +24,7 @@ export default function MissionSection() {
           </motion.span>
 
           <motion.h2
-            className="font-open-sans text-[26px] sm:text-[32px] md:text-[44px] lg:text-[48px] font-bold text-[#001F3F] leading-snug sm:leading-tight"
+            className="text-[26px] sm:text-[32px] md:text-[32px] lg:text-[35px] font-extrabold text-[#001F3F] leading-snug"
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3, duration: 0.8 }}
@@ -36,7 +36,7 @@ export default function MissionSection() {
           </motion.h2>
 
           <motion.p
-            className="font-open-sans text-[16px] sm:text-[20px] md:text-[24px] text-[#D7263D] mt-4 mb-6 sm:mb-8 lg:mb-16 sm:mt-6 font-medium"
+            className="text-[16px] sm:text-[17px] md:text-[20px] text-[#D7263D] mt-4 mb-6 sm:mb-8 lg:mb-16 sm:mt-6 font-medium"
             initial={{ opacity: 0 }}
             whileInView={{ opacity: 1 }}
             transition={{ delay: 0.5, duration: 0.8 }}
@@ -55,7 +55,7 @@ export default function MissionSection() {
         viewport={{ once: true }}
       >
         <div
-          className="relative overflow-hidden rounded-2xl h-[320px] sm:h-[440px] md:h-[520px] w-full flex flex-col justify-end shadow-2xl"
+          className="relative overflow-hidden rounded-2xl h-[300px] sm:h-[400px] md:h-[500px] w-full flex flex-col justify-end shadow-2xl"
           style={{
             backgroundImage: "url('/images/mission.jpg')",
             backgroundSize: "cover",
@@ -90,11 +90,11 @@ export default function MissionSection() {
 
           {/* Button */}
           <motion.div
-            className="absolute bottom-4 left-4 right-4 sm:bottom-8 sm:right-10 sm:left-auto"
+            className="absolute bottom-4 left-4 right-4 sm:bottom-11 sm:right-10 sm:left-auto"
             whileHover={{ scale: 1.05 }}
             transition={{ type: "spring", stiffness: 300 }}
           >
-            <a href="/events" className="flex w-full sm:w-auto items-center justify-center gap-2 bg-white text-gray-900 font-medium px-4 sm:px-5 py-2.5 rounded-xl shadow-lg hover:bg-gray-100 active:scale-95 transition">
+            <a href="/events" className="flex w-full sm:w-auto items-center justify-center gap-2 bg-white text-gray-900 font-medium px-6 sm:px-5 py-4 rounded-xl shadow-lg hover:bg-gray-100 active:scale-95 transition">
               Get Involved
               <ArrowRight size={18} />
             </a>

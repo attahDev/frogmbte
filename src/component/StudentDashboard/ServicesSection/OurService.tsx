@@ -14,7 +14,7 @@ const OurServices: React.FC = () => {
         <h2 className="text-2xl sm:text-[25px] font-bold text-[#001F3F]">
           Our Services
         </h2>
-        <p className="font-open-sans mt-2 max-w-5xl text-sm sm:text-base text-[#6B7280]">
+        <p className="font-montserrat mt-2 max-w-5xl text-sm sm:text-base text-[#6B7280]">
           Explore GMBTE&apos;s toolkits designed to empower Greater Manchester&apos;s growing tech community.
         </p>
 

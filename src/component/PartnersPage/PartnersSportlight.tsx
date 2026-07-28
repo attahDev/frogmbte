@@ -1,6 +1,6 @@
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import type { FC } from "react";
 import { useRef } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
 
 interface SpotlightCardProps {
     image: string;
@@ -29,7 +29,7 @@ const SpotlightCard: FC<SpotlightCardProps> = ({
         <div className="p-4 sm:p-6 flex flex-col grow">
             <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-2">{name}</h3>
             <p className="text-gray-700 text-sm sm:text-base leading-relaxed grow">{description}</p>
-            <a
+            {/* <a
                 href="#"
                 className="mt-5 inline-flex items-center gap-2 text-[#D7263D] text-sm font-semibold hover:text-[#D7263D] transition-colors"
             >
@@ -39,7 +39,7 @@ const SpotlightCard: FC<SpotlightCardProps> = ({
                     <path d="M8 3.33337L12.6667 8.00004L8 12.6667" stroke="#D7263D" stroke-width="1.33333" stroke-linecap="round" stroke-linejoin="round" />
                 </svg>
 
-            </a>
+            </a> */}
         </div>
     </div>
 );
@@ -91,13 +91,13 @@ const PartnerSpotlight: FC = () => {
             <div className="max-w-7xl mx-auto relative">
                 {/* Section Header */}
                 <div className="text-center mb-10 sm:mb-16">
-                    <span className="text-xs sm:text-[14px] text-[#001F3F] bg-[#EFE6BF] px-4 sm:px-5 py-2 rounded-full tracking-wider">
+                    <span className="text-xs sm:text-[14px] text-[#001F3F] bg-[#F5F5F5] px-4 sm:px-5 py-2 mb-4 rounded-full tracking-wider">
                         Together, we grow.
                     </span>
-                    <h2 className="text-2xl sm:text-3xl md:text-[35px] font-extrabold text-[#001F3F] mt-4 sm:mt-5 mb-3">
+                    <h2 className="font-montserrat text-xl font-bold text-[#001F3F] my-2 sm:text-[27px] md:text-[30px]">
                         Partners Spotlights
                     </h2>
-                    <p className="text-[#6B7280] text-base sm:text-lg md:text-2xl mt-3 max-w-3xl mx-auto px-2 leading-relaxed">
+                    <p className="font-montserrat  px-2 text-base text-[#6B7280] sm:text-lg md:text-lg leading-relaxed">
                         Real stories of collaboration, innovation, and community impact.
                     </p>
                 </div>
@@ -108,7 +108,7 @@ const PartnerSpotlight: FC = () => {
                     <button
                         onClick={() => scroll("left")}
                         aria-label="Scroll left"
-                        className="absolute -left-1 sm:-left-4 md:-left-6 top-1/2 -translate-y-1/2 bg-white hover:bg-gray-50 w-9 h-9 sm:w-12 sm:h-12 rounded-full hidden sm:flex items-center justify-center shadow-lg border border-gray-200 transition-all z-10 hover:scale-110"
+                        className="absolute left-0 sm:-left-2 md:-left-6 top-1/2 -translate-y-1/2 bg-white hover:bg-gray-50 w-9 h-9 sm:w-12 sm:h-12 rounded-full hidden sm:flex items-center justify-center shadow-lg border border-gray-200 transition-all z-10 hover:scale-110"
                     >
                         <ChevronLeft className="text-gray-700 w-5 h-5 sm:w-6 sm:h-6" />
                     </button>
@@ -128,7 +128,7 @@ const PartnerSpotlight: FC = () => {
                     <button
                         onClick={() => scroll("right")}
                         aria-label="Scroll right"
-                        className="absolute -right-1 sm:-right-4 md:-right-6 top-1/2 -translate-y-1/2 bg-[#FFD700] hover:bg-[#FFD700] w-9 h-9 sm:w-12 sm:h-12 rounded-full hidden sm:flex items-center justify-center shadow-lg transition-all z-10 hover:scale-110"
+                        className="absolute right-0 sm:-right-2 md:-right-6 top-1/2 -translate-y-1/2 bg-[#FFD700] hover:bg-[#FFD700] w-9 h-9 sm:w-12 sm:h-12 rounded-full hidden sm:flex items-center justify-center shadow-lg transition-all z-10 hover:scale-110"
                     >
                         <ChevronRight className="text-gray-900 w-5 h-5 sm:w-6 sm:h-6" />
                     </button>

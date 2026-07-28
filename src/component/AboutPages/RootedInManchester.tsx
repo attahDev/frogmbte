@@ -18,13 +18,12 @@ const RootedInManchester: React.FC = () => {
 
   return (
     <section className="flex flex-col items-center text-center py-12 sm:py-16 md:py-20 bg-[#FFFDF7] mt-6 sm:mt-10">
-      <div className="w-full max-w-6xl px-4 sm:px-6 lg:px-8">
-        <h2 className="text-2xl sm:text-3xl md:text-[36px] font-bold text-[#0D2149] mb-3">
+      <div className="w-full max-w-xl px-4 sm:px-6 lg:px-8">
+        <h2 className="font-montserrat text-xl font-bold text-[#001F3F] mb-3 sm:text-[27px] md:text-[30px]">
           Rooted in Manchester
         </h2>
         <p className="text-[#001F3F] text-sm sm:text-base md:text-[18px] mt-2 leading-relaxed">
-          Connecting every borough from Salford to Stockport, Wigan to Bury{" "}
-          <br className="hidden sm:block" />
+          Connecting every borough from Salford to Stockport, Wigan to Bury
           Greater Manchester thrives through opportunity and innovation.
         </p>
       </div>

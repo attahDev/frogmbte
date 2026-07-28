@@ -18,8 +18,8 @@ const packages: Package[] = [
   {
     id: "starter",
     name: "Starter Package",
-    price: 99,
-    description: "Perfect for new businesses getting started",
+    price: 159,
+    description: "Essential support to get you off the ground",
     features: [
       "Business registration support",
       "Basic compliance guidance",
@@ -34,8 +34,8 @@ const packages: Package[] = [
   {
     id: "growth",
     name: "Growth Package",
-    price: 129,
-    description: "For businesses ready to scale operations",
+    price: 299,
+    description: "Full scaling support for scaling businesses - most popular",
     features: [
       "Full Business Registration",
       "Advanced Compliance Guidance",
@@ -53,9 +53,9 @@ const packages: Package[] = [
   },
   {
     id: "platinum",
-    name: "Platinum Package",
-    price: 149,
-    description: "Comprehensive support for ambitious ventures",
+    name: "Comprehensive",
+    price: 499,
+    description: "Premium, white-glove service for ambitious ventures",
     features: [
       "Enterprise Registration Support",
       "Full Compliance Management",

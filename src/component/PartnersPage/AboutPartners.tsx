@@ -4,9 +4,9 @@ import React from "react";
 const AboutPartner: React.FC = () => {
     return (
         <section className="bg-[linear-gradient(135deg,#FFD700_0%,#FFE55C_100%)] py-12 sm:py-16 px-4 sm:px-6 md:px-20 relative overflow-hidden">
-            <div className="grid md:grid-cols-2 gap-8 sm:gap-12 items-center max-w-7xl mx-auto mt-6 sm:mt-10 mb-6 sm:mb-10">
+            <div className="grid md:grid-cols-2 gap-8 sm:gap-12 items-center max-w-[1400px] mx-auto mt-6 sm:mt-10 mb-6 sm:mb-10">
                 {/* LEFT CONTENT */}
-                <div className="min-w-0 md:pr-8">
+                <div className="md:pr-8">
                     <motion.h2
                         initial={{ opacity: 0, y: -20 }}
                         whileInView={{ opacity: 1, y: 0 }}
@@ -18,7 +18,7 @@ const AboutPartner: React.FC = () => {
                         Partnership
                     </motion.h2>
 
-                    <p className="text-base sm:text-lg md:text-[20px] text-[#001F3F] mb-8 leading-relaxed text-center md:text-left">
+                    <p className="text-base text-lg md:text-[20px] text-[#001F3F] mb-8 leading-relaxed text-center md:text-left">
                         Collaboration drives innovation. Together, we're building{" "}
                         <br className="hidden sm:block" />
                         an ecosystem where every Manchester community can{" "}
@@ -54,7 +54,7 @@ const AboutPartner: React.FC = () => {
                 </motion.div>
 
                 {/* Absolute background SVGs are fine, their size is relative to the section */}
-                <div className="absolute bottom-[50px] right-[-50px] opacity-10 rotate-[-20deg] pointer-events-none select-none">
+                <div className="absolute bottom-[-90px] right-[-50px] opacity-10 rotate-[-20deg] pointer-events-none select-none">
                     <svg
                         width="300"
                         height="300"
@@ -72,7 +72,7 @@ const AboutPartner: React.FC = () => {
                 </div>
 
                 {/* Secound Image */}
-                <div className="absolute bottom-[-200px] left-[-100px] opacity-10 rotate-[-20deg] pointer-events-none select-none">
+                <div className="absolute bottom-[-200px] lg:flex hidden left-[-100px] opacity-10 rotate-[-20deg] pointer-events-none select-none">
                     <svg
                         width="500"
                         height="500"

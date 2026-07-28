@@ -16,7 +16,7 @@ const TimelineItem: FC<TimelineItemProps> = ({
   return (
     <div
       className={`
-        font-open-sans relative grid items-center
+        font-montserrat relative grid items-center
         lg:grid-cols-2 gap-8
       `}
     >

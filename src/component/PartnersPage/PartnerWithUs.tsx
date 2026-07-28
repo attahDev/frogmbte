@@ -94,7 +94,7 @@ const PartnerWithUs = () => {
           ].map((item, index) => (
             <div key={index} className="flex items-center gap-2 mt-3 sm:mt-5">
               <CheckCircle className="text-[#D7263D] w-5 h-5 shrink-0" />
-              <span className="text-[#001F3F] text-[16px] sm:text-[18px] leading-snug">
+              <span className="text-[#001F3F] text-[12px] sm:text-[18px] leading-snug">
                 {item}
               </span>
             </div>
@@ -109,18 +109,19 @@ const PartnerWithUs = () => {
         </div>
 
         {/* IMAGE + TEXT */}
-        <div className="mt-8 sm:mt-10 w-full max-w-[574px] mx-auto md:mx-0 rounded-xl overflow-hidden shadow-md">
-          <div className="relative">
+        <div className="relative mx-auto mt-8 w-full max-w-[574px] overflow-hidden rounded-3xl shadow-md sm:mt-10 md:mx-0">
+          <div className="relative h-[260px] sm:h-[250px] md:h-[290px]">
             <img
               src="/partners/patus.jpg"
               alt="Two men in flat caps and blazers engage in conversation at a tech summit."
-              className="object-cover object-center w-full h-[230px] sm:h-[240px] md:h-[260px]"
+              className="h-full w-full object-cover object-center"
             />
-            <div className="absolute bottom-0 left-0 w-full bg-black/60 text-white px-4 py-3.5 sm:p-4">
-              <h3 className="font-semibold text-[20px] sm:text-[22px] md:text-[24px] mb-2 sm:mb-1 leading-tight">
-                For Greater Manchester's
+            <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black via-black/55 to-transparent" />
+            <div className="absolute bottom-0 left-0 w-full p-5 sm:p-6 md:p-8">
+              <h3 className="mb-2 text-[20px] font-bold leading-tight text-white sm:mb-3 sm:text-[26px] md:text-[28px]">
+                For Greater Manchester&apos;s
               </h3>
-              <p className="text-[12px] sm:text-[13px] md:text-[14px] leading-relaxed sm:leading-snug text-gray-200">
+              <p className="max-w-md text-[12px] leading-relaxed text-white/85 sm:text-[14px] md:text-[15px]">
                 Your support helps us connect diverse talent with mentorship,
                 education and real world experiences, building a stronger, more
                 inclusive tech ecosystem for everyone.

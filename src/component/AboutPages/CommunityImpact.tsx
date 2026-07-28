@@ -1,5 +1,5 @@
-import React from "react";
 import { Quote } from "lucide-react";
+import React from "react";
 
 interface Testimonial {
   name: string;
@@ -37,10 +37,10 @@ const CommunityImpact: React.FC = () => {
     <section className="bg-[#FFD700] py-16 md:py-20 text-center overflow-hidden">
       <div className="container mx-auto px-4 sm:px-6">
         {/* Heading */}
-        <h2 className="text-3xl sm:text-4xl font-extrabold text-[#001F3F] mb-3">
+        <h2 className="font-montserrat text-xl font-bold text-[#001F3F] sm:text-[27px] mb-3 md:text-[30px]">
           Community Impact
         </h2>
-        <p className="text-base sm:text-lg text-[#001F3F] mb-10 sm:mb-14 max-w-2xl mx-auto">
+        <p className="text-base sm:text-lg text-[#001F3F] mb-10 sm:mb-14 mx-auto">
           Real numbers, real impact. See how we're transforming lives <br /> and
           businesses across Greater Manchester.
         </p>

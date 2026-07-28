@@ -2,9 +2,9 @@
 
 @font-face {
   font-family: "Montserrat";
-  src: url("/fonts/Montserrat/Montserrat-VariableFont_wght.ttf")
-    format("truetype");
-  font-weight: normal; /* Adjust as needed for specific weights */
+  src: url("/fonts/Montserrat/Montserrat-VariableFont_wght.ttf") format("truetype");
+  font-weight: normal;
+  /* Adjust as needed for specific weights */
   font-style: normal;
 }
 
@@ -23,6 +23,7 @@ body {
     transform: scale(0.92);
     opacity: 0;
   }
+
   100% {
     transform: scale(1);
     opacity: 1;
@@ -30,16 +31,20 @@ body {
 }
 
 @keyframes pinBounce {
+
   0%,
   100% {
     transform: translateY(0);
   }
+
   30% {
     transform: translateY(-10px);
   }
+
   50% {
     transform: translateY(0);
   }
+
   70% {
     transform: translateY(-5px);
   }
@@ -49,8 +54,8 @@ body {
   animation: pinBounce 0.6s ease-out;
 }
 
-.font-open-sans {
-  font-family: "Open Sans", sans-serif;
+.font-montserrat {
+  font-family: "Montserrat", sans-serif;
 }
 
 /* Optional but makes scrolling buttery smooth on macOS/iOS */
@@ -98,4 +103,73 @@ body {
 /* For sections where you want scroll snapping */
 .section {
   scroll-snap-align: start;
+}
+
+/* ========================= */
+/* Infinite Partner Marquee  */
+/* ========================= */
+
+.marquee-wrapper {
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+}
+
+.marquee {
+  display: flex;
+  width: max-content;
+  will-change: transform;
+}
+
+.marquee-left {
+  animation: marquee-left 35s linear infinite;
+}
+
+.marquee-right {
+  animation: marquee-right 35s linear infinite;
+}
+
+.marquee:hover {
+  animation-play-state: paused;
+}
+
+@keyframes marquee-left {
+  from {
+    transform: translateX(0);
+  }
+
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@keyframes marquee-right {
+  from {
+    transform: translateX(-50%);
+  }
+
+  to {
+    transform: translateX(0);
+  }
+}
+
+@media (max-width: 1024px) {
+  .marquee-left,
+  .marquee-right {
+    animation-duration: 28s;
+  }
+}
+
+@media (max-width: 768px) {
+  .marquee-left,
+  .marquee-right {
+    animation-duration: 22s;
+  }
+}
+
+@media (max-width: 480px) {
+  .marquee-left,
+  .marquee-right {
+    animation-duration: 18s;
+  }
 }

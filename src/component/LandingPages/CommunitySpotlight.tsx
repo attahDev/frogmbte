@@ -1,6 +1,6 @@
+import { AnimatePresence, motion, type PanInfo } from "framer-motion";
+import { ChevronLeft, ChevronRight, Quote } from "lucide-react";
 import { useEffect, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, ArrowRight, Quote } from "lucide-react";
 
 interface Spotlight {
   name: string;
@@ -15,15 +15,16 @@ const spotlights: Spotlight[] = [
     name: "Adewale",
     lname: "Omoniyi",
     role: "Software Engineer at MediaCityUK",
-    quote: "What struck me most was the incredible knowledge shared by fellow  speakers and the vibrant connections I made with some of the brightest  minds in the industry.",
+    quote:
+      "What struck me most was the incredible knowledge shared by fellow speakers and the vibrant connections I made with some of the brightest minds in the industry.",
     image: "/spotlight/adewale.jpeg",
   },
   {
-    name: "Emilee",
+    name: "Dr. Emilee",
     lname: "Simmons",
     role: "AI and ML Engineer",
     quote:
-      "The most effective entrepreneurial individuals have been found to be those who adopt an effectual logic. They start with the means they have and rely on the journey to gen...",
+      "The most effective entrepreneurial individuals have been found to be those who adopt an effectual logic. They start with the means they have and rely on the journey to generate ideas and opportunities.",
     image: "/spotlight/emilee.jpeg",
   },
   {
@@ -35,29 +36,17 @@ const spotlights: Spotlight[] = [
     image: "/spotlight/carol.jpeg",
   },
   {
-    name: "Sara",
-    lname: "Okafor",
-    role: "Product Manager at TechNorth",
-    quote:
-      "The Manchester tech community gave me the confidence to lead diverse teams.",
-    image: "/spotlight/woman1.png",
-  },
-  {
-    name: "James",
-    lname: "Taylor",
+    name: "Esther ",
+    lname: "Aluko",
     role: "AI Researcher at Innovate UK",
-    quote: "Innovation thrives when collaboration meets curiosity.",
-    image: "/spotlight/woman2.png",
-  },
-  {
-    name: "Aisha",
-    lname: "Bello",
-    role: "Blockchain Engineer at FinTech North",
     quote:
-      "Building decentralized tools that empower local startups is my mission.",
-    image: "/spotlight/woman3.png",
+      "What an eventful weekend at the GREATER MANCHESTER BLACK TECH EXPO! The lineup of speakers and panelists was brilliantly curated, representing diverse industries.",
+    image: "/spotlight/esther.png",
   },
 ];
+
+const SWIPE_OFFSET = 60;
+const SWIPE_VELOCITY = 500;
 
 export default function CommunitySpotlight() {
   const [startIndex, setStartIndex] = useState(0);
@@ -83,95 +72,104 @@ export default function CommunitySpotlight() {
     setStartIndex(0);
   }, [itemsPerView]);
 
-  const handleNext = () =>
-    setStartIndex((prev) =>
-      prev + itemsPerView >= spotlights.length ? 0 : prev + itemsPerView
-    );
+  const maxStartIndex = Math.max(spotlights.length - itemsPerView, 0);
+  const canPrev = startIndex > 0;
+  const canNext = startIndex < maxStartIndex;
 
-  const handlePrev = () =>
-    setStartIndex((prev) =>
-      prev - itemsPerView < 0
-        ? Math.max(spotlights.length - itemsPerView, 0)
-        : prev - itemsPerView
-    );
+  const handleNext = () => {
+    if (!canNext) return;
+    setStartIndex((prev) => Math.min(prev + itemsPerView, maxStartIndex));
+  };
 
-  const visibleSpotlights = spotlights.slice(startIndex, startIndex + itemsPerView);
-  const displayed =
-    visibleSpotlights.length < itemsPerView
-      ? [
-          ...visibleSpotlights,
-          ...spotlights.slice(0, itemsPerView - visibleSpotlights.length),
-        ]
-      : visibleSpotlights;
+  const handlePrev = () => {
+    if (!canPrev) return;
+    setStartIndex((prev) => Math.max(prev - itemsPerView, 0));
+  };
+
+  const handleDragEnd = (_: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
+    const { offset, velocity } = info;
+    if (offset.x < -SWIPE_OFFSET || velocity.x < -SWIPE_VELOCITY) {
+      handleNext();
+    } else if (offset.x > SWIPE_OFFSET || velocity.x > SWIPE_VELOCITY) {
+      handlePrev();
+    }
+  };
+
+  const displayed = spotlights.slice(startIndex, startIndex + itemsPerView);
 
   return (
-    <section className="bg-[#FFFDF7] mb-16 sm:mb-20 md:mb-24 text-center relative w-full overflow-hidden py-8 sm:py-0">
-      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 relative">
+    <section className="relative w-full overflow-hidden bg-white py-12 sm:py-16 md:py-20 text-center">
+      <div className="relative mx-auto max-w-[1400px] px-4 sm:px-6">
         {/* Header */}
-        <p className="text-sm sm:text-base font-medium text-[#001F3F] bg-[#F5F5F5] inline-block px-3 py-1 rounded-full mb-4">
+        <p className="mb-4 inline-block rounded-full bg-[#F5F5F5] px-3 py-1 text-sm font-medium text-[#001F3F] sm:text-base">
           Featured Stories
         </p>
-        <h2 className="font-open-sans text-2xl sm:text-[32px] md:text-[35px] font-bold text-[#001F3F]">
+        <h2 className="font-montserrat text-xl font-bold text-[#001F3F] sm:text-[27px] md:text-[30px]">
           Community Spotlight
         </h2>
-        <p className="font-open-sans text-base sm:text-lg md:text-2xl text-[#6B7280] mt-2 px-2">
-          Celebrating the faces shaping Manchester's tech future.
+        <p className="font-montserrat mt-2 px-2 text-base text-[#6B7280] sm:text-lg md:text-2xl">
+          Celebrating the faces shaping Manchester&apos;s tech future.
         </p>
 
-        {/* Carousel */}
-        <div className="relative mt-8 sm:mt-12 flex items-center justify-center w-full px-0 sm:px-10 md:px-14">
-          {/* Left Button */}
+        <div className="relative mt-10 flex w-full items-center justify-center sm:mt-12">
+          {/* Left Button — overlaps left card edge */}
           <button
+            type="button"
             onClick={handlePrev}
+            disabled={!canPrev}
             aria-label="Previous stories"
-            className="absolute left-0 sm:-left-2 md:-left-6 bg-[#001F3F]/95 text-white rounded-full p-2.5 sm:p-3 hover:scale-105 transition z-10 shadow-md hidden sm:flex items-center justify-center"
+            aria-disabled={!canPrev}
+            className={`absolute left-2 z-20 hidden h-11 w-11 -translate-x-1/2 items-center justify-center rounded-full shadow-md transition sm:flex md:left-0 md:h-12 md:w-12 ${
+              canPrev
+                ? "bg-[#001F3F] text-white hover:scale-105"
+                : "cursor-not-allowed bg-[#001F3F]/40 text-white/35"
+            }`}
           >
-            <ArrowLeft size={20} className="sm:w-[22px] sm:h-[22px]" />
+            <ChevronLeft size={22} />
           </button>
 
-          {/* Container */}
-          <div className="overflow-hidden w-full">
+          {/* Cards */}
+          <div className="w-full overflow-hidden touch-pan-y">
             <AnimatePresence mode="wait">
               <motion.div
                 key={startIndex}
-                initial={{ x: 100, opacity: 0 }}
+                initial={{ x: 80, opacity: 0 }}
                 animate={{ x: 0, opacity: 1 }}
-                exit={{ x: -100, opacity: 0 }}
-                transition={{ duration: 0.6 }}
-                className="flex flex-nowrap gap-4 sm:gap-6 justify-start sm:justify-between"
+                exit={{ x: -80, opacity: 0 }}
+                transition={{ duration: 0.45 }}
+                drag="x"
+                dragConstraints={{ left: 0, right: 0 }}
+                dragElastic={0.35}
+                onDragEnd={handleDragEnd}
+                className="flex cursor-grab flex-nowrap justify-start gap-4 active:cursor-grabbing sm:cursor-default sm:gap-6 sm:justify-between"
               >
                 {displayed.map((spotlight, i) => (
                   <div
-                    key={i}
-                    className="relative rounded-3xl overflow-hidden shadow-lg h-[320px] sm:h-[360px] md:h-[380px] flex-1 min-w-full sm:min-w-[calc(50%-12px)] md:min-w-[calc(33.333%-16px)] flex items-end group shrink-0 sm:shrink"
+                    key={`${spotlight.name}-${spotlight.lname}-${i}`}
+                    className="group relative flex h-[200px] min-w-full flex-1 shrink-0 items-end overflow-hidden rounded-3xl shadow-lg sm:h-[300px] sm:min-w-[calc(50%-12px)] sm:shrink md:h-[350px] md:min-w-[calc(33.333%-16px)]"
                   >
-                    {/* Image container with smooth zoom on hover */}
                     <div className="absolute inset-0 overflow-hidden">
                       <img
                         src={spotlight.image}
                         alt={`Headshot of ${spotlight.name} ${spotlight.lname}`}
-                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                        className="pointer-events-none h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
+                        draggable={false}
                       />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/35 to-transparent" />
                     </div>
 
-                    {/* Quote icon */}
-                    <div className="absolute top-4 right-4 bg-[#FFD700] rounded-full p-3 z-10">
-                      <Quote className="text-gray-800" />
+                    <div className="absolute right-4 top-4 z-10 rounded-full bg-[#FFD700] p-3">
+                      <Quote className="text-gray-900" size={20} />
                     </div>
 
-                    {/* Text content */}
-                    <div className="relative z-10 w-full p-4 sm:p-6 text-left text-white">
-                      <h3 className="text-lg sm:text-xl md:text-2xl font-semibold">
-                        {spotlight.name} <span className="text-[#FFD700]">{spotlight.lname} </span>
+                    <div className="relative z-10 w-full p-5 text-left text-white sm:p-6">
+                      <h3 className="font-montserrat text-lg font-semibold sm:text-xl">
+                        {spotlight.name}{" "}
+                        <span className="text-[#FFD700]">{spotlight.lname}</span>
                       </h3>
-                      {/* <p className="text-[#FFD700] text-sm mt-1">{spotlight.role}</p> */}
-                      <p className="italic text-xs sm:text-sm mt-2 sm:mt-3 max-w-md line-clamp-3 sm:line-clamp-none">
-                        "{spotlight.quote}"
+                      <p className="mt-2 line-clamp-3 max-w-md text-xs italic text-white/95 sm:mt-3 sm:text-sm sm:line-clamp-4">
+                        &ldquo;{spotlight.quote}&rdquo;
                       </p>
-                      <button className="mt-3 sm:mt-5 inline-flex items-center gap-2 bg-[#D7263D] hover:bg-[#D7263D] text-white px-4 sm:px-5 py-2 text-sm sm:text-base rounded-md transition">
-                        Read Story →
-                      </button>
                     </div>
                   </div>
                 ))}
@@ -179,13 +177,20 @@ export default function CommunitySpotlight() {
             </AnimatePresence>
           </div>
 
-          {/* Right Button */}
+          {/* Right Button — overlaps right card edge */}
           <button
+            type="button"
             onClick={handleNext}
+            disabled={!canNext}
             aria-label="Next stories"
-            className="absolute right-0 sm:-right-2 md:-right-6 bg-[#001F3F]/95 text-white rounded-full p-2.5 sm:p-3 hover:scale-105 transition z-10 shadow-md hidden sm:flex items-center justify-center"
+            aria-disabled={!canNext}
+            className={`absolute right-2 z-20 hidden h-11 w-11 translate-x-1/2 items-center justify-center rounded-full shadow-md transition sm:flex md:right-0 md:h-12 md:w-12 ${
+              canNext
+                ? "bg-[#001F3F] text-white hover:scale-105"
+                : "cursor-not-allowed bg-[#001F3F]/40 text-white/35"
+            }`}
           >
-            <ArrowRight size={20} className="sm:w-[22px] sm:h-[22px]" />
+            <ChevronRight size={22} />
           </button>
         </div>
 
@@ -196,7 +201,7 @@ export default function CommunitySpotlight() {
               key={i}
               type="button"
               aria-label={`Go to slide ${i + 1}`}
-              onClick={() => setStartIndex(i * itemsPerView)}
+              onClick={() => setStartIndex(Math.min(i * itemsPerView, maxStartIndex))}
               className={`h-2 rounded-full transition-all ${
                 Math.floor(startIndex / itemsPerView) === i
                   ? "w-6 bg-[#001F3F]"

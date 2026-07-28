@@ -11,15 +11,15 @@ const stats = [
 
 const AboutGMBTE: React.FC = () => {
     return (
-        <section className="bg-[linear-gradient(135deg,#FFD700_0%,#FFE55C_100%)] py-12 sm:py-16 px-4 sm:px-6 md:px-20 relative overflow-hidden">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-10 sm:gap-12 items-center mx-auto max-w-7xl">
+        <section className="relative overflow-hidden bg-[#FFD700] px-4 py-14 sm:px-6 sm:py-16 md:px-12 lg:px-16 lg:py-20">
+            <div className="relative mx-auto grid max-w-[1400px] grid-cols-1 items-center gap-10 md:grid-cols-2 md:gap-12 lg:gap-16">
                 {/* LEFT CONTENT */}
-                <div className="min-w-0 text-left md:ml-8">
+                <div className="min-w-0 text-left">
                     <motion.h2
                         initial={{ opacity: 0, y: -20 }}
                         whileInView={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.6 }}
-                        className="text-3xl sm:text-[48px] md:text-[64px] font-extrabold text-[#001F3F] mb-4 leading-tight"
+                        className="mb-4 text-3xl font-extrabold leading-tight text-[#001F3F] sm:text-[48px] md:text-[64px]"
                     >
                         About GMBTE
                     </motion.h2>
@@ -28,39 +28,40 @@ const AboutGMBTE: React.FC = () => {
                         initial={{ opacity: 0 }}
                         whileInView={{ opacity: 1 }}
                         transition={{ delay: 0.2 }}
-                        className="text-lg sm:text-[22px] md:text-[24px] font-semibold text-[#001F3F] mb-4 leading-snug"
+                        className="mb-4 text-lg font-semibold leading-snug text-[#001F3F] sm:text-[22px] md:text-[24px]"
                     >
                         Building a stronger, more connected tech <br className="hidden sm:block" />
                         community across Greater Manchester.
                     </motion.p>
 
-                    <p className="text-[16px] sm:text-[18px] text-[#001F3FCC] mb-8 leading-relaxed">
+                    <p className="mb-8 text-[16px] leading-relaxed text-[#001F3FCC] sm:text-[18px]">
                         Empowering Greater Manchester's diverse community through <br className="hidden sm:block" />
                         technology education, professional mentorship, and business <br className="hidden sm:block" />
                         growth opportunities. We’re bridging the gap between talent <br className="hidden sm:block" />
                         and opportunity in the digital economy.
                     </p>
 
-                    <div className="flex flex-wrap gap-8 mb-10">
+                    <div className="mb-10 flex flex-wrap gap-8">
                         {stats.map((stat, index) => (
                             <motion.div
                                 key={index}
                                 initial={{ opacity: 0, y: 10 }}
                                 whileInView={{ opacity: 1, y: 0 }}
                                 transition={{ delay: index * 0.1 }}
-                                className="flex items-center space-x-3"
+                                className=" items-center space-x-3"
                             >
-                                {stat.icon}
-                                <div>
-                                    <p className="text-xl sm:text-2xl font-bold text-gray-900">{stat.value}</p>
-                                    <p className="text-sm sm:text-base font-medium text-gray-700">{stat.label}</p>
+                                <div className="mb-1 flex items-center gap-2">
+                                    {/* {stat.icon} */}
+                                    <p className="text-xl font-extrabold text-[#001F3F] sm:text-2xl">{stat.value}</p>
                                 </div>
+                                <p className="text-sm font-medium text-[#001F3F]/80 sm:text-base">{stat.label}</p>
                             </motion.div>
                         ))}
                     </div>
 
-                    <Link to="/login" className="bg-[#D7263D] hover:bg-[#b41d31] text-white px-6 py-3 rounded-lg text-base sm:text-lg transition-transform hover:scale-105">
+                    <Link to="/login" className="inline-flex items-center gap-2 rounded-lg bg-[#D7263D] px-6 py-3 text-base text-white transition-transform hover:scale-105 hover:bg-[#b41d31] sm:text-lg">
                         Join the Movement
+                        <span aria-hidden="true">→</span>
                     </Link>
                 </div>
 
@@ -69,34 +70,34 @@ const AboutGMBTE: React.FC = () => {
                     initial={{ opacity: 0, x: 40 }}
                     whileInView={{ opacity: 1, x: 0 }}
                     transition={{ duration: 0.6 }}
-                    className="relative flex w-full min-w-0 justify-center md:justify-end lg:mr-[100px]"
+                    className="relative w-full min-w-0"
                 >
-                    <div className="rounded-2xl overflow-hidden w-full max-w-full sm:max-w-[500px] lg:max-w-[681px] h-[280px] sm:h-[400px] lg:h-[506px]">
+                    <div className="h-[280px] w-full overflow-hidden rounded-[20px] sm:h-[400px] lg:h-[480px]">
                         <img
                             src="/about/about.jpg"
                             alt="A group of happy people, wearing colorful traditional clothing, stand indoors holding certificates."
-                            className="object-cover w-full h-full rounded-2xl"
+                            className="h-full w-full rounded-[20px] object-cover"
                         />
                     </div>
 
                     {/* Floating Badge */}
-                    <div
-                        className="absolute bottom-3 left-3 sm:bottom-6 sm:left-6 bg-white shadow-lg rounded-xl px-3 py-3 sm:px-5 sm:py-4 flex flex-col text-center max-w-[140px] sm:max-w-none"
-                    >
-                        <motion.div animate={{ y: [0, -15, 0] }}
+                    <div className="absolute bottom-4 left-4 max-w-[220px] items-center gap-3 rounded-xl bg-white px-4 py-5 shadow-lg sm:bottom-6 sm:left-6 sm:max-w-[240px] sm:gap-4 sm:px-5 sm:py-6">
+                        <motion.div
+                            animate={{ y: [0, -8, 0] }}
                             transition={{ repeat: Infinity, duration: 3, ease: "easeInOut" }}
-                            className="w-8 h-8 rounded-full bg-[#D7263D] mb-3" />
-                        <p className="text-[14px] sm:text-[15px] font-semibold text-gray-800 ">
+                            className="h-8 w-8 shrink-0 rounded-full bg-[#D7263D] sm:h-9 sm:w-9"
+                        />
+                        <p className="text-left text-[14px] font-semibold leading-snug text-[#001F3F] sm:text-[15px]">
                             Connecting Talent <br />& Opportunity
                         </p>
                     </div>
                 </motion.div>
 
                 {/* Decorative SVG */}
-                <div className="absolute bottom-[-200px] right-[-100px] opacity-10 rotate-[-20deg] pointer-events-none select-none">
+                <div className="pointer-events-none absolute bottom-[-100px] right-[-100px] rotate-[-20deg] select-none opacity-10">
                     <svg
-                        width="500"
-                        height="500"
+                        width="200"
+                        height="200"
                         viewBox="0 0 17 16"
                         fill="none"
                         xmlns="http://www.w3.org/2000/svg"

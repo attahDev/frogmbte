@@ -1,5 +1,5 @@
-import { useState } from "react";
 import { ArrowRight } from "lucide-react";
+import { useState } from "react";
 import SupportMissionModal from "./SupportMissionModal";
 
 export default function SupportMissionSection() {
@@ -17,8 +17,8 @@ export default function SupportMissionSection() {
       <div className="relative mx-auto max-w-[1440px] grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center justify-center">
         {/* Left Column */}
         <div className="z-10 text-center lg:text-left">
-          <h2 className="text-[26px] sm:text-[32px] md:text-[36px] font-semibold text-[#001F3F] mb-4 sm:mb-6 leading-snug">
-            Empowering Greater Manchester
+          <h2 className="text-[26px] sm:text-[32px] md:text-[36px] font-bold text-[#001F3F] mb-4 sm:mb-6 leading-snug">
+            Empowering Greater Manchester{' '}
             <br className="hidden sm:block" />
             Through Tech and Opportunities
           </h2>
@@ -29,7 +29,7 @@ export default function SupportMissionSection() {
             tech accessible to everyone in Manchester.
           </p>
 
-          <p className="text-[20px] sm:text-[22px] md:text-[24px] font-medium text-[#D7263D] mb-8">
+          <p className="text-[20px] sm:text-[20px] md:text-[24px] font-medium text-[#D7263D] mb-8">
             Powered by community. Driven by innovation.
           </p>
 

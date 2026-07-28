@@ -142,10 +142,10 @@ const LaunchIdeationRoadmap: React.FC = () => {
       <div className="max-w-7xl mx-auto mb-[100px]">
         {/* Header */}
         <div className="text-center mb-8 mt-10 sm:mt-16 lg:mt-20 lg:mb-12">
-          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-[#001F3F] mb-2 lg:mb-3">
+          <h2 className="font-montserrat text-xl mb-3 font-bold text-[#001F3F] sm:text-[27px] md:text-[30px]">
             Launch Ideation & Roadmap
-          </h1>
-          <p className="text-[#001F3F] text-base sm:text-lg px-4 max-w-2xl mx-auto leading-relaxed">
+          </h2>
+          <p className="text-[#001F3F] text-base sm:text-md px-4 max-w-2xl mx-auto leading-relaxed">
           From a simple idea to a thriving community that's transforming
             <br className="hidden sm:block" />
             {" "}Greater Manchester's tech landscape
@@ -153,7 +153,7 @@ const LaunchIdeationRoadmap: React.FC = () => {
         </div>
 
         {/* Toggle Buttons */}
-        <div className="flex flex-wrap justify-center gap-3 sm:gap-4 lg:gap-6 mb-8 lg:mb-16 px-2">
+        <div className="flex flex-wrap justify-center gap-3 py-3 sm:gap-4 lg:gap-6 mb-8 lg:mb-16 px-2">
           {/* BUILD */}
           <button
             onClick={() => setActiveView('build')}
@@ -163,7 +163,7 @@ const LaunchIdeationRoadmap: React.FC = () => {
               <span className="absolute inset-0 translate-y-1 rounded-full bg-[#D7263D]" />
             )}
             <span
-              className={`relative inline-flex items-center justify-center px-6 sm:px-8 lg:px-12 py-2 sm:py-3 lg:py-4 rounded-full font-bold text-base sm:text-lg lg:text-xl transition-all
+              className={`relative inline-flex items-center justify-center px-6 sm:px-8 lg:px-18 py-2 sm:py-3 lg:py-4 rounded-full font-bold text-base sm:text-lg lg:text-xl transition-all
                 ${activeView === 'build'
                   ? 'bg-[#FFD700] text-gray-900'
                   : 'bg-white text-[#001F3F] border border-[#DEDFE2]'
@@ -180,10 +180,10 @@ const LaunchIdeationRoadmap: React.FC = () => {
             className="relative group"
           >
             {activeView === 'boom' && (
-              <span className="absolute inset-0 translate-y-1 rounded-full bg-red-500" />
+              <span className="absolute inset-0 translate-y-1 rounded-full py-2 bg-red-500" />
             )}
             <span
-              className={`relative inline-flex items-center justify-center px-6 sm:px-8 lg:px-12 py-2 sm:py-3 lg:py-4 rounded-full font-bold text-base sm:text-lg lg:text-xl transition-all
+              className={`relative inline-flex items-center justify-center px-6 sm:px-8 lg:px-18 py-2 sm:py-3 lg:py-4 rounded-full font-bold text-base sm:text-lg lg:text-xl transition-all
                 ${activeView === 'boom'
                   ? 'bg-yellow-400 text-gray-900'
                   : 'bg-white text-gray-800 border-2 border-gray-300'
@@ -239,7 +239,7 @@ const LaunchIdeationRoadmap: React.FC = () => {
 
               return (
                 <div key={idx} className="w-full">
-                  <div className="mb-4 sm:mb-6">
+                  <div className="mb-3 sm:mb-3">
                     <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-1 sm:mb-2">
                       {phase.year}
                     </h2>

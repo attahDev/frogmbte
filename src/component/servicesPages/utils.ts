@@ -19,7 +19,7 @@ export const packages: Package[] = [
   {
     id: "starter",
     name: "Starter Package",
-    price: 99,
+    price: 159,
     description: "Perfect for new businesses getting started",
     features: [
       "Business registration support",
@@ -35,7 +35,7 @@ export const packages: Package[] = [
   {
     id: "growth",
     name: "Growth Package",
-    price: 129,
+    price: 229,
     description: "For businesses ready to scale operations",
     features: [
       "Full Business Registration",
@@ -54,8 +54,8 @@ export const packages: Package[] = [
   },
   {
     id: "platinum",
-    name: "Platinum Package",
-    price: 149,
+    name: "Comprehensive",
+    price: 499,
     description: "Comprehensive support for ambitious ventures",
     features: [
       "Enterprise Registration Support",

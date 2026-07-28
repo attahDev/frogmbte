@@ -1,5 +1,4 @@
-
 User-agent: *
 Allow: /
 
-Sitemap: https://gmbtefro.vercel.app/sitemap.xml
+Sitemap: https://www.gmblacktechexpo.co.uk/sitemap.xml

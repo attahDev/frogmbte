@@ -260,10 +260,10 @@ export default function ImpactGallery() {
             <p className="text-sm sm:text-base font-medium text-[#001F3F] bg-[#F5F5F5] inline-block px-3 py-1 rounded-full mb-4">
               Impact Gallery
             </p>
-            <h2 className="font-open-sans text-2xl sm:text-[32px] md:text-[35px] font-bold text-[#001F3F] leading-tight">
+            <h2 className="font-montserrat text-2xl sm:text-[32px] md:text-[35px] font-bold text-[#001F3F] leading-tight">
               Seeing Our Impact in Action
             </h2>
-            <p className="font-open-sans text-base sm:text-lg md:text-2xl text-[#6B7280] mt-2 px-2">
+            <p className="font-montserrat text-base sm:text-lg md:text-2xl text-[#6B7280] mt-2 px-2">
               From heritage dining at The Portico Library to community celebrations
               — explore the moments shaping Greater Manchester&apos;s Black tech
               ecosystem.
@@ -324,10 +324,10 @@ export default function ImpactGallery() {
                     <span className="inline-block bg-[#D7263D] text-white text-xs sm:text-sm font-semibold px-3 py-1 rounded-md mb-3">
                       {currentMoment.badge}
                     </span>
-                    <h3 className="font-open-sans text-xl sm:text-2xl md:text-3xl font-bold leading-snug max-w-2xl">
+                    <h3 className="font-montserrat text-xl sm:text-2xl md:text-3xl font-bold leading-snug max-w-2xl">
                       {currentMoment.title}
                     </h3>
-                    <p className="font-open-sans text-sm sm:text-base text-white/85 mt-2 max-w-xl line-clamp-2 sm:line-clamp-none">
+                    <p className="font-montserrat text-sm sm:text-base text-white/85 mt-2 max-w-xl line-clamp-2 sm:line-clamp-none">
                       {currentMoment.description}
                     </p>
                   </div>
@@ -381,17 +381,17 @@ export default function ImpactGallery() {
                 <div className="flex gap-5 sm:gap-4">
                   <div className="w-1 shrink-0 bg-[#FFD700] rounded-full" />
                   <div>
-                    <h4 className="font-open-sans text-xl sm:text-2xl font-bold text-[#001F3F] mb-3">
+                    <h4 className="font-montserrat text-xl sm:text-2xl font-bold text-[#001F3F] mb-3">
                       A Legacy of Empowerment
                     </h4>
-                    <p className="font-open-sans text-lg sm:text-base text-[#6B7280] leading-relaxed">
+                    <p className="font-montserrat text-lg sm:text-base text-[#6B7280] leading-relaxed">
                       An edible history of Manchester, hosted with Mayor Andy Burnham
                       at The Portico Library, in support of the Portico Reunited
                       restoration project. Proceeds go toward reclaiming all three
                       floors of this historic building for the first time in over a
                       century.
                     </p>
-                    <p className="font-open-sans text-sm sm:text-base text-[#6B7280] leading-relaxed mt-3">
+                    <p className="font-montserrat text-sm sm:text-base text-[#6B7280] leading-relaxed mt-3">
                       Our Chief Heritage Officer role advises on curating the history
                       and culture of our membership — preserving physical archives,
                       historical collections, and digital assets that belong to our
@@ -427,10 +427,10 @@ export default function ImpactGallery() {
               
               <div className="bg-white rounded-2xl p-5 sm:p-6 shadow-lg border border-[#001F3F]/5">
                 <div className="flex items-center justify-between mb-4">
-                  <h4 className="font-open-sans text-lg sm:text-xl font-bold text-[#001F3F]">
+                  <h4 className="font-montserrat text-lg sm:text-xl font-bold text-[#001F3F]">
                     Story Highlights
                   </h4>
-                  <span className="font-open-sans text-xs sm:text-sm text-[#6B7280] uppercase tracking-wide">
+                  <span className="font-montserrat text-xs sm:text-sm text-[#6B7280] uppercase tracking-wide">
                     {storyVideos.length} Videos
                   </span>
                 </div>
@@ -445,10 +445,10 @@ export default function ImpactGallery() {
                     className="absolute inset-0 w-full h-full border-0"
                   />
                 </div>
-                <p className="font-open-sans text-sm font-semibold text-[#001F3F] mb-1">
+                <p className="font-montserrat text-sm font-semibold text-[#001F3F] mb-1">
                   {activeVideo.title}
                 </p>
-                <p className="font-open-sans text-xs sm:text-sm text-[#6B7280] mb-4">
+                <p className="font-montserrat text-xs sm:text-sm text-[#6B7280] mb-4">
                   {activeVideo.subtitle} · {activeVideo.duration}
                 </p>
 
@@ -489,17 +489,17 @@ export default function ImpactGallery() {
                           </div>
                           <div className="flex-1 min-w-0">
                             <p
-                              className={`font-open-sans text-sm font-semibold line-clamp-2 ${
+                              className={`font-montserrat text-sm font-semibold line-clamp-2 ${
                                 isActive ? "text-[#D7263D]" : "text-[#001F3F]"
                               }`}
                             >
                               {video.title}
                             </p>
-                            <p className="font-open-sans text-xs text-[#6B7280] mt-0.5 line-clamp-1">
+                            <p className="font-montserrat text-xs text-[#6B7280] mt-0.5 line-clamp-1">
                               {video.subtitle}
                             </p>
                           </div>
-                          <span className="shrink-0 font-open-sans text-xs text-[#6B7280]">
+                          <span className="shrink-0 font-montserrat text-xs text-[#6B7280]">
                             {video.duration}
                           </span>
                         </button>
@@ -512,7 +512,7 @@ export default function ImpactGallery() {
 
             {/* Featured on LinkedIn — external stories from The Portico Library */}
             <div className="mt-10">
-              <h4 className="font-open-sans text-lg sm:text-xl font-bold text-[#001F3F] mb-4">
+              <h4 className="font-montserrat text-lg sm:text-xl font-bold text-[#001F3F] mb-4">
                 Featured on LinkedIn
               </h4>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -524,10 +524,10 @@ export default function ImpactGallery() {
                     rel="noopener noreferrer"
                     className="group block bg-white rounded-2xl p-5 shadow-sm border border-[#001F3F]/10 hover:border-[#FFD700] hover:shadow-md transition"
                   >
-                    <p className="font-open-sans text-sm font-bold text-[#001F3F] group-hover:text-[#D7263D] transition">
+                    <p className="font-montserrat text-sm font-bold text-[#001F3F] group-hover:text-[#D7263D] transition">
                       {story.title}
                     </p>
-                    <p className="font-open-sans text-xs text-[#6B7280] mt-2 leading-relaxed">
+                    <p className="font-montserrat text-xs text-[#6B7280] mt-2 leading-relaxed">
                       {story.description}
                     </p>
                     <span className="inline-block mt-3 text-xs font-semibold text-[#001F3F]/60 group-hover:text-[#FFD700] transition">

@@ -1,15 +1,5 @@
 // @ts-nocheck
-// @ts-nocheck
-// @ts-nocheck
-
-const BASE = "https://gmbtemrkt.onrender.com/api/v1".replace(/\/+$/, "");
-
-console.log("Market Research API:", BASE);
-if (!BASE) {
-  console.error(
-    "VITE_MARKET_RESEARCH_API_URL is not set. Set it in your Vercel project's Environment Variables and redeploy."
-  );
-}
+const BASE = "https://gmbtemrkt.onrender.com/api/v1";
 
 function getToken() {
   return (

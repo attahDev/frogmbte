@@ -1,5 +1,5 @@
 import CommunitySpotlight from './CommunitySpotlight'
-import ImpactGallery from './GallerySection'
+  // import ImpactGallery from './GallerySection'
 import EventsSection from './EventsSection'
 import HeroSection from './Herosection'
 import MissionSection from './MissionSection'
@@ -13,7 +13,7 @@ export const IndexLandingPage = () => {
       <HeroSection />
       <ProgramSection />
       <CommunitySpotlight />
-      <ImpactGallery />
+      {/* <ImpactGallery /> */}
       <MissionSection />
       <section id="events">
         <EventsSection />
