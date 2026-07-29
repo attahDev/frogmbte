@@ -1,94 +1,111 @@
 import { SlidersHorizontal } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import JobCard from "./component/JobCard";
 import JobsFilterSidebar from "./component/JobsFilterSidebar";
 import { dummyJobs } from "./component/lib/dummyJobs";
-import { fetchJobs } from "./component/lib/jobs";
+import { fetchOpportunities, fetchOpportunityCategories } from "./component/lib/jobs";
 import type { JobCardData } from "./component/types/jobs";
-
-type Filters = {
-  jobTypes: string[];
-  level: string;
-  industry: string;
-  salaryRange: string;
-};
-
-const initialFilters: Filters = {
-  jobTypes: [],
-  level: "",
-  industry: "",
-  salaryRange: "",
-};
+import { useLiveSignal } from "../../../lib/useLiveSignal";
 
 export default function JobOpportunitiesPage() {
-  const [search, setSearch] = useState("");
+  const [searchParams] = useSearchParams();
+  const initialSearch = searchParams.get("search")?.trim() ?? "";
+  const [search, setSearch] = useState(initialSearch);
+  const [searchInput, setSearchInput] = useState(initialSearch);
   const [jobs, setJobs] = useState<JobCardData[]>(dummyJobs);
-  const [loading, setLoading] = useState(false);
-  const [hasSearched, setHasSearched] = useState(false);
-  const [filters, setFilters] = useState<Filters>(initialFilters);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
+  // Dummy jobs are only ever a "still loading the very first time" placeholder.
+  // Once the first real fetch settles (success OR failure) we never want fake
+  // listings standing in for real data again — an error should look like an
+  // error, not like a working page full of stale placeholder jobs.
+  const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
+  const [categories, setCategories] = useState<string[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState("");
+  const [selectedJobTypes, setSelectedJobTypes] = useState<string[]>([]);
   const [showFilters, setShowFilters] = useState(false);
+  const liveTick = useLiveSignal(["opportunities:updated"]);
 
-  async function handleSearch(e: React.FormEvent) {
+  // Category list is independent of the current search/filter — always the
+  // full set of categories that exist, not just the ones in the current
+  // result page.
+  useEffect(() => {
+    fetchOpportunityCategories()
+      .then(setCategories)
+      .catch(() => setCategories([]));
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    // Only show the loading state for the very first fetch — a live push
+    // or the poll fallback refreshing in the background shouldn't flash
+    // the whole page back to a loading spinner every 60s.
+    if (!hasLoadedOnce) setLoading(true);
+    setLoadError(false);
+
+    fetchOpportunities({ search, category: selectedCategory })
+      .then((results) => {
+        if (cancelled) return;
+        // Real data (even an empty result set for a specific search) always
+        // wins over the placeholder — dummy jobs only show up before the
+        // very first fetch resolves.
+        setJobs(results);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setLoadError(true);
+        // Don't leave fake listings on screen dressed up as real results —
+        // an errored fetch should look empty/errored, not "working".
+        setJobs([]);
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setLoading(false);
+          setHasLoadedOnce(true);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+    // liveTick bumps on an "opportunities:updated" push or the 60s poll
+    // fallback — re-running this effect just re-triggers the fetch above.
+    // hasLoadedOnce is intentionally excluded: it's only read to decide
+    // whether to show the loading spinner, not something that should
+    // itself retrigger a fetch.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search, selectedCategory, liveTick]);
+
+  function handleSearch(e: React.FormEvent) {
     e.preventDefault();
-
-    if (!search.trim()) return;
-
-    try {
-      setLoading(true);
-      const liveJobs = await fetchJobs(search.trim());
-      setJobs(liveJobs);
-      setHasSearched(true);
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setLoading(false);
-    }
+    setSearch(searchInput.trim());
   }
 
   function toggleJobType(value: string) {
-    setFilters((prev) => ({
-      ...prev,
-      jobTypes: prev.jobTypes.includes(value)
-        ? prev.jobTypes.filter((item) => item !== value)
-        : [...prev.jobTypes, value],
-    }));
+    setSelectedJobTypes((prev) =>
+      prev.includes(value) ? prev.filter((item) => item !== value) : [...prev, value],
+    );
   }
 
-  function updateSelect(key: "level" | "industry" | "salaryRange", value: string) {
-    setFilters((prev) => ({ ...prev, [key]: value }));
-  }
+  const jobTypeOptions = useMemo(() => {
+    const types = new Set<string>();
+    jobs.forEach((job) => {
+      if (job.jobType && job.jobType !== "Not specified") types.add(job.jobType);
+    });
+    return Array.from(types).sort();
+  }, [jobs]);
 
   const filteredJobs = useMemo(() => {
-    return jobs.filter((job) => {
-      const text = `${job.title} ${job.description} ${job.company}`.toLowerCase();
-
-      const matchType =
-        filters.jobTypes.length === 0 ||
-        filters.jobTypes.some((type) =>
-          `${job.jobType} ${job.tags.join(" ")}`.toLowerCase().includes(type.toLowerCase())
-        );
-
-      const matchLevel = !filters.level || text.includes(filters.level);
-
-      const matchIndustry = !filters.industry || text.includes(filters.industry);
-
-      const matchSalary =
-        !filters.salaryRange ||
-        (filters.salaryRange === "low" && (job.salaryMax || 0) < 40000) ||
-        (filters.salaryRange === "mid" &&
-          (job.salaryMax || 0) >= 40000 &&
-          (job.salaryMax || 0) <= 70000) ||
-        (filters.salaryRange === "high" && (job.salaryMax || 0) > 70000);
-
-      return matchType && matchLevel && matchIndustry && matchSalary;
-    });
-  }, [jobs, filters]);
+    if (selectedJobTypes.length === 0) return jobs;
+    return jobs.filter((job) => selectedJobTypes.includes(job.jobType));
+  }, [jobs, selectedJobTypes]);
 
   return (
     <section className="w-full min-w-0 overflow-hidden rounded-[16px] border border-[#D9DEE8] bg-[#FFFDF7] px-4 pb-5 pt-4 shadow-[0px_2px_4px_-1px_rgba(0,31,63,0.06),0px_4px_6px_-1px_rgba(0,31,63,0.10)] sm:rounded-[20px] sm:px-6 sm:pb-6 sm:pt-5">
       <div className="mb-5 space-y-3 sm:mb-6 lg:mb-8 lg:flex lg:items-start lg:justify-between lg:gap-8 lg:space-y-0">
         <h2 className="shrink-0 text-left text-lg font-semibold text-[#001F3F] sm:text-xl lg:pt-2 lg:text-[22px]">
-          Job Opportunities
+          Opportunities
         </h2>
 
         <form
@@ -97,9 +114,9 @@ export default function JobOpportunitiesPage() {
         >
           <div className="flex items-stretch gap-2 sm:gap-3">
             <input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search jobs..."
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              placeholder="Search opportunities..."
               className="box-border min-h-[48px] min-w-0 flex-1 rounded-[10px] border border-[#D9DEE8] bg-white px-3 py-3 text-base text-[#001F3F] outline-none placeholder:text-[#9CA3AF] focus:border-[#001F3F]/30 sm:min-h-[46px] sm:px-4 sm:text-sm"
             />
             <button
@@ -125,26 +142,35 @@ export default function JobOpportunitiesPage() {
         <div className={`${showFilters ? "block" : "hidden"} lg:block`}>
           <JobsFilterSidebar
             total={filteredJobs.length}
-            filters={filters}
+            categories={categories}
+            selectedCategory={selectedCategory}
+            onSelectCategory={setSelectedCategory}
+            jobTypes={jobTypeOptions}
+            selectedJobTypes={selectedJobTypes}
             onToggleJobType={toggleJobType}
-            onSelect={updateSelect}
           />
         </div>
 
         <div className="min-w-0 space-y-5 sm:space-y-7">
-          {!hasSearched && (
-            <p className="text-sm text-[#6A7282] sm:text-[14px]">
-              Showing demo jobs. Search to load live jobs from Adzuna.
-            </p>
+          {loadError && (
+            <div className="rounded-[16px] border border-[#F3C6C6] bg-[#FDF0F0] p-4 text-sm text-[#8A1F1F]">
+              Couldn't load opportunities right now. Please try again in a moment.
+            </div>
+          )}
+
+          {loading && !hasLoadedOnce && (
+            <p className="text-sm text-[#6A7282] sm:text-[14px]">Loading opportunities…</p>
           )}
 
           {filteredJobs.map((job) => (
             <JobCard key={job.id} job={job} />
           ))}
 
-          {filteredJobs.length === 0 && (
+          {!loading && !loadError && filteredJobs.length === 0 && (
             <div className="rounded-[16px] border border-[#E5E7EB] bg-[#F9FAFB] p-6 text-center text-sm text-[#6A7282] sm:p-8 sm:text-[14px]">
-              No jobs found for this filter combination.
+              {jobs.length === 0
+                ? "No opportunities available right now — check back soon."
+                : "No opportunities found for this filter combination."}
             </div>
           )}
         </div>

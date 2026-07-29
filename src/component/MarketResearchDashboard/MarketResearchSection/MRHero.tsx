@@ -1,45 +1,43 @@
-type StatTile = {
-  label: string
-  value: string
-  valueClass: string
-}
-
-const stats: StatTile[] = [
-  {
-    label: 'MARKET DEMAND',
-    value: 'High ↑',
-    valueClass: 'text-[#5AA34A]',
-  },
-  {
-    label: 'COMPETITION',
-    value: 'Medium',
-    valueClass: 'text-[#F5A623]',
-  },
-  {
-    label: 'STARTUP COST',
-    value: 'Low–Med',
-    valueClass: 'text-[#4A9EE8]',
-  },
-  {
-    label: 'PROFIT POTENTIAL',
-    value: 'High ↑',
-    valueClass: 'text-[#F5A623]',
-  },
-]
+import type { IdeaContent } from '../lib/ideaEngineApi'
 
 type Props = {
-  title?: string
-  subtitle?: string
-  score?: number
-  badge?: string
+  content?: IdeaContent
 }
 
-export default function MRResultHero({
-  title = 'Market Validation Score',
-  subtitle = 'AI Fitness Coaching App — Full market assessment',
-  score = 78,
-  badge = 'Strong Opportunity',
-}: Props) {
+export default function MRResultHero({ content }: Props) {
+  const summary = content?.summary_card ?? {
+    title: 'Market Validation Score',
+    description: 'AI Fitness Coaching App — Full market assessment',
+    confidence_score: 78,
+  }
+  const insights = content?.market_insights
+
+  const score = summary.confidence_score
+  const badge = score >= 70 ? 'Strong Opportunity' : score >= 40 ? 'Moderate Opportunity' : 'Needs Work'
+
+  const stats = [
+    {
+      label: 'MARKET DEMAND',
+      value: insights ? `${insights.demand.label} ↑` : 'High ↑',
+      valueClass: 'text-[#5AA34A]',
+    },
+    {
+      label: 'COMPETITION',
+      value: insights?.competition.label ?? 'Medium',
+      valueClass: 'text-[#F5A623]',
+    },
+    {
+      label: 'STARTUP COST',
+      value: insights?.startup_cost ?? 'Low–Med',
+      valueClass: 'text-[#4A9EE8]',
+    },
+    {
+      label: 'PROFIT POTENTIAL',
+      value: insights ? `${insights.profit_potential} ↑` : 'High ↑',
+      valueClass: 'text-[#F5A623]',
+    },
+  ]
+
   return (
     <div className="relative overflow-hidden rounded-2xl bg-[#0B2545] w-full min-w-0 px-4 py-5 shadow-[0_8px_32px_rgba(11,37,69,0.18)] sm:px-6 sm:py-7">
      <div className="pointer-events-none absolute -right-10 -bottom-16 z-0 sm:-right-6 sm:-bottom-10">
@@ -49,8 +47,8 @@ export default function MRResultHero({
       </div>
 
       <div className="relative z-10">
-      <p className="text-base font-bold text-white sm:text-lg">{title}</p>
-      <p className="mt-0.5 text-xs text-[#8AA4BF] break-words">{subtitle}</p>
+      <p className="text-base font-bold text-white sm:text-lg">{summary.title}</p>
+      <p className="mt-0.5 text-xs text-[#8AA4BF] break-words">{summary.description}</p>
 
       <div className="mt-5 flex flex-wrap items-end gap-3">
         <span className="text-5xl font-extrabold leading-none text-[#F6D04D] sm:text-[64px]">{score}</span>

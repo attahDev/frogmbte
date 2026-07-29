@@ -4,7 +4,6 @@ import DashboardEmpty from './AIDashboardEmpty'
 import DashboardHero from './AIDashboardHero'
 import DashboardProjects from './AIDashboardProjects'
 import DashboardStats from './AIDashboardStats'
-import DashboardRecommendations from './AIRecommendations'
 
 type Props = {
   hasContent?: boolean
@@ -22,10 +21,7 @@ const DashboardSection = ({ hasContent = true }: Props) => {
 
               <DashboardProjects />
 
-              <div className="grid gap-6 lg:grid-cols-2">
-                <DashboardActivity />
-                <DashboardRecommendations />
-              </div>
+              <DashboardActivity />
             </div>
 
             <ChatSideBarPanel />

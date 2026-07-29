@@ -1,4 +1,3 @@
-import CommunitySpotlight from "../DashboardSection/CommunitySpotlight"
 import CollaborationLiveSessions from "./CollaborativeSession"
 import CommunityMentorship from "./CommunityMentorship"
 import EducationlToolkit from "./EducationalToolkits"
@@ -14,7 +13,6 @@ export const ToolkitsIndex = () => {
     <CollaborationLiveSessions />
     <CommunityMentorship />
     <RealWorldPractice />
-    <CommunitySpotlight />
     </div>
   )
 }

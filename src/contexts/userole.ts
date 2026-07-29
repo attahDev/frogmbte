@@ -1,4 +1,4 @@
-export type UserRole = "ADMIN" | "STUDENT" | "PROFESSIONAL" | "ENGINEER" |  "OTHER";
+export type UserRole = "ADMIN" | "STUDENT" | "PROFESSIONAL" | "ENGINEER" | "MENTOR" | "OTHER";
 
 // This interface defines the minimum required fields for a User 
 // object returned by the NestJS /users/profile endpoint.
@@ -15,7 +15,9 @@ export interface User {
     // Custom Application Fields
     // NOTE: organization and role are crucial fields from your registration DTO
     organization: string;
-    role: 'STUDENT' | 'PROFESSIONAL' | 'ENGINEER' | 'ADMIN' | 'OTHER';
+    role: 'STUDENT' | 'PROFESSIONAL' | 'ENGINEER' | 'MENTOR' | 'ADMIN' | 'OTHER';
+    region?: string | null;
+    profileVisibility?: 'PUBLIC' | 'PRIVATE';
 
     // Status Fields
     isVerified: boolean;

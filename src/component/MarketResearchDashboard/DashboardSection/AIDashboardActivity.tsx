@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ArrowRight, BarChart3, FileText, Sparkles } from "lucide-react";
+import { ArrowRight, FileText, Lightbulb } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import AIDashboardButton from "../ui/AIDashboardButton";
 import AIDashboardCard from "../ui/AIDashboardCard";
@@ -10,10 +10,18 @@ import {
   type BusinessPlanHistoryItem,
   getBusinessPlanHistory,
 } from "../lib/businessPlannerApi";
+import { type IdeaListItem, listIdeas } from "../lib/ideaEngineApi";
+
+type ActivityItem = {
+  id: string;
+  title: string;
+  time: string;
+  icon: typeof FileText;
+};
 
 export default function DashboardActivity() {
   const navigate = useNavigate();
-  const [activities, setActivities] = useState<BusinessPlanHistoryItem[]>([]);
+  const [activities, setActivities] = useState<ActivityItem[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -24,16 +32,44 @@ export default function DashboardActivity() {
     try {
       setLoading(true);
 
-      const response = await getBusinessPlanHistory();
+      const [plansResult, ideasResult] = await Promise.allSettled([
+        getBusinessPlanHistory(),
+        listIdeas(),
+      ]);
 
-      const plans = response?.data || [];
+      const plans: BusinessPlanHistoryItem[] =
+        plansResult.status === "fulfilled" ? plansResult.value?.data || [] : [];
+      const ideas: IdeaListItem[] =
+        ideasResult.status === "fulfilled" ? ideasResult.value || [] : [];
 
-      const recent = [...plans]
-        .sort(
-          (a, b) =>
-            new Date(b.updatedAt || b.createdAt).getTime() -
-            new Date(a.updatedAt || a.createdAt).getTime()
-        )
+      if (plansResult.status === "rejected") {
+        console.error("Failed to fetch business plans:", plansResult.reason);
+      }
+      if (ideasResult.status === "rejected") {
+        console.error("Failed to fetch ideas:", ideasResult.reason);
+      }
+
+      const planItems: ActivityItem[] = plans.map((plan) => {
+        const data = plan.aiResponse?.data;
+        const title =
+          data?.summary_card?.title || plan.businessIdea || "Business plan";
+        return {
+          id: `plan-${plan.id}`,
+          title: `${title} plan created`,
+          time: plan.updatedAt || plan.createdAt,
+          icon: FileText,
+        };
+      });
+
+      const ideaItems: ActivityItem[] = ideas.map((idea) => ({
+        id: `idea-${idea.id}`,
+        title: `${idea.business_idea} idea generated`,
+        time: idea.created_at,
+        icon: Lightbulb,
+      }));
+
+      const recent = [...planItems, ...ideaItems]
+        .sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime())
         .slice(0, 3);
 
       setActivities(recent);
@@ -73,23 +109,14 @@ export default function DashboardActivity() {
             <ActivitySkeleton />
           </>
         ) : activities.length ? (
-          activities.map((plan, index) => {
-            const data = plan.aiResponse?.data;
-            const title =
-              data?.summary_card?.title || plan.businessIdea || "Business plan";
-
-            const icon =
-              index === 0 ? FileText : index === 1 ? BarChart3 : Sparkles;
-
-            return (
-              <ActivityCard
-                key={plan.id}
-                icon={icon}
-                title={`${title} generated`}
-                time={timeAgo(plan.updatedAt || plan.createdAt)}
-              />
-            );
-          })
+          activities.map((activity) => (
+            <ActivityCard
+              key={activity.id}
+              icon={activity.icon}
+              title={activity.title}
+              time={timeAgo(activity.time)}
+            />
+          ))
         ) : (
           <div className="rounded-2xl bg-[#F8FAFC] p-4 text-sm text-[#64748B]">
             No recent activity yet.

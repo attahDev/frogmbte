@@ -1,4 +1,4 @@
-import { Bookmark, Clock3, Eye, MapPin, Star } from "lucide-react";
+import { Bookmark, Clock3, Eye, MapPin, Sparkles } from "lucide-react";
 import { Link } from "react-router-dom";
 import type { JobCardData } from "./types/jobs";
 
@@ -19,10 +19,12 @@ export default function JobCard({ job }: JobCardProps) {
           </p>
         </div>
 
-        <div className="inline-flex w-fit shrink-0 items-center gap-1 self-start rounded-full bg-[#F8F0D2] px-3 py-1.5 text-xs font-medium text-[#8A6A00] sm:py-2 sm:text-[14px]">
-          <Star size={14} className="fill-[#8A6A00] text-[#8A6A00]" />
-          {job.match}% match
-        </div>
+        {job.isFeatured && (
+          <div className="inline-flex w-fit shrink-0 items-center gap-1 self-start rounded-full bg-[#F8F0D2] px-3 py-1.5 text-xs font-medium text-[#8A6A00] sm:py-2 sm:text-[14px]">
+            <Sparkles size={14} className="fill-[#8A6A00] text-[#8A6A00]" />
+            Featured
+          </div>
+        )}
       </div>
 
       <div className="mt-4 flex flex-wrap items-center gap-4 text-[13px] text-[#6A7282]">
@@ -47,7 +49,9 @@ export default function JobCard({ job }: JobCardProps) {
         ))}
       </div>
 
-      <p className="mt-4 text-base font-semibold text-[#001F3F] sm:mt-5 sm:text-[18px]">{job.salary}</p>
+      <p className="mt-4 line-clamp-2 text-sm text-[#4A5565] sm:mt-5 sm:text-[15px]">
+        {job.description}
+      </p>
 
       <div className="mt-5 flex flex-col gap-2.5 sm:mt-6 sm:flex-row sm:items-stretch">
         <Link

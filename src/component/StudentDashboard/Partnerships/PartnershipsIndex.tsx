@@ -1,5 +1,4 @@
 import { Building2, Calendar, Handshake, Target, Users } from "lucide-react";
-import CommunitySpotlight from "../DashboardSection/CommunitySpotlight";
 import EducationToolkitCommunity from "../ServicesSection/Toolkits/EducationToolkitCommunity";
 import CollaborationLiveSessions from "../ToolkitsSection/CollaborativeSession";
 import CommunityMentorship from "../ToolkitsSection/CommunityMentorship";
@@ -61,7 +60,6 @@ export default function PartnershipsIndex() {
       <CommunityMentorship />
       <RealWorldPractice />
       <EducationToolkitCommunity />
-      <CommunitySpotlight />
     </div>
   );
 }

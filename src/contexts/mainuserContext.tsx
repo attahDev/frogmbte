@@ -4,6 +4,7 @@ import axios from 'axios';
 import type { User } from './userole';
 import { api } from './mainuseAuth';
 import toast from "react-hot-toast";
+import { refreshSocketAuth } from '../lib/socket';
 
 interface RegisterForm {
   firstname: string;
@@ -47,6 +48,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       localStorage.removeItem('token');
       delete api.defaults.headers.common['Authorization'];
     }
+    // Reconnect the realtime socket with the new (or cleared) token so
+    // private live events (badges, chat, mentor updates) work immediately
+    // after login without needing a manual page refresh.
+    refreshSocketAuth();
   };
 
   // Fixed fetchUserProfile - handles both wrapped and direct responses

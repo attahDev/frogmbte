@@ -16,6 +16,8 @@ export const sustainabilityCourses: SustainabilityCourse[] = [
     level: "Foundation",
     progress: 0,
     certificateAvailable: true,
+    tags: ["Climate Justice", "Social Justice", "Africa", "Policy"],
+    isFeatured: true,
 
     learningOutcomes: [
       "Explain climate justice and how it differs from general climate action.",
@@ -219,7 +221,7 @@ export const sustainabilityCourses: SustainabilityCourse[] = [
           },
           {
             id: "african-court",
-            title: "African Court on Human and Peoples’ Rights",
+            title: "African Court on Human and Peoples' Rights",
             type: "content",
             paragraphs: [
               "The African Court can examine climate issues through rights protected under the African Charter on Human and Peoples' Rights.",
@@ -390,6 +392,8 @@ export const sustainabilityCourses: SustainabilityCourse[] = [
     level: "Foundation",
     progress: 0,
     certificateAvailable: true,
+    tags: ["Technology", "Data", "AI", "Monitoring"],
+    isFeatured: false,
 
     learningOutcomes: [
       "Identify major climate-data sources.",

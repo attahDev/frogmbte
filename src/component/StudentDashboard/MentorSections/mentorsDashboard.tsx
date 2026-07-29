@@ -1,8 +1,10 @@
-import type { JSX } from "react";
-import { Users } from "lucide-react";
+import { useEffect, useRef, useState, type JSX } from "react";
+import { Users, MessageCircle } from "lucide-react";
 import { useApiGet } from "../hooks/useApiGet";
 import CardSkeleton from "../shared/CardSkeleton";
 import EmptyState from "../../MarketResearchDashboard/ui/EmptyState";
+import ConnectionPanel from "./ConnectionPanel";
+import CareerReadinessCard from "./CareerReadinessCard";
 
 export interface CardProps {
   children: React.ReactNode;
@@ -89,10 +91,26 @@ const statIconMeta = [
 // ------------------------------------------------------------
 
 export default function MentorsDashboard(): JSX.Element {
-  const { data: stats, loading: statsLoading } = useApiGet<MentorStats>("/mentors/stats", EMPTY_STATS);
-  const { data: mentors, loading: mentorsLoading } = useApiGet<MyMentorEntry[]>("/mentors/my-mentors", []);
+  const { data: stats, loading: statsLoading } = useApiGet<MentorStats>("/mentors/stats", EMPTY_STATS, [
+    "mentors:updated",
+  ]);
+  const { data: mentors, loading: mentorsLoading } = useApiGet<MyMentorEntry[]>("/mentors/my-mentors", [], [
+    "mentors:updated",
+  ]);
   const s = stats ?? EMPTY_STATS;
   const myMentors = mentors ?? [];
+  const [activeChat, setActiveChat] = useState<MyMentorEntry | null>(null);
+  const [initialTab, setInitialTab] = useState<"chat" | "sessions">("chat");
+  const activeChatRef = useRef<HTMLDivElement>(null);
+
+  // The panel renders above the mentor card grid — without this, clicking
+  // "Schedule Session" on a card further down the page opens the panel
+  // off-screen and looks like the button did nothing.
+  useEffect(() => {
+    if (activeChat) {
+      activeChatRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }, [activeChat]);
 
   return (
     <div className="mx-auto max-w-[1400px] px-4 py-6 sm:px-6 sm:py-8 lg:px-8 lg:py-10">
@@ -129,9 +147,26 @@ export default function MentorsDashboard(): JSX.Element {
         ))}
       </div>
 
+      <div className="mb-8 sm:mb-10 lg:mb-14">
+        <CareerReadinessCard />
+      </div>
+
       {/* Mentors Section */}
       <h2 className="text-xl sm:text-2xl font-bold text-[#001F3F] mb-1 sm:mb-2">Your Mentors Activity</h2>
       <p className="text-[#6B7280] text-sm sm:text-base mb-6 sm:mb-8">Stay connected with mentors guiding your journey.</p>
+
+      {activeChat && (
+        <div ref={activeChatRef} className="mb-6 max-w-md scroll-mt-6">
+          <ConnectionPanel
+            connectionId={activeChat.connectionId}
+            otherPartyName={activeChat.mentor.name}
+            otherPartySubtitle={activeChat.mentor.role}
+            viewerRole="mentee"
+            initialTab={initialTab}
+            onBack={() => setActiveChat(null)}
+          />
+        </div>
+      )}
 
       {mentorsLoading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
@@ -144,7 +179,7 @@ export default function MentorsDashboard(): JSX.Element {
           title="No mentors yet"
           description="You haven't connected with a mentor yet. Head to Find a Mentor to browse the directory and send a connection request."
           buttonText="Find a Mentor"
-          buttonHref="/dashboard/community/find"
+          buttonHref="/dashboard/mentors/find"
         />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
@@ -182,10 +217,24 @@ export default function MentorsDashboard(): JSX.Element {
                 </p>
 
                 <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
-                  <button className="bg-[#D7263D] px-3 sm:px-4 py-2 text-white rounded-xl text-xs sm:text-sm font-medium transition flex items-center justify-center gap-2 flex-1 sm:flex-initial">
+                  <button
+                    onClick={() => {
+                      setInitialTab("sessions");
+                      setActiveChat(m);
+                    }}
+                    className="bg-[#D7263D] px-3 sm:px-4 py-2 text-white rounded-xl text-xs sm:text-sm font-medium transition hover:bg-[#B01F32] flex items-center justify-center gap-2 flex-1 sm:flex-initial"
+                  >
                     <span className="truncate">Schedule Session</span>
                   </button>
-                  <Button variant="outline" className="flex-1 sm:flex-initial justify-center">
+                  <Button
+                    variant="outline"
+                    className="flex-1 sm:flex-initial justify-center"
+                    onClick={() => {
+                      setInitialTab("chat");
+                      setActiveChat(m);
+                    }}
+                  >
+                    <MessageCircle className="h-4 w-4" />
                     Message
                   </Button>
                 </div>

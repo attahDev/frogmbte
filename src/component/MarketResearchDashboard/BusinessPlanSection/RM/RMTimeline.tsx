@@ -1,20 +1,9 @@
-type CheckItem = {
-  text: string
-  done: boolean
-}
+import type { IdeaContent } from '../../lib/ideaEngineApi'
 
-type Phase = {
-  tag: string
-  title: string
-  items: CheckItem[]
-  isActive?: boolean
-}
-
-const phases: Phase[] = [
+const defaultPhases = [
   {
     tag: 'WEEK 1-2',
     title: 'Foundation & Validation',
-    isActive: false,
     items: [
       { text: 'Define core value proposition', done: true },
       { text: 'Conduct 10 customer interviews', done: true },
@@ -23,11 +12,10 @@ const phases: Phase[] = [
     ],
   },
   {
-    tag: 'MONTH 1 — ACTIVE',
-    title: 'Month 1 — Active',
-    isActive: true,
+    tag: 'MONTH 1',
+    title: 'Build & Recruit',
     items: [
-      { text: 'Design core user flows', done: true },
+      { text: 'Design core user flows', done: false },
       { text: 'Build MVP with core AI feature', done: false },
       { text: 'Recruit 20 beta testers', done: false },
       { text: 'Launch email waitlist campaign', done: false },
@@ -36,7 +24,6 @@ const phases: Phase[] = [
   {
     tag: 'MONTH 2-3',
     title: 'Beta Launch & Iteration',
-    isActive: false,
     items: [
       { text: 'Launch closed beta to 500 users', done: false },
       { text: 'Collect feedback and iterate weekly', done: false },
@@ -47,7 +34,6 @@ const phases: Phase[] = [
   {
     tag: '90-DAY GOAL',
     title: 'Public Launch',
-    isActive: false,
     items: [
       { text: 'Full public launch on Product Hunt', done: false },
       { text: 'Scale to 200 paying subscribers', done: false },
@@ -82,22 +68,29 @@ function Checkbox({ done }: { done: boolean }) {
   )
 }
 
-export default function RoadmapTimeline() {
+type Props = {
+  content?: IdeaContent
+}
+
+export default function RoadmapTimeline({ content }: Props) {
+  const phases = content?.roadmap.phases?.length ? content.roadmap.phases : defaultPhases
+  // The first not-fully-done phase is treated as the active one.
+  const activeIndex = phases.findIndex((p) => p.items.some((i) => !i.done))
+  const active = activeIndex === -1 ? 0 : activeIndex
+
   return (
     <section>
       <div className="relative">
-        {/* vertical line */}
         <div className="absolute left-3 top-4 bottom-4 w-px bg-[#D6DAE3]" />
 
         <div className="space-y-4">
-          {phases.map((phase) => (
+          {phases.map((phase, i) => (
             <div key={phase.tag} className="flex gap-5">
-              {/* dot */}
               <div className="relative z-10 mt-4 flex h-6 w-6 shrink-0 items-center justify-center">
                 <span
                   className={[
                     'h-3 w-3 rounded-full',
-                    phase.isActive ? 'bg-[#5AA34A]' : 'bg-[#CBD2DB]',
+                    i === active ? 'bg-[#5AA34A]' : 'bg-[#CBD2DB]',
                   ].join(' ')}
                 />
               </div>
@@ -106,7 +99,7 @@ export default function RoadmapTimeline() {
                 <p
                   className={[
                     'mb-0.5 text-[10px] font-bold tracking-[0.1em] uppercase',
-                    phase.isActive ? 'text-[#5AA34A]' : 'text-[#9CA3AF]',
+                    i === active ? 'text-[#5AA34A]' : 'text-[#9CA3AF]',
                   ].join(' ')}
                 >
                   {phase.tag}
@@ -114,8 +107,8 @@ export default function RoadmapTimeline() {
                 <h4 className="mb-3 text-sm font-bold text-[#001F3F]">{phase.title}</h4>
 
                 <div className="space-y-2">
-                  {phase.items.map((item) => (
-                    <div key={item.text} className="flex items-start gap-2.5">
+                  {phase.items.map((item, j) => (
+                    <div key={j} className="flex items-start gap-2.5">
                       <Checkbox done={item.done} />
                       <span
                         className={[

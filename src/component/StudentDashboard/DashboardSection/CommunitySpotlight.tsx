@@ -1,6 +1,8 @@
-import { Heart, MessageCircle, Share2, ArrowRight, Star } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Heart, MessageCircle, Share2, ArrowRight, Star, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useApiGet } from '../hooks/useApiGet';
+import { api } from '../../../lib/api';
 import CardSkeleton from '../shared/CardSkeleton';
 
 interface SpotlightStory {
@@ -14,6 +16,7 @@ interface SpotlightStory {
   likes: number;
   comments: number;
   createdAt: string;
+  hasLiked: boolean;
 }
 
 function initials(name: string) {
@@ -37,6 +40,37 @@ function timeAgo(iso: string) {
 export default function CommunitySpotlight() {
   const { data: stories, loading } = useApiGet<SpotlightStory[]>('/community/spotlight', []);
   const list = stories ?? [];
+
+  // The list itself only refetches on mount/route change — liking shouldn't
+  // require a full refetch, so track per-story overrides locally and fall
+  // back to whatever the API returned.
+  const [overrides, setOverrides] = useState<Record<string, { likes: number; hasLiked: boolean }>>({});
+  const [pending, setPending] = useState<Record<string, boolean>>({});
+
+  const toggleLike = async (story: SpotlightStory) => {
+    if (pending[story.id]) return;
+    const current = overrides[story.id] ?? { likes: story.likes, hasLiked: story.hasLiked };
+    const next = current.hasLiked
+      ? { likes: Math.max(0, current.likes - 1), hasLiked: false }
+      : { likes: current.likes + 1, hasLiked: true };
+
+    setPending((p) => ({ ...p, [story.id]: true }));
+    setOverrides((o) => ({ ...o, [story.id]: next })); // optimistic
+
+    try {
+      const { data } = current.hasLiked
+        ? await api.delete(`/community/spotlight/${story.id}/like`)
+        : await api.post(`/community/spotlight/${story.id}/like`);
+      const result = data?.data ?? data;
+      if (result && typeof result.likes === 'number') {
+        setOverrides((o) => ({ ...o, [story.id]: { likes: result.likes, hasLiked: result.hasLiked } }));
+      }
+    } catch {
+      setOverrides((o) => ({ ...o, [story.id]: current })); // revert on failure
+    } finally {
+      setPending((p) => ({ ...p, [story.id]: false }));
+    }
+  };
 
   return (
     <div className="w-full bg-[#FFFDF7] p-4 sm:p-6 lg:p-8">
@@ -65,57 +99,14 @@ export default function CommunitySpotlight() {
           ) : (
             <div className="space-y-4 sm:space-y-6">
               {list.map((story) => (
-                <div key={story.id} className="border border-gray-200 rounded-xl sm:rounded-2xl p-4 sm:p-6 hover:shadow-md transition-shadow">
-                  <div className="flex flex-col sm:flex-row gap-4 sm:gap-6">
-                    {/* Image */}
-                    {story.imageUrl && (
-                      <div className="flex-shrink-0">
-                        <img
-                          src={story.imageUrl}
-                          alt={story.title}
-                          className="w-full sm:w-28 md:w-32 h-48 sm:h-28 md:h-32 rounded-xl object-cover"
-                        />
-                      </div>
-                    )}
-
-                    {/* Content */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between mb-2 gap-1 sm:gap-0">
-                        <h3 className="text-xl sm:text-2xl font-bold text-gray-900">{story.title}</h3>
-                        <span className="text-xs sm:text-sm text-gray-500 whitespace-nowrap sm:ml-4">{timeAgo(story.createdAt)}</span>
-                      </div>
-
-                      <p className="text-gray-600 text-xs sm:text-sm mb-3 sm:mb-4 leading-relaxed">{story.description}</p>
-
-                      {/* Author and Actions */}
-                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0">
-                        <div className="flex items-center gap-3">
-                          <div className={`w-8 h-8 sm:w-10 sm:h-10 ${story.avatarColor ?? 'bg-red-600'} rounded-full flex items-center justify-center text-white font-semibold text-xs sm:text-sm`}>
-                            {initials(story.authorName)}
-                          </div>
-                          <div>
-                            <p className="font-semibold text-gray-900 text-xs sm:text-sm">{story.authorName}</p>
-                            <p className="text-gray-600 text-[10px] sm:text-xs">{story.authorRole}</p>
-                          </div>
-                        </div>
-
-                        <div className="flex items-center gap-4 sm:gap-6">
-                          <span className="flex items-center gap-1.5 sm:gap-2 text-gray-600">
-                            <Heart className="w-4 h-4 sm:w-5 sm:h-5" />
-                            <span className="text-xs sm:text-sm font-medium">{story.likes}</span>
-                          </span>
-                          <span className="flex items-center gap-1.5 sm:gap-2 text-gray-600">
-                            <MessageCircle className="w-4 h-4 sm:w-5 sm:h-5" />
-                            <span className="text-xs sm:text-sm font-medium">{story.comments}</span>
-                          </span>
-                          <button className="text-gray-600 hover:text-gray-900 transition" aria-label="Share">
-                            <Share2 className="w-4 h-4 sm:w-5 sm:h-5" />
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                <StoryCard
+                  key={story.id}
+                  story={story}
+                  likes={overrides[story.id]?.likes ?? story.likes}
+                  hasLiked={overrides[story.id]?.hasLiked ?? story.hasLiked}
+                  pending={!!pending[story.id]}
+                  onToggleLike={() => toggleLike(story)}
+                />
               ))}
             </div>
           )}
@@ -132,6 +123,121 @@ export default function CommunitySpotlight() {
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+function StoryCard({
+  story,
+  likes,
+  hasLiked,
+  pending,
+  onToggleLike,
+}: {
+  story: SpotlightStory;
+  likes: number;
+  hasLiked: boolean;
+  pending: boolean;
+  onToggleLike: () => void;
+}) {
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+
+  return (
+    <div className="rounded-xl sm:rounded-2xl bg-white border border-gray-200 hover:shadow-md transition-shadow overflow-hidden">
+      <div className="p-4 sm:p-6 pb-0">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className={`w-9 h-9 sm:w-10 sm:h-10 shrink-0 ${story.avatarColor ?? 'bg-red-600'} rounded-full flex items-center justify-center text-white font-semibold text-xs sm:text-sm`}>
+              {initials(story.authorName)}
+            </div>
+            <div className="min-w-0">
+              <p className="font-semibold text-gray-900 text-xs sm:text-sm truncate">{story.authorName}</p>
+              <p className="text-gray-500 text-[10px] sm:text-xs truncate">{story.authorRole}</p>
+            </div>
+          </div>
+          <span className="text-xs sm:text-sm text-gray-400 whitespace-nowrap shrink-0">{timeAgo(story.createdAt)}</span>
+        </div>
+
+        <h3 className="text-lg sm:text-xl font-bold text-gray-900 mt-3">{story.title}</h3>
+        <p className="text-gray-600 text-xs sm:text-sm mt-1 leading-relaxed">{story.description}</p>
+      </div>
+
+      {story.imageUrl && (
+        <button
+          type="button"
+          onClick={() => setLightboxOpen(true)}
+          className="mt-4 block w-full group"
+          aria-label="View full-size photo"
+        >
+          <img
+            src={story.imageUrl}
+            alt={story.title}
+            loading="lazy"
+            className="w-full h-64 sm:h-80 object-cover group-hover:brightness-95 transition"
+          />
+        </button>
+      )}
+
+      <div className="flex items-center gap-4 sm:gap-6 px-4 sm:px-6 py-3 sm:py-4">
+        <button
+          type="button"
+          onClick={onToggleLike}
+          disabled={pending}
+          className={`flex items-center gap-1.5 sm:gap-2 transition disabled:opacity-60 ${
+            hasLiked ? 'text-red-600' : 'text-gray-600 hover:text-red-600'
+          }`}
+          aria-label={hasLiked ? 'Unlike' : 'Like'}
+        >
+          <Heart className="w-4 h-4 sm:w-5 sm:h-5" fill={hasLiked ? 'currentColor' : 'none'} />
+          <span className="text-xs sm:text-sm font-medium">{likes}</span>
+        </button>
+        <span className="flex items-center gap-1.5 sm:gap-2 text-gray-600">
+          <MessageCircle className="w-4 h-4 sm:w-5 sm:h-5" />
+          <span className="text-xs sm:text-sm font-medium">{story.comments}</span>
+        </span>
+        <button className="text-gray-600 hover:text-gray-900 transition ml-auto" aria-label="Share">
+          <Share2 className="w-4 h-4 sm:w-5 sm:h-5" />
+        </button>
+      </div>
+
+      {lightboxOpen && story.imageUrl && (
+        <Lightbox src={story.imageUrl} alt={story.title} onClose={() => setLightboxOpen(false)} />
+      )}
+    </div>
+  );
+}
+
+/** Full-screen click-to-view for a story photo — uncropped (object-contain),
+ *  since the card thumbnail above is deliberately cropped to a fixed height
+ *  for a consistent grid. Closes on backdrop click or Escape. */
+function Lightbox({ src, alt, onClose }: { src: string; alt: string; onClose: () => void }) {
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [onClose]);
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-4 sm:p-8"
+      onClick={onClose}
+    >
+      <button
+        type="button"
+        onClick={onClose}
+        className="absolute top-4 right-4 rounded-full bg-white/10 p-2 text-white hover:bg-white/20 transition"
+        aria-label="Close"
+      >
+        <X className="h-6 w-6" />
+      </button>
+      <img
+        src={src}
+        alt={alt}
+        onClick={(e) => e.stopPropagation()}
+        className="max-h-full max-w-full rounded-lg object-contain"
+      />
     </div>
   );
 }

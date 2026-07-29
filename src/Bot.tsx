@@ -22,7 +22,10 @@ export const BotComp = () => {
   const [open, setOpen] = useState(false);
   const [userType, setUserType] = useState<UserType>(null);
   const [messages, setMessages] = useState<Message[]>([
-    { from: "bot", text: "Hi, welcome to GMBTE. How can I help you today?" },
+    {
+      from: "bot",
+      text: "Hey, I'm Nora 👋 — think of me as your friendly guide around GMBTE. Whether you're here to learn, mentor, or partner with us, I've got you. What brings you by today?",
+    },
   ]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -44,7 +47,9 @@ export const BotComp = () => {
     setMessages([
       {
         from: "bot",
-        text: `Great! You selected ${type}. What would you like to do?`,
+        text: type
+          ? `Got it, a ${type.toLowerCase()} — good to have you here! What would you like to do?`
+          : "What would you like to do?",
       },
     ]);
   };
@@ -147,9 +152,9 @@ export const BotComp = () => {
 
                 <div>
                   <h2 className="text-[16px] font-bold text-[#001F3F]">
-                    GMBTE Assistant
+                    Nora · GMBTE Guide
                   </h2>
-                  <p className="text-sm text-[#5C5C00]">Here to help!</p>
+                  <p className="text-sm text-[#5C5C00]">Ask me anything, I don't bite 🙂</p>
                 </div>
               </div>
 
@@ -183,7 +188,7 @@ export const BotComp = () => {
                   {messages.map((msg, index) => (
                     <div
                       key={index}
-                      className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm ${
+                      className={`max-w-[80%] whitespace-pre-line rounded-2xl px-4 py-3 text-sm ${
                         msg.from === "bot"
                           ? "bg-[#F3F4F6] text-[#001F3F]"
                           : "ml-auto bg-[#00264D] text-white"

@@ -103,7 +103,8 @@ export default function MarketResearchPage({
         <div className="ml-auto flex flex-wrap items-center gap-2">
           {showResult && (
             <>
-              <ExportButton query={currentQuery} jobData={jobData} />
+              {/* Export PDF hidden per product decision — re-enable by uncommenting */}
+              {/* <ExportButton query={currentQuery} jobData={jobData} /> */}
               <button
                 onClick={onNewSearch}
                 className="inline-flex items-center gap-1.5 rounded-xl bg-[#D7263D] px-4 py-2 text-xs font-bold text-white transition hover:-translate-y-0.5 hover:bg-[#A81D2F]"
