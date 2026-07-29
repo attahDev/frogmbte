@@ -12,6 +12,6 @@ export const useAuth = () => {
 };
 
 export const api = axios.create({
-  baseURL: "https://gmbtebac.onrender.com",
+  baseURL: "https://backgmb.onrender.com",
   withCredentials: true,
 });
