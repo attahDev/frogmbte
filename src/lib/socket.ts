@@ -10,7 +10,7 @@ import { io } from "socket.io-client";
  * backend) — they just don't get private events, only broadcasts like
  * "opportunities:updated".
  */
-const API_URL = "https://gmbtebac.onrender.com";
+const API_URL = "https://backgmb.onrender.com";
 
 function getToken(): string | null {
   if (typeof window === "undefined") return null;
