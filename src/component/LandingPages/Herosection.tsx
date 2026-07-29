@@ -23,8 +23,20 @@ const floatBottom = {
   },
 };
 
+const opportunities = [
+  "Grow Your Business",
+  "Find Opportunities",
+  "Learn New Skills",
+  "Hire Talent",
+  "Raise Investment",
+  "Attend Events",
+  "Access AI Tools",
+  "Build Global Connections",
+] as const;
+
 const HeroSection: React.FC = () => {
   return (
+    <>
     <section className="relative bg-[#001F3F] text-white overflow-hidden min-h-[90vh] sm:min-h-[95vh] flex items-center">
       
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_70%_55%_at_28%_50%,rgba(250,211,21,0.07)_0%,transparent_70%)] pointer-events-none z-0" />
@@ -48,16 +60,15 @@ const HeroSection: React.FC = () => {
           </div>
 
           {/* Heading */}
-          <h1 className="text-white font-open-sans text-3xl sm:text-5xl md:text-[64px] font-semibold leading-[1.1] tracking-wide">
-            Empowering Communities
-            <br /> Through Tech
-            <br /> & Connection
+          <h1 className="text-white font-open-sans text-2xl sm:text-3xl md:text-[54px] font-semibold leading-[1.1] tracking-wide">
+            The Digital Infrastructure for
+            <br /> Black Innovation, Business & Talent
           </h1>
 
           {/* Description */}
-          <p className="text-[#DBEAFE]/90 text-base text-center lg:text-left leading-[1.65] tracking-wide max-w-lg mx-auto lg:mx-0">
-            Bringing Greater Manchester&apos;s diverse talent closer to {" "}<br className="hidden sm:block" />  mentorship, jobs, and innovation in technology.
-          </p>
+          <p className="text-[#DBEAFE]/90 text-base text-center lg:text-left leading-[1.60] tracking-wide max-w-lg mx-auto lg:mx-0">
+           Black Tech Expo is a technology platform connecting entrepreneurs, professionals, students, {" "}<br className="hidden sm:block" />  investors, corporations and governments through AI-powered tools, digital services, events, education and global collaboration.
+            </p>
 
           {/* Buttons */}
           <div className="flex flex-col sm:flex-row justify-center lg:justify-start gap-3 mt-1 mb-8 lg:mb-12">
@@ -104,6 +115,8 @@ const HeroSection: React.FC = () => {
             <motion.img
               src="/hero/hero1.jpeg"
               alt="A diverse group of 13 people smiling and posing indoors at Black Tech Expo."
+              initial={{ y: 0 }}
+              animate={floatBottom}
               className="absolute -bottom-8 left-1/2 -translate-x-1/2 w-28 h-20 md:w-32 md:h-24 lg:w-38 lg:h-35 object-cover rounded-xl border-4 shadow-lg border-white z-10"
             />
           </div>
@@ -125,6 +138,38 @@ const HeroSection: React.FC = () => {
         </div>
       </div>
     </section>
+
+    {/* Opportunities band — compact professional strip */}
+    <section className="relative bg-[#F7F4EC] border-b border-[#001F3F]/10">
+      <div className="absolute top-0 inset-x-0 h-0.5 bg-[#FAD315]" />
+
+      <div className="max-w-[1450px] mx-auto px-4 sm:px-6 md:px-8 lg:px-9 xl:px-14 py-5 sm:py-6">
+        <div className="flex flex-col items-center gap-3.5">
+          <h2 className="font-open-sans text-[13px] sm:text-sm font-semibold tracking-[0.04em] uppercase text-[#001F3F] text-center">
+            One Platform
+            <span className="mx-2 text-[#FAD315]" aria-hidden>·</span>
+            <span className="text-[#D7263D]">Endless Opportunities</span>
+          </h2>
+
+          <ul className="flex flex-wrap justify-center items-center gap-y-2 text-[13px] sm:text-sm text-[#001F3F]/75">
+            {opportunities.map((item, index) => (
+              <li key={item} className="flex items-center">
+                {index > 0 && (
+                  <span
+                    className="mx-2.5 sm:mx-3.5 h-3 w-px bg-[#001F3F]/15"
+                    aria-hidden
+                  />
+                )}
+                <span className="font-medium text-[#001F3F]/80 whitespace-nowrap">
+                  {item}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
+    </section>
+    </>
   );
 };
 

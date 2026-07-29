@@ -40,6 +40,14 @@ const teamMembers: TeamMember[] = [
     role: "Building bridges between academia and industry",
     image: "/about/team/sadiq.png",
   },
+  {
+    name: "Dr. Emilee",
+    lname: "Simmons",
+    title: "Advisory Board - Black Tech Expo",
+    role: "Former Microsoft PM, passionate about diversity in tech",
+    image: "/spotlight/emilee2.png",
+    imagePosition: "object-[50%_22%] sm:object-[50%_18%] lg:object-[30%_10%]"
+  },
 ];
 
 const MeetTheTeam: React.FC = () => {
