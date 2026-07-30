@@ -49,7 +49,7 @@ export default function CommunityPage() {
 
   useEffect(load, []);
 
-  const pendingOrRejected = useMemo(
+  const flaggedOrRejected = useMemo(
     () => (mine ?? []).filter((p) => p.status !== "APPROVED"),
     [mine]
   );
@@ -67,25 +67,29 @@ export default function CommunityPage() {
           onPosted={load}
         />
 
-        {pendingOrRejected.length > 0 && (
+        {flaggedOrRejected.length > 0 && (
           <div className="mt-6 space-y-2">
-            {pendingOrRejected.map((p) => (
+            {flaggedOrRejected.map((p) => (
               <div
                 key={p.id}
                 className={`flex items-center gap-2 rounded-xl px-4 py-3 text-sm ${
-                  p.status === "PENDING"
+                  p.status === "FLAGGED" || p.status === "PENDING"
                     ? "bg-amber-50 text-amber-800"
                     : "bg-red-50 text-red-700"
                 }`}
               >
-                {p.status === "PENDING" ? (
+                {p.status === "FLAGGED" || p.status === "PENDING" ? (
                   <Clock className="h-4 w-4 shrink-0" />
                 ) : (
                   <XCircle className="h-4 w-4 shrink-0" />
                 )}
                 <span className="font-medium">{p.title}</span>
                 <span className="text-xs opacity-75">
-                  {p.status === "PENDING" ? "— awaiting admin approval" : "— not approved"}
+                  {p.status === "FLAGGED"
+                    ? "— pulled from the feed, awaiting admin review"
+                    : p.status === "PENDING"
+                    ? "— awaiting admin approval"
+                    : "— removed"}
                 </span>
               </div>
             ))}
@@ -141,7 +145,7 @@ function Composer({ authorName, onPosted }: { authorName: string; onPosted: () =
     setSubmitting(true);
     try {
       await createCommunityPost({ title, description, image });
-      setMessage("Posted! It'll show up in the feed once an admin approves it.");
+      setMessage("Posted! It's live in the feed now.");
       reset();
       onPosted();
     } catch {

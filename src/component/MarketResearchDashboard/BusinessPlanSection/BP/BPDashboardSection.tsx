@@ -6,9 +6,11 @@ import type { IdeaContent } from '../../lib/ideaEngineApi'
 
 type Props = {
   content?: IdeaContent
+  planId?: string
+  initialCompletedIndexes?: number[]
 }
 
-export const BPDashboardSection = ({ content }: Props) => {
+export const BPDashboardSection = ({ content, planId, initialCompletedIndexes }: Props) => {
   return (
     <div className="min-h-screen bg-[#F2F2EE] px-4 py-6 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-[1600px] space-y-6">
@@ -16,7 +18,7 @@ export const BPDashboardSection = ({ content }: Props) => {
           <div className="space-y-6">
             <BPExecutiveSummary content={content} />
             <BPBusinessModel content={content} />
-            <BPNextActions content={content} />
+            <BPNextActions content={content} planId={planId} initialCompletedIndexes={initialCompletedIndexes} />
           </div>
 
           <ChatSideBarPanel />

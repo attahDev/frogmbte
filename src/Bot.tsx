@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Bot, X, ChevronRight, ArrowLeft, Send, Loader2 } from "lucide-react";
 import { api } from "./lib/api"; // adjust path if your api file is elsewhere
@@ -8,6 +9,7 @@ type UserType = "Student" | "Mentor" | "Partner" | null;
 type Message = {
   from: "bot" | "user";
   text: string;
+  route?: string | null;
 };
 
 const CHAT_SESSION_KEY = "gmbte_chat_session_id";
@@ -19,6 +21,7 @@ const visitorTypeMap = {
 } as const;
 
 export const BotComp = () => {
+  const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const [userType, setUserType] = useState<UserType>(null);
   const [messages, setMessages] = useState<Message[]>([
@@ -97,6 +100,7 @@ export const BotComp = () => {
 
     const newSessionId = data?.data?.sessionId;
     const answer = data?.data?.answer;
+    const suggestedRoute = data?.data?.suggestedRoute;
 
     if (newSessionId) {
       localStorage.setItem(CHAT_SESSION_KEY, newSessionId);
@@ -107,6 +111,7 @@ export const BotComp = () => {
       {
         from: "bot",
         text: answer || "Sorry, I could not generate a response.",
+        route: suggestedRoute || null,
       },
     ]);
   } catch (error: any) {
@@ -186,15 +191,28 @@ export const BotComp = () => {
               <>
                 <div className="flex-1 space-y-3 overflow-y-auto p-4">
                   {messages.map((msg, index) => (
-                    <div
-                      key={index}
-                      className={`max-w-[80%] whitespace-pre-line rounded-2xl px-4 py-3 text-sm ${
-                        msg.from === "bot"
-                          ? "bg-[#F3F4F6] text-[#001F3F]"
-                          : "ml-auto bg-[#00264D] text-white"
-                      }`}
-                    >
-                      {msg.text}
+                    <div key={index} className={msg.from === "bot" ? "max-w-[80%]" : "ml-auto max-w-[80%]"}>
+                      <div
+                        className={`whitespace-pre-line rounded-2xl px-4 py-3 text-sm ${
+                          msg.from === "bot"
+                            ? "bg-[#F3F4F6] text-[#001F3F]"
+                            : "bg-[#00264D] text-white"
+                        }`}
+                      >
+                        {msg.text}
+                      </div>
+                      {msg.from === "bot" && msg.route && (
+                        <button
+                          onClick={() => {
+                            navigate(msg.route!);
+                            setOpen(false);
+                          }}
+                          className="mt-2 inline-flex items-center gap-1 rounded-full bg-[#F6D04D] px-3 py-1.5 text-xs font-semibold text-[#001F3F] transition hover:opacity-90"
+                        >
+                          Take me there
+                          <ChevronRight className="h-3.5 w-3.5" />
+                        </button>
+                      )}
                     </div>
                   ))}
 

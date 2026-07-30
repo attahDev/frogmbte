@@ -32,12 +32,13 @@ export const readStoredBusinessMentorChatId = (): string | undefined => {
  */
 export const sendMentorMessage = async (
   message: string,
-  chatId?: string
+  chatId?: string,
+  persona?: 'sam' | 'business_mentor'
 ): Promise<MentorChatResponse> => {
   try {
     const response = await api.post<WrappedResponse | MentorChatResponse>(
       "/mentor-ai/chat",
-      { message, chatId }
+      { message, chatId, persona }
     );
     return unwrap(response.data);
   } catch (err: any) {
@@ -48,13 +49,37 @@ export const sendMentorMessage = async (
       if (typeof window !== 'undefined') sessionStorage.removeItem(BUSINESS_MENTOR_CHAT_ID_KEY);
       const response = await api.post<WrappedResponse | MentorChatResponse>(
         "/mentor-ai/chat",
-        { message }
+        { message, persona }
       );
       return unwrap(response.data);
     }
     throw err;
   }
 };
+
+export type MentorChatSummary = { id: string; title: string | null; createdAt: string; updatedAt: string };
+export type MentorMessage = { id: string; role: 'USER' | 'ASSISTANT'; content: string; createdAt: string };
+export type MentorChatDetail = MentorChatSummary & { messages: MentorMessage[] };
+
+/** GET /mentor-ai/chats — past conversations for the resume list. */
+export const listMentorChats = async (): Promise<MentorChatSummary[]> => {
+  const response = await api.get<{ success: boolean; data: MentorChatSummary[] }>("/mentor-ai/chats");
+  return unwrapList(response.data);
+};
+
+/** GET /mentor-ai/chats/:id — full message history, for hydrating the UI
+ *  instead of always starting from a blank slate. */
+export const getMentorChat = async (chatId: string): Promise<MentorChatDetail> => {
+  const response = await api.get<{ success: boolean; data: MentorChatDetail } | MentorChatDetail>(
+    `/mentor-ai/chats/${chatId}`
+  );
+  const body = response.data as any;
+  return "data" in body ? body.data : body;
+};
+
+function unwrapList<T>(body: { success: boolean; data: T } | T): T {
+  return (body as any)?.data ?? body;
+}
 
 function unwrap(body: WrappedResponse | MentorChatResponse): MentorChatResponse {
   return "data" in body ? body.data : body;

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Bot, Circle, Loader2, Send, X } from 'lucide-react';
 import AIDashboardButton from '../ui/AIDashboardButton';
 import AIDashboardCard from '../ui/AIDashboardCard';
-import { sendMentorMessage, BUSINESS_MENTOR_CHAT_ID_KEY, readStoredBusinessMentorChatId } from '../lib/mentorAiApi';
+import { sendMentorMessage, getMentorChat, BUSINESS_MENTOR_CHAT_ID_KEY, readStoredBusinessMentorChatId } from '../lib/mentorAiApi';
 
 const prompts = [
   'I want to start a business...',
@@ -43,6 +43,30 @@ export default function BusinessMentorChat({ onClose, isMobileOverlay = false }:
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, loading]);
+
+  useEffect(() => {
+    const existingChatId = chatIdRef.current;
+    if (!existingChatId) return;
+
+    getMentorChat(existingChatId)
+      .then((chat) => {
+        if (!chat.messages?.length) return;
+        setMessages([
+          welcomeMessage,
+          ...chat.messages.map((m) => ({
+            id: m.id,
+            role: m.role === 'USER' ? ('user' as const) : ('assistant' as const),
+            text: m.content,
+            time: new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          })),
+        ]);
+      })
+      .catch(() => {
+        // Stale/foreign chatId — fall back to a fresh conversation.
+        chatIdRef.current = undefined;
+        if (typeof window !== 'undefined') sessionStorage.removeItem(BUSINESS_MENTOR_CHAT_ID_KEY);
+      });
+  }, []);
 
   const handleSend = async (text?: string) => {
     const messageText = (text ?? input).trim();

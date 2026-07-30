@@ -178,6 +178,7 @@ function ProjectDetailsModal({
   plan: BusinessPlanHistoryItem;
   onClose: () => void;
 }) {
+  const navigate = useNavigate();
   const data = plan.aiResponse?.data;
 
   return (
@@ -203,6 +204,13 @@ function ProjectDetailsModal({
             <X className="h-5 w-5" />
           </button>
         </div>
+
+        <button
+          onClick={() => navigate(`/dashboard/business-plan/${plan.id}`)}
+          className="mb-6 rounded-full bg-[#001F3F] px-5 py-2 text-sm font-semibold text-white transition hover:opacity-90"
+        >
+          Open Full Plan
+        </button>
 
         <div className="grid gap-4 md:grid-cols-3">
           <InfoCard

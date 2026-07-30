@@ -141,6 +141,12 @@ export default function DashboardHero({
 
       setGeneratedPlan(result.data);
       onPlanGenerated?.(result.data);
+
+      if (result.planId) {
+        navigate(`/dashboard/business-plan/${result.planId}`);
+      } else {
+        navigate("/dashboard/business-plan");
+      }
     } catch (err: any) {
       setError(
         err?.response?.data?.error ||

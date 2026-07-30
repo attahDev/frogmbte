@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useParams } from 'react-router-dom'
 import { BPDashboardSection } from './BP/BPDashboardSection'
 import { FinDashboardSection } from './FI/FIDashboardSection'
 import { RoadmapDashboardSection } from './RM/RMDashboardSection'
@@ -8,6 +9,7 @@ import BPEmpty from './BPEmpty'
 import ChatSideBarPanel from '../ChatSideBar/ChatSideBarPanel'
 import { getIdea, type IdeaContent } from '../lib/ideaEngineApi'
 import { getCurrentIdeaId } from '../lib/currentIdea'
+import { getBusinessPlanById } from '../lib/businessPlannerApi'
 
 type Tab = 'roadmap' | 'financials' | 'business-plan'
 
@@ -18,10 +20,34 @@ const tabs: { id: Tab; label: string }[] = [
 ]
 
 export default function BPTabs() {
+  // planId in the URL (/dashboard/business-plan/:planId) is the source of
+  // truth for which saved plan is being viewed. Since it's saved server-side
+  // by userId, this URL works the same on any device the user is signed
+  // into — no per-device/session state involved.
+  const { planId: routePlanId } = useParams<{ planId?: string }>()
   const [active, setActive] = useState<Tab>('roadmap')
   const [content, setContent] = useState<IdeaContent | undefined>(undefined)
   const [loading, setLoading] = useState(true)
   const [hasIdea, setHasIdea] = useState(false)
+  const [planId, setPlanId] = useState<string | undefined>(undefined)
+  const [initialCompletedIndexes, setInitialCompletedIndexes] = useState<number[]>([])
+
+  useEffect(() => {
+    if (!routePlanId) return
+    let cancelled = false
+    getBusinessPlanById(routePlanId)
+      .then((plan) => {
+        if (cancelled) return
+        setPlanId(plan.id)
+        setInitialCompletedIndexes(plan.completedActionIndexes || [])
+      })
+      .catch(() => {
+        /* invalid/inaccessible plan id — checkboxes just start unchecked */
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [routePlanId])
 
   useEffect(() => {
     const ideaId = getCurrentIdeaId()
@@ -91,7 +117,13 @@ export default function BPTabs() {
       {/* Tab content */}
       {active === 'roadmap'       && <RoadmapDashboardSection content={content} />}
       {active === 'financials'    && <FinDashboardSection     content={content} />}
-      {active === 'business-plan' && <BPDashboardSection      content={content} />}
+      {active === 'business-plan' && (
+        <BPDashboardSection
+          content={content}
+          planId={planId}
+          initialCompletedIndexes={initialCompletedIndexes}
+        />
+      )}
     </div>
   )
 }

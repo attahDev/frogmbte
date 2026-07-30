@@ -48,6 +48,29 @@ export default function MentorAIAssistant() {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, loading, error]);
 
+  useEffect(() => {
+    if (!chatId) return;
+
+    api
+      .get(`/mentor-ai/chats/${chatId}`)
+      .then((res) => {
+        const chat = res.data?.data ?? res.data;
+        if (!chat?.messages?.length) return;
+        setMessages(
+          chat.messages.map((m: { role: string; content: string }) => ({
+            role: m.role === "USER" ? "user" : "assistant",
+            content: m.content,
+          }))
+        );
+        setHasStarted(true);
+      })
+      .catch(() => {
+        // Stale/foreign chatId — fall back to a fresh conversation.
+        setChatId(null);
+        if (typeof window !== "undefined") sessionStorage.removeItem(CHAT_ID_KEY);
+      });
+  }, []);
+
   const startChat = async (text: string) => {
     const cleanText = text.trim();
     if (!cleanText || loading) return;
@@ -63,14 +86,14 @@ export default function MentorAIAssistant() {
     try {
       let res;
       try {
-        res = await api.post("/mentor-ai/chat", { message: cleanText, chatId });
+        res = await api.post("/mentor-ai/chat", { message: cleanText, chatId, persona: "sam" });
       } catch (err: any) {
         const isStaleChat =
           err?.response?.status === 400 &&
           chatId &&
           /chat not found/i.test(err?.response?.data?.message ?? "");
         if (!isStaleChat) throw err;
-        res = await api.post("/mentor-ai/chat", { message: cleanText });
+        res = await api.post("/mentor-ai/chat", { message: cleanText, persona: "sam" });
       }
 
       const data: ApiResponse = res.data?.data ?? res.data;
@@ -196,7 +219,7 @@ export default function MentorAIAssistant() {
                 </div>
 
                 <h2 className="mt-4 text-lg font-bold text-[#001F3F] sm:mt-5 sm:text-xl lg:text-[25px]">
-                  Hi, I&apos;m your MentorAI 👋
+                  Hi, I&apos;m Sam, your MentorAI 👋
                 </h2>
 
                 <p className="mt-2 max-w-[520px] text-sm leading-relaxed text-[#6B7280]">
@@ -247,7 +270,7 @@ export default function MentorAIAssistant() {
                     </div>
                     <div className="rounded-[14px] bg-[#001F3F08] px-3.5 py-3 sm:px-5 sm:py-4">
                       <p className="text-sm font-semibold text-[#101828] sm:text-base">
-                        MentorAI is thinking...
+                        Sam is thinking...
                       </p>
                     </div>
                   </div>

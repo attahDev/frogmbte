@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { api } from "../../lib/api";
+import { fetchEventAttendees, type EventAttendee } from "../../lib/eventsApi";
 
 type EventRecap = {
   summary: string;
@@ -72,6 +73,24 @@ export default function AdminEvents() {
   const [recapKeepGallery, setRecapKeepGallery] = useState<string[]>([]);
   const [recapNewFiles, setRecapNewFiles] = useState<File[]>([]);
   const [recapSubmitting, setRecapSubmitting] = useState(false);
+
+  const [attendeesFor, setAttendeesFor] = useState<{
+    eventId: string;
+    eventTitle: string;
+    count: number;
+    attendees: EventAttendee[];
+  } | null>(null);
+  const [attendeesLoading, setAttendeesLoading] = useState(false);
+  const [attendeesError, setAttendeesError] = useState(false);
+
+  const viewAttendees = (eventId: string) => {
+    setAttendeesLoading(true);
+    setAttendeesError(false);
+    fetchEventAttendees(eventId)
+      .then(setAttendeesFor)
+      .catch(() => setAttendeesError(true))
+      .finally(() => setAttendeesLoading(false));
+  };
 
   const load = () => {
     api
@@ -525,7 +544,7 @@ export default function AdminEvents() {
                     <input
                       value={editForm.link}
                       onChange={(e) => setEditForm({ ...editForm, link: e.target.value })}
-                      placeholder="Link (optional)"
+                      placeholder="Link — registration page, Zoom/Meet, Eventbrite (optional)"
                       className="rounded border border-gray-300 px-2 py-1 text-sm"
                     />
                     <input
@@ -671,6 +690,12 @@ export default function AdminEvents() {
                       {ev.recap ? "Edit recap" : "Add recap"}
                     </button>
                     <button
+                      onClick={() => viewAttendees(ev.id)}
+                      className="rounded border border-gray-300 px-2 py-1 text-xs text-gray-600"
+                    >
+                      Attendees
+                    </button>
+                    <button
                       onClick={() => toggleActive(ev)}
                       disabled={submitting}
                       className="rounded border border-gray-300 px-2 py-1 text-xs text-gray-600 disabled:opacity-50"
@@ -684,6 +709,56 @@ export default function AdminEvents() {
           </div>
         )}
       </div>
+
+      {(attendeesLoading || attendeesError || attendeesFor) && (
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 p-4"
+          onClick={() => {
+            setAttendeesFor(null);
+            setAttendeesError(false);
+          }}
+        >
+          <div
+            className="max-h-[80vh] w-full max-w-md overflow-y-auto rounded-md bg-white p-4 shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {attendeesLoading ? (
+              <p className="text-sm text-gray-500">Loading attendees…</p>
+            ) : attendeesError ? (
+              <p className="text-sm text-[#8A1F1F]">Couldn't load attendees — the request failed.</p>
+            ) : attendeesFor ? (
+              <>
+                <h3 className="text-sm font-semibold text-[#001F3F]">{attendeesFor.eventTitle}</h3>
+                <p className="mt-1 text-xs text-gray-400">
+                  {attendeesFor.count} expected {attendeesFor.count === 1 ? "invitee" : "invitees"} registered
+                  through GMBTE
+                </p>
+                {attendeesFor.count === 0 ? (
+                  <p className="mt-3 text-sm text-gray-500">No one has registered yet.</p>
+                ) : (
+                  <div className="mt-3 space-y-2">
+                    {attendeesFor.attendees.map((a) => (
+                      <div key={a.userId} className="rounded border border-gray-200 p-2 text-sm">
+                        <p className="font-medium text-[#001F3F]">{a.name}</p>
+                        <p className="text-xs text-gray-500">{a.email}</p>
+                        <p className="text-xs text-gray-400">
+                          Registered {new Date(a.registeredAt).toLocaleString()}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <button
+                  onClick={() => setAttendeesFor(null)}
+                  className="mt-4 w-full rounded border border-gray-300 px-3 py-1.5 text-sm text-gray-600"
+                >
+                  Close
+                </button>
+              </>
+            ) : null}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

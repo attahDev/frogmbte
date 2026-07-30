@@ -218,6 +218,7 @@ function AppLayout() {
             />
             <Route path="opportunity-insights" element={<MRDashboardSection />} />
             <Route path="business-plan" element={<BPTabs />} />
+            <Route path="business-plan/:planId" element={<BPTabs />} />
 
             <Route path="services" element={<Navigate to="/dashboard/business" replace />} />
             <Route path="services/toolkits" element={<Navigate to="/dashboard/business" replace />} />

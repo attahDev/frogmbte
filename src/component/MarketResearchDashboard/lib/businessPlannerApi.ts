@@ -25,6 +25,7 @@ export type BusinessPlanHistoryItem = {
   experienceLevel: string;
   goal: string;
   aiResponse: any;
+  completedActionIndexes: number[];
   createdAt: string;
   updatedAt: string;
 };
@@ -41,6 +42,27 @@ export const getBusinessPlanHistory = async () => {
     message: string;
     timestamp: string;
   }>("/business-planner/history");
+
+  return response.data;
+};
+
+export const getBusinessPlanById = async (planId: string) => {
+  const response = await api.get<BusinessPlanHistoryItem>(
+    `/business-planner/${planId}`
+  );
+
+  return response.data;
+};
+
+export const updatePlanProgress = async (
+  planId: string,
+  completedActionIndexes: number[]
+) => {
+  const response = await api.patch<{
+    success: boolean;
+    planId: string;
+    completedActionIndexes: number[];
+  }>(`/business-planner/${planId}/progress`, { completedActionIndexes });
 
   return response.data;
 };

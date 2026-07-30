@@ -159,6 +159,25 @@ export async function rsvpToEvent(eventId: string) {
   return data;
 }
 
+export type EventAttendee = {
+  userId: string;
+  name: string;
+  email: string;
+  registeredAt: string;
+};
+
+/** Admin's "expected invitees" list — everyone who's RSVP'd through GMBTE
+ *  for this event, whether it links out to Eventbrite or not. */
+export async function fetchEventAttendees(eventId: string): Promise<{
+  eventId: string;
+  eventTitle: string;
+  count: number;
+  attendees: EventAttendee[];
+}> {
+  const { data } = await api.get(`/events/admin/${eventId}/attendees`);
+  return data?.data ?? data;
+}
+
 export async function saveEvent(eventId: string) {
   const { data } = await api.post(`/events/${eventId}/save`);
   return data;

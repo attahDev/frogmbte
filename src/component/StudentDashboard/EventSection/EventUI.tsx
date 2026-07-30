@@ -112,11 +112,17 @@ const EventsUI = () => {
     });
   };
 
-  const handleRsvp = async (eventId: string) => {
+  const handleRsvp = async (eventId: string, link?: string | null) => {
     setBusyId(eventId);
     try {
       await rsvpToEvent(eventId);
       await load();
+      // GMBTE tracks the RSVP as the "expected invitee" record regardless;
+      // the external link (Eventbrite, Zoom, etc.) is where they actually
+      // complete registration if the event has one.
+      if (link) {
+        window.open(link, '_blank', 'noopener,noreferrer');
+      }
     } catch {
       setError("Couldn't register for that event. It may already be full or you're already registered.");
     } finally {
@@ -268,13 +274,13 @@ const EventsUI = () => {
         ) : (
           <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
             <button
-              onClick={() => handleRsvp(event.id)}
+              onClick={() => handleRsvp(event.id, event.link)}
               disabled={busyId === event.id}
               className="flex-1 bg-gradient-to-r from-[#D7263D] to-[#D7263D] text-white py-2.5 sm:py-3.5 px-3 sm:px-4 rounded-lg sm:rounded-xl text-sm font-semibold hover:shadow-lg transition-all duration-200 flex items-center justify-center gap-2 group disabled:opacity-60"
             >
               {busyId === event.id ? <Loader2 className="w-4 h-4 animate-spin" /> : (
                 <>
-                  RSVP
+                  {event.link ? 'Register' : 'RSVP'}
                   <ArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 group-hover:translate-x-1 transition-transform" />
                 </>
               )}
