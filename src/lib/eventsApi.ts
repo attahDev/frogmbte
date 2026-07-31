@@ -165,6 +165,14 @@ export async function rsvpToEvent(eventId: string) {
   return data;
 }
 
+/** "My Events" → Attending → Cancel RSVP. Only clears GMBTE's own record —
+ *  if the event links out to Eventbrite, this doesn't cancel a real
+ *  Eventbrite ticket, which has to be managed there directly. */
+export async function cancelRsvp(eventId: string) {
+  const { data } = await api.delete(`/events/${eventId}/rsvp`);
+  return data;
+}
+
 export type EventAttendee = {
   userId: string;
   name: string;
@@ -254,4 +262,36 @@ export async function fetchMySubmissions(): Promise<UiSubmission[]> {
   const { data } = await api.get("/events/community/mine");
   const events: (BackendEvent & { reviewStatus: SubmissionStatus })[] = data?.data ?? data;
   return events.map((e) => ({ ...toUiEvent(e), reviewStatus: e.reviewStatus }));
+}
+
+/** "My Events" → Hosting → Edit. Same field set as submitCommunityEvent —
+ *  every field optional since it's a partial update. Editing sends the
+ *  event back to PENDING review on the backend regardless of prior state,
+ *  so it disappears from public listings until an admin re-approves. */
+export async function updateMySubmission(
+  eventId: string,
+  input: Partial<CommunityEventInput>,
+) {
+  const form = new FormData();
+  if (input.title !== undefined) form.append("title", input.title);
+  if (input.description !== undefined) form.append("description", input.description);
+  if (input.location !== undefined) form.append("location", input.location);
+  if (input.mode !== undefined) form.append("mode", input.mode);
+  if (input.link !== undefined) form.append("link", input.link);
+  if (input.eventbriteUrl !== undefined) form.append("eventbriteUrl", input.eventbriteUrl);
+  if (input.tags !== undefined) form.append("tags", input.tags.join(","));
+  if (input.startsAt !== undefined) form.append("startsAt", input.startsAt);
+  if (input.endsAt !== undefined) form.append("endsAt", input.endsAt);
+  if (input.image) form.append("image", input.image);
+
+  const { data } = await api.patch(`/events/community/mine/${eventId}`, form);
+  return data;
+}
+
+/** "My Events" → Hosting → Withdraw. Hard-deletes the submission — any
+ *  existing RSVPs/saves on it go with it, with no separate warning beyond
+ *  the confirm step in the UI. */
+export async function withdrawMySubmission(eventId: string) {
+  const { data } = await api.delete(`/events/community/mine/${eventId}`);
+  return data;
 }

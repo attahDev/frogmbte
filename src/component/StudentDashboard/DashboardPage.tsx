@@ -2,6 +2,7 @@ import {
   Award,
   BarChart3,
   Building2,
+  CalendarCheck,
   CalendarDays,
   ChevronDown,
   ChevronLeft,
@@ -178,6 +179,11 @@ const Dashboard: React.FC = () => {
             name: 'Events',
             icon: <CalendarDays className={iconClass} />,
             path: '/dashboard/events',
+          },
+          {
+            name: 'My Events',
+            icon: <CalendarCheck className={iconClass} />,
+            path: '/dashboard/events/mine',
           },
           {
             name: 'Community',
