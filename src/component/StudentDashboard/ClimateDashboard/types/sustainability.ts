@@ -63,4 +63,8 @@ export type SustainabilityCourse = {
   // pass straight through from the backend Course row.
   tags: string[];
   isFeatured: boolean;
+  // 0/undefined = free. When set, the course requires a one-time credit
+  // spend to enroll — see CourseEnrollGate.
+  creditCost?: number;
+  isEnrolled?: boolean;
 };

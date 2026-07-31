@@ -4,6 +4,7 @@ import { Navigate, useParams } from "react-router-dom";
 import { CourseSidebar } from "../Component/CourseSidebar";
 import { LessonContent } from "../Component/LessonContent";
 import { LessonNavigation } from "../Component/LessonNavigation";
+import { CourseEnrollGate } from "../Component/CourseEnrollGate";
 import { fetchLessonBySlug, toggleSectionComplete } from "../../../../lib/coursesApi";
 
 type CourseLessonPageProps = {
@@ -42,6 +43,20 @@ export default function CourseLessonPage({ basePath = "/dashboard/green-impact" 
 
   if (!data) {
     return <Navigate to={basePath} replace />;
+  }
+
+  if (data.locked) {
+    return (
+      <main className="min-h-screen bg-[#F6F4EE] px-4 py-6 sm:px-6 lg:px-8">
+        <div className="mx-auto flex w-full max-w-[720px]">
+          <CourseEnrollGate
+            course={data.course}
+            courseSlug={courseSlug}
+            onEnrolled={() => queryClient.invalidateQueries({ queryKey })}
+          />
+        </div>
+      </main>
+    );
   }
 
   const { course, lesson } = data;

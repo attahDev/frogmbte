@@ -1,4 +1,4 @@
-import { Award, Clock3, Play } from "lucide-react";
+import { Award, Clock3, Coins, Play } from "lucide-react";
 import { Link } from "react-router-dom";
 
 type CourseCardProps = {
@@ -11,6 +11,8 @@ type CourseCardProps = {
   /** Where this course's detail page lives — differs between Green Impact
    *  and Academy even though they share the same card/overview/lesson UI. */
   basePath?: string;
+  /** 0/undefined = free — no badge shown. */
+  creditCost?: number;
 };
 
 export function CourseCard({
@@ -21,6 +23,7 @@ export function CourseCard({
   slug,
   certificateAvailable = true,
   basePath = "/dashboard/green-impact",
+  creditCost = 0,
 }: CourseCardProps) {
   const safeProgress = Math.min(Math.max(progress, 0), 100);
   const hasStarted = safeProgress > 0;
@@ -41,6 +44,13 @@ export function CourseCard({
           <Clock3 size={14} />
           {duration}
         </div>
+
+        {creditCost > 0 && (
+          <div className="absolute left-4 top-4 flex items-center gap-1.5 rounded-[7px] bg-[#001F3F]/90 px-3 py-2 text-[13px] font-medium text-white shadow-sm backdrop-blur">
+            <Coins size={14} />
+            {creditCost} credit{creditCost === 1 ? "" : "s"}
+          </div>
+        )}
       </div>
 
       <div className="flex flex-1 flex-col px-[18px] pb-[18px] pt-[18px]">

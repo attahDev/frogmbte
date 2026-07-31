@@ -43,6 +43,7 @@ export default function SustainabilityPage() {
                 progress={course.progress}
                 slug={course.slug}
                 certificateAvailable={course.certificateAvailable}
+                creditCost={course.creditCost}
               />
             ))}
           </div>

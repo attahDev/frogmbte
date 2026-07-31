@@ -17,6 +17,8 @@ type BackendCourse = {
   totalModules: number;
   completedModules?: number;
   progressPercent?: number;
+  creditCost?: number;
+  isEnrolled?: boolean;
 };
 
 type BackendModule = {
@@ -59,6 +61,8 @@ function toCourse(course: BackendCourse, modules: BackendModule[] = []): Sustain
     finalProject: m.finalProject,
     tags: course.tags ?? [],
     isFeatured: course.isFeatured ?? false,
+    creditCost: course.creditCost ?? 0,
+    isEnrolled: course.isEnrolled ?? (course.creditCost ?? 0) === 0,
   };
 }
 
@@ -106,20 +110,37 @@ type BackendModuleWithProgress = BackendModule & {
 
 /** A single lesson merged with the current user's checkbox progress —
  *  what CourseLessonPage should actually render instead of pulling the
- *  lesson out of the whole-course fetch (which has no progress data). */
+ *  lesson out of the whole-course fetch (which has no progress data).
+ *  Returns { locked: true, course } instead of a lesson when the course is
+ *  paid and the user hasn't enrolled — the backend withholds lesson content
+ *  entirely in that case, it isn't just hidden client-side. */
 export async function fetchLessonBySlug(
   courseSlug: string,
   lessonSlug: string,
-): Promise<{ course: SustainabilityCourse; lesson: CourseLesson } | null> {
+): Promise<
+  | { locked: false; course: SustainabilityCourse; lesson: CourseLesson }
+  | { locked: true; course: SustainabilityCourse }
+  | null
+> {
   try {
     const { data } = await api.get(`/courses/by-slug/${courseSlug}/modules/${lessonSlug}`);
-    const payload: { course: BackendCourse; module: BackendModuleWithProgress } = data?.data ?? data;
+    const payload: {
+      course: BackendCourse;
+      locked: boolean;
+      module?: BackendModuleWithProgress;
+    } = data?.data ?? data;
 
     const course = toCourse(payload.course, []);
+
+    if (payload.locked || !payload.module) {
+      return { locked: true, course };
+    }
+
     const lesson = toLesson(payload.module);
     const completedIds = new Set(payload.module.completedSectionIds);
 
     return {
+      locked: false,
       course,
       lesson: {
         ...lesson,
@@ -130,6 +151,14 @@ export async function fetchLessonBySlug(
   } catch {
     return null;
   }
+}
+
+/** Enroll in a course — free courses (creditCost 0) still call this once
+ *  (it just skips the credit charge server-side) so a CourseProgress row
+ *  exists either way and lesson pages can tell "enrolled" from "not". */
+export async function enrollInCourse(courseSlug: string) {
+  const { data } = await api.post(`/courses/by-slug/${courseSlug}/enroll`);
+  return data?.data ?? data;
 }
 
 /** The "mark this section done" checkbox. Toggles on the server (which

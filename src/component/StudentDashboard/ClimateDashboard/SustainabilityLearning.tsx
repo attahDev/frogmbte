@@ -97,6 +97,7 @@ export default function SustainabilityLearningSection() {
             duration: c.duration,
             progress: c.progress,
             slug: c.slug,
+            creditCost: c.creditCost,
           })),
         );
       })

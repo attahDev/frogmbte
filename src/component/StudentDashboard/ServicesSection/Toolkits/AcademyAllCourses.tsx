@@ -139,6 +139,7 @@ export default function AcademyAllCourses() {
                   progress={course.progress}
                   certificateAvailable={course.certificateAvailable}
                   basePath={ACADEMY_BASE_PATH}
+                  creditCost={course.creditCost}
                 />
               ))}
             </div>
@@ -174,6 +175,7 @@ export default function AcademyAllCourses() {
                   progress={course.progress}
                   certificateAvailable={course.certificateAvailable}
                   basePath={ACADEMY_BASE_PATH}
+                  creditCost={course.creditCost}
                 />
               ))}
             </div>
