@@ -16,6 +16,8 @@ export type BackendEvent = {
   imageUrl: string | null;
   mode: string | null;
   link: string | null;
+  eventbriteEventId: string | null;
+  eventbriteAttendeeCount: number | null;
   tags: string[];
   startsAt: string;
   endsAt: string | null;
@@ -43,6 +45,8 @@ export type UiEvent = {
   format: EventFormat;
   location: string | null;
   link: string | null;
+  eventbriteEventId: string | null;
+  eventbriteAttendeeCount: number | null;
   tags: string[];
   image: string;
   isFeatured: boolean;
@@ -100,6 +104,8 @@ function toUiEvent(event: BackendEvent): UiEvent {
     format: formatFor(event),
     location: event.location,
     link: event.link,
+    eventbriteEventId: event.eventbriteEventId ?? null,
+    eventbriteAttendeeCount: event.eventbriteAttendeeCount ?? null,
     tags: event.tags ?? [],
     image: event.imageUrl ?? placeholderImageFor(event.id),
     isFeatured: event.isFeatured,
@@ -163,18 +169,34 @@ export type EventAttendee = {
   userId: string;
   name: string;
   email: string;
+  status: "SAVED" | "REGISTERED";
+  viaEventbrite: boolean;
   registeredAt: string;
 };
 
-/** Admin's "expected invitees" list — everyone who's RSVP'd through GMBTE
- *  for this event, whether it links out to Eventbrite or not. */
+/** Admin's "expected invitees" list — everyone who's RSVP'd OR saved
+ *  through GMBTE (both count toward `count` now), plus Eventbrite's own
+ *  confirmed count if the event is linked. `eventbriteCount` is null when
+ *  there's no linked event or no synced number yet — use "Sync now"
+ *  (syncEventbriteAttendees) to populate it. */
 export async function fetchEventAttendees(eventId: string): Promise<{
   eventId: string;
   eventTitle: string;
   count: number;
+  gmbteCount: number;
+  eventbriteEventId: string | null;
+  eventbriteCount: number | null;
+  eventbriteSyncedAt: string | null;
   attendees: EventAttendee[];
 }> {
   const { data } = await api.get(`/events/admin/${eventId}/attendees`);
+  return data?.data ?? data;
+}
+
+/** Admin's "Sync now" button — pulls a fresh confirmed-attendee count from
+ *  Eventbrite for a linked event. */
+export async function syncEventbriteAttendees(eventId: string) {
+  const { data } = await api.post(`/events/admin/${eventId}/eventbrite/sync`);
   return data?.data ?? data;
 }
 
@@ -194,6 +216,7 @@ export type CommunityEventInput = {
   location?: string;
   mode?: EventFormat;
   link?: string;
+  eventbriteUrl?: string;
   tags?: string[];
   startsAt: string; // ISO
   endsAt?: string; // ISO
@@ -211,6 +234,7 @@ export async function submitCommunityEvent(input: CommunityEventInput) {
   if (input.location) form.append("location", input.location);
   if (input.mode) form.append("mode", input.mode);
   if (input.link) form.append("link", input.link);
+  if (input.eventbriteUrl) form.append("eventbriteUrl", input.eventbriteUrl);
   if (input.tags?.length) form.append("tags", input.tags.join(","));
   form.append("startsAt", input.startsAt);
   if (input.endsAt) form.append("endsAt", input.endsAt);
