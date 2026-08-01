@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Bot, X, ChevronRight, ArrowLeft, Send, Loader2 } from "lucide-react";
 import { api } from "./lib/api"; // adjust path if your api file is elsewhere
+import { reportApiError } from "./lib/creditErrors";
 
 type UserType = "Student" | "Mentor" | "Partner" | null;
 type Message = {
@@ -117,14 +118,14 @@ export const BotComp = () => {
   } catch (error: any) {
     console.log("CHATBOT ERROR:", error);
 
+    let text = "Sorry, something went wrong. Please try again.";
+    reportApiError(error, (m) => { text = m; }, text);
+
     setMessages((prev) => [
       ...prev,
       {
         from: "bot",
-        text:
-          error?.response?.data?.message ||
-          error?.message ||
-          "Sorry, something went wrong. Please try again.",
+        text,
       },
     ]);
   } finally {

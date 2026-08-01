@@ -15,6 +15,7 @@ import {
 import { generateIdea, type GenerateIdeaPayload } from "../lib/ideaEngineApi";
 import { setCurrentIdeaId, getCurrentIdeaId } from "../lib/currentIdea";
 import { GeneratedPlanResult } from "./generatedplan";
+import { reportApiError } from "../../../lib/creditErrors";
 
 type Props = {
   hasContent?: boolean;
@@ -88,7 +89,7 @@ export default function DashboardHero({
       setCurrentIdeaId(idea.id);
       navigate("/dashboard/idea-generator");
     } catch (err: any) {
-      setError(err?.message || "Something went wrong generating your idea. Please try again.");
+      reportApiError(err, setError, "Something went wrong generating your idea. Please try again.");
     } finally {
       setActiveAction(null);
     }
@@ -109,7 +110,7 @@ export default function DashboardHero({
       setCurrentIdeaId(idea.id);
       navigate("/dashboard/opportunity-insights");
     } catch (err: any) {
-      setError(err?.message || "Something went wrong validating your idea. Please try again.");
+      reportApiError(err, setError, "Something went wrong validating your idea. Please try again.");
     } finally {
       setActiveAction(null);
     }
@@ -148,12 +149,7 @@ export default function DashboardHero({
         navigate("/dashboard/business-plan");
       }
     } catch (err: any) {
-      setError(
-        err?.response?.data?.error ||
-          err?.response?.data?.message ||
-          err?.message ||
-          "Something went wrong. Please try again."
-      );
+      reportApiError(err, setError, "Something went wrong. Please try again.");
     } finally {
       setActiveAction(null);
     }

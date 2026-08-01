@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Loader2, Send } from "lucide-react";
 import { askGreenAdvisor, fetchGreenAdvice, type AdvisorCard } from "../../../../../lib/greenAdvisorApi";
+import { reportApiError } from "../../../../../lib/creditErrors";
 
 function AdvisorCardView({ title, description, variant, badge }: AdvisorCard) {
     const styles = {
@@ -88,8 +89,8 @@ export default function AIGreenAdvisor() {
                 prev.map((t, i) => (i === prev.length - 1 ? { ...t, answer } : t))
             );
         } catch (err: any) {
-            const message =
-                err?.response?.data?.message || "Couldn't get an answer right now — try again.";
+            let message = "Couldn't get an answer right now — try again.";
+            reportApiError(err, (m) => { message = m; }, message);
             setTurns((prev) =>
                 prev.map((t, i) => (i === prev.length - 1 ? { ...t, error: message } : t))
             );

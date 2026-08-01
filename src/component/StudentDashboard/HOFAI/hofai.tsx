@@ -17,6 +17,7 @@ import {
 } from "react";
 
 import { api } from "../../../lib/api";
+import { reportApiError } from "../../../lib/creditErrors";
 
 // Routed through the backend (POST /hof-ai/chat) instead of calling the
 // Hugging Face Space directly — keeps the Space URL server-side and gates
@@ -139,9 +140,10 @@ export default function MentorAiSection() {
     } catch (err: any) {
       console.error("Hall of Fame AI error:", err);
 
-      setError(
-        err?.response?.data?.message ||
-          "Hall of Fame AI is currently unavailable. Please try again.",
+      reportApiError(
+        err,
+        setError,
+        "Hall of Fame AI is currently unavailable. Please try again.",
       );
     } finally {
       setLoading(false);

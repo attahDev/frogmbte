@@ -3,6 +3,7 @@ import { Bot, Circle, Loader2, Send, X } from 'lucide-react';
 import AIDashboardButton from '../ui/AIDashboardButton';
 import AIDashboardCard from '../ui/AIDashboardCard';
 import { sendMentorMessage, getMentorChat, BUSINESS_MENTOR_CHAT_ID_KEY, readStoredBusinessMentorChatId } from '../lib/mentorAiApi';
+import { reportApiError } from '../../../lib/creditErrors';
 
 const prompts = [
   'I want to start a business...',
@@ -90,8 +91,8 @@ export default function BusinessMentorChat({ onClose, isMobileOverlay = false }:
         { id: crypto.randomUUID(), role: 'assistant', text: reply, time: timeNow() },
       ]);
     } catch (err: any) {
-      const message =
-        err?.response?.data?.message || err?.message || "Sorry, I couldn't reach your mentor right now.";
+      let message = "Sorry, I couldn't reach your mentor right now.";
+      reportApiError(err, (m) => { message = m; }, message);
       setError(message);
       setMessages((prev) => [
         ...prev,
