@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { CreditCard } from "lucide-react";
 import toast from "react-hot-toast";
-import { fetchMySubscription, startCheckout, Tier } from "../../../lib/subscriptionsApi";
+import { fetchMySubscription, startCheckout } from "../../../lib/subscriptionsApi";
+import type { Tier } from "../../../lib/subscriptionsApi";
 
 const TIERS: { tier: Tier; label: string; monthly: string; annual: string }[] = [
   { tier: "STUDENT", label: "Student", monthly: "£9.99/mo", annual: "£99/yr" },

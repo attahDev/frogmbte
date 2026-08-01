@@ -1,11 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { api } from "../../lib/api";
-import {
-  adminGetUserSubscription,
-  adminGrantTier,
-  AdminSubscriptionView,
-  Tier,
-} from "../../lib/subscriptionsApi";
+import { adminGetUserSubscription, adminGrantTier } from "../../lib/subscriptionsApi";
+import type { AdminSubscriptionView, Tier } from "../../lib/subscriptionsApi";
 
 type UserRow = {
   id: string;
