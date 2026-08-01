@@ -18,6 +18,7 @@ const TABS = [
   { to: "/dashboard/admin/hall-of-fame", label: "Hall of Fame" },
   { to: "/dashboard/admin/community", label: "Community" },
   { to: "/dashboard/admin/opportunities", label: "Opportunities" },
+  { to: "/dashboard/admin/billing", label: "Billing (test)" },
 ];
 
 export default function AdminLayout() {

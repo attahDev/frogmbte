@@ -3,6 +3,7 @@ import { KeyRound, ShieldCheck } from "lucide-react";
 import toast from "react-hot-toast";
 import { useAuth } from "../../../contexts/mainuseAuth";
 import { changeMyPassword, updateProfileVisibility } from "../../../lib/profileApi";
+import BillingSection from "./BillingSection";
 
 export default function SettingsPage() {
   const { user, refreshUser } = useAuth();
@@ -79,6 +80,9 @@ export default function SettingsPage() {
             </button>
           </div>
         </div>
+
+        {/* Billing & plan */}
+        <BillingSection />
 
         {/* Change password */}
         <div className="rounded-2xl bg-white shadow-sm p-6">

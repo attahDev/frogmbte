@@ -46,6 +46,7 @@ import AdminCourses from './component/Admin/AdminCourses';
 import AdminGreenProjects from './component/Admin/AdminGreenProjects';
 import AdminHOF from './component/Admin/AdminHOF';
 import AdminOpportunities from './component/Admin/AdminOpportunities';
+import AdminBilling from './component/Admin/AdminBilling';
 import AdminCommunity from './component/Admin/AdminCommunity';
 import AIDashboardIndex from './component/MarketResearchDashboard/AIDashboardIndex';
 import BPTabs from './component/MarketResearchDashboard/BusinessPlanSection/BPTabs';
@@ -146,6 +147,7 @@ function AppLayout() {
               <Route path="community" element={<AdminCommunity />} />
               <Route path="hall-of-fame" element={<AdminHOF />} />
               <Route path="green-projects" element={<AdminGreenProjects />} />
+              <Route path="billing" element={<AdminBilling />} />
             </Route>
 
             {/* ── LIVE at launch: Dashboard, Academy, Green Impact, Hall of Fame ── */}
